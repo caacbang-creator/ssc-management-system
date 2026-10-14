@@ -1,0 +1,18 @@
+<%
+  // Usage: include('partials/status-pill', { status: 'pending' })
+  // Always shows a WORD, never colour alone. Amber = waiting, blue = in progress, green = done, red = stopped.
+  const pillLabels = {
+    draft: 'Draft',
+    pending: 'Pending',
+    published: 'Published',
+    submitted: 'Received',
+    under_review: 'Under review',
+    responded: 'Answered',
+    approved: 'Approved',
+    resolved: 'Resolved',
+    completed: 'Completed',
+    rejected: 'Rejected',
+    cancelled: 'Cancelled'
+  };
+%>
+<span class="pill pill-<%= status.replace('_', '-') %>"><%= pillLabels[status] || status %></span>

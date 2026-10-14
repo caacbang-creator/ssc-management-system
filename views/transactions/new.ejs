@@ -1,0 +1,72 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/transactions"><span aria-hidden="true">&larr;</span> My requests</a>
+
+  <section class="card">
+    <h1>Make a request</h1>
+    <p class="muted">Fill in the basics. Only fill in the extra box that matches your request.</p>
+    <%- include('../partials/form-errors') %>
+
+    <form method="post" action="/transactions" novalidate>
+      <div class="form-field">
+        <label for="type">Request type</label>
+        <select id="type" name="type">
+          <option value="">Choose one</option>
+          <% Object.keys(transactionTypes).forEach((key) => { %>
+            <option value="<%= key %>"<% if (old.type === key) { %> selected<% } %>><%= transactionTypes[key] %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="purpose">Purpose</label>
+        <textarea id="purpose" name="purpose" rows="3" maxlength="500" required><%= old.purpose || '' %></textarea>
+      </div>
+      <div class="form-field">
+        <label for="preferred_date">Date</label>
+        <input type="date" id="preferred_date" name="preferred_date" value="<%= old.preferred_date || '' %>"
+          min="<%= minDate %>" aria-describedby="date-hint" required>
+        <p class="hint" id="date-hint">Your appointment day, or the day you'll pick up the item.</p>
+      </div>
+
+      <fieldset class="form-group">
+        <legend>For appointments</legend>
+        <div class="form-field">
+          <label for="preferred_time">Preferred time</label>
+          <input type="time" id="preferred_time" name="preferred_time" value="<%= old.preferred_time || '' %>">
+        </div>
+      </fieldset>
+
+      <fieldset class="form-group">
+        <legend>For borrowing an item</legend>
+        <div class="form-field">
+          <label for="item_id">Item</label>
+          <select id="item_id" name="item_id">
+            <option value="">Choose an item</option>
+            <% items.forEach((i) => { %>
+              <option value="<%= i.id %>"<% if (String(i.id) === (old.item_id || '')) { %> selected<% } %>><%= i.name %> (<%= i.quantity %> in stock)</option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="quantity">Quantity</label>
+            <input type="text" id="quantity" name="quantity" value="<%= old.quantity || '' %>" inputmode="numeric" maxlength="4">
+          </div>
+          <div class="form-field">
+            <label for="return_date">Return date</label>
+            <input type="date" id="return_date" name="return_date" value="<%= old.return_date || '' %>" min="<%= minDate %>">
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send request <span class="arrow" aria-hidden="true">&rarr;</span></button>
+        <a class="btn btn-secondary" href="/transactions">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('../partials/foot') %>

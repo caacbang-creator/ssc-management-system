@@ -1,0 +1,143 @@
+<%- include('partials/head') %>
+<%- include('partials/nav') %>
+
+<%
+  // Each card is one link. Icons are hand-drawn SVG paths, chosen by name below,
+  // so no raw HTML string is ever printed unescaped.
+  const features = [
+    { href: '/events', icon: 'calendar', title: 'Join an event',
+      text: 'See what\'s coming up and save your spot.' },
+    { href: '/transactions', icon: 'clipboard', title: 'Book a service',
+      text: 'Clearance, SSC appointments and borrowing items.' },
+    { href: '/concerns', icon: 'chat', title: 'Raise a concern',
+      text: 'Tell us what\'s wrong. You can stay anonymous.' },
+    { href: '/documents', icon: 'document', title: 'See where funds go',
+      text: 'Read our financial reports and resolutions.' }
+  ];
+
+  // School year: a new year starts in August (month 7, counting from 0)
+  const today = new Date();
+  const ayStart = today.getMonth() >= 7 ? today.getFullYear() : today.getFullYear() - 1;
+%>
+
+<main id="main">
+  <%# Hero as a Z: title top-left -> seal top-right -> contact bottom-left -> buttons bottom-right %>
+  <section class="hero-band" aria-labelledby="hero-title">
+    <div class="container hero-inner">
+      <div class="hero-text-block fade-up">
+        <p class="eyebrow">CSPC &middot; Academic Year <%= ayStart %>&ndash;<%= ayStart + 1 %></p>
+        <h1 id="hero-title" class="hero-title">Supreme Student Council</h1>
+        <p class="hero-text">Your voice on campus. Join events, book services and get help, all in one place.</p>
+      </div>
+
+      <div class="hero-seal fade-up fade-up-delay-1">
+        <%# Decorative here: the logo is already announced in the header %>
+        <img class="logo-img" src="/img/SSC.png" alt="" width="164" height="210">
+      </div>
+
+      <ul class="contact-line hero-contact fade-up fade-up-delay-2">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>
+          <span><span class="visually-hidden">Facebook, Instagram, X and TikTok: </span>@cspcssc</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <a href="mailto:sscservices@cspc.edu.ph">sscservices@cspc.edu.ph</a>
+        </li>
+      </ul>
+
+      <%# The main call to action changes with the visitor: guests are invited to join, members go to their dashboard %>
+      <div class="action-row hero-cta fade-up fade-up-delay-2">
+        <% if (currentUser) { %>
+          <a class="btn btn-light" href="/dashboard">Go to my dashboard <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn-outline-light" href="/events">See events</a>
+        <% } else { %>
+          <a class="btn btn-light" href="/register">Create your account <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn-outline-light" href="/login">Log in</a>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <h2 class="visually-hidden">What you can do here</h2>
+    <div class="feature-grid swipe-row">
+      <% features.forEach((f) => { %>
+        <a class="card feature-card" href="<%= f.href %>">
+          <span class="icon-tile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <% if (f.icon === 'calendar') { %>
+                <rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h3v3H8z"/>
+              <% } else if (f.icon === 'clipboard') { %>
+                <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="m9 13 2 2 4-4"/>
+              <% } else if (f.icon === 'chat') { %>
+                <path d="M20 12a8 8 0 0 1-11.7 7.1L4 20l1-4.1A8 8 0 1 1 20 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/>
+              <% } else { %>
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>
+              <% } %>
+            </svg>
+          </span>
+          <h3><%= f.title %></h3>
+          <p><%= f.text %></p>
+          <span class="card-link">Let's go <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+      <% }) %>
+    </div>
+    <%# Below the row, because the row overlaps the hero above it %>
+    <p class="swipe-hint" aria-hidden="true">Swipe for more <span class="arrow">&rarr;</span></p>
+
+    <%# Most useful information first: what's happening soon %>
+    <section class="home-section" aria-labelledby="events-title">
+      <div class="section-heading">
+        <h2 id="events-title">Coming up</h2>
+        <a class="text-link" href="/events">All events <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+      <% if (events.length === 0) { %>
+        <div class="card empty-state">
+          <p>No events scheduled yet. We'll post them here first.</p>
+        </div>
+      <% } else { %>
+        <p class="swipe-hint" aria-hidden="true">Swipe for more <span class="arrow">&rarr;</span></p>
+        <div class="card-grid-3 swipe-row">
+          <% events.forEach((e) => { %>
+            <%- include('partials/event-card', { e }) %>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="home-section" aria-labelledby="news-title">
+      <div class="section-heading">
+        <h2 id="news-title">Latest news</h2>
+        <a class="text-link" href="/announcements">All news <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      </div>
+      <% if (announcements.length === 0) { %>
+        <div class="card empty-state">
+          <p>Nothing new right now. Check back soon.</p>
+        </div>
+      <% } else { %>
+        <div class="card-grid-2">
+          <% announcements.forEach((a) => { %>
+            <a class="card link-card" href="/announcements/<%= a.id %>">
+              <span class="meta"><span class="tag"><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></span> <%= formatDate(a.published_at) %></span>
+              <h3><%= a.title %></h3>
+              <p><%= a.body.length > 120 ? a.body.slice(0, 120).trim() + '…' : a.body %></p>
+              <span class="card-link">Read more <span class="arrow" aria-hidden="true">&rarr;</span></span>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <%# Bottom-right of the Z: one last, clear invitation %>
+    <div class="page-end">
+      <p>Something on your mind? We read every concern.</p>
+      <a class="btn btn-primary" href="/concerns/new">Raise a concern <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/foot') %>

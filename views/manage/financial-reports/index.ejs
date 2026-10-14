@@ -1,0 +1,64 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const canWrite = ['treasurer', 'president'].includes(currentUser.role);
+  const filters = [
+    { value: '', label: 'All' },
+    { value: 'pending', label: 'With the President' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'published', label: 'Published' }
+  ];
+%>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officer tools</p>
+      <h1>Financial reports</h1>
+      <p class="page-lead"><%= canWrite ? 'Show students how their funds are used.' : 'You can view these, but not edit them.' %></p>
+    </div>
+    <% if (canWrite) { %>
+      <a class="btn btn-primary" href="/manage/financial-reports/new">Write a report <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    <% } %>
+  </div>
+
+  <nav aria-label="Filter by status">
+    <ul class="filter-links">
+      <% filters.forEach((f) => { %>
+        <li><a href="/manage/financial-reports<%= f.value ? '?status=' + f.value : '' %>"<% if (status === f.value) { %> aria-current="page"<% } %>><%= f.label %></a></li>
+      <% }) %>
+    </ul>
+  </nav>
+
+  <% if (reports.length === 0) { %>
+    <div class="card empty-state"><p><%= status ? 'Nothing here right now.' : 'No financial reports yet.' %></p></div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Report</th>
+            <th scope="col">Status</th>
+            <th scope="col">Period</th>
+            <th scope="col" class="num">Left</th>
+            <th scope="col">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.forEach((r) => { %>
+            <tr>
+              <td><a href="/manage/financial-reports/<%= r.id %>"><%= r.title %></a></td>
+              <td><%- include('../../partials/status-pill', { status: r.status }) %></td>
+              <td><%= formatDate(r.period_start) %> &ndash; <%= formatDate(r.period_end) %></td>
+              <td class="num"><%= formatMoney(r.remaining_balance) %></td>
+              <td><%= formatDate(r.updated_at) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../../partials/foot') %>

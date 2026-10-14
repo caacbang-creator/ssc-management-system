@@ -1,0 +1,68 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">About us</p>
+      <h1>Who we are</h1>
+      <p class="page-lead">The students who work for every student at CSPC.</p>
+    </div>
+    <% if (currentUser && currentUser.role === 'president') { %>
+      <a class="btn btn-secondary" href="/manage/about">Edit this page</a>
+    <% } else { %>
+      <a class="btn btn-primary" href="/officers">Meet the officers <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    <% } %>
+  </div>
+
+  <% if (!about) { %>
+    <div class="card empty-state">
+      <p>We're still writing this page. Come back soon.</p>
+    </div>
+  <% } else { %>
+    <%# Mission and vision first: they say in one line what the SSC is for %>
+    <div class="card-grid-2">
+      <section class="card">
+        <h2>Our mission</h2>
+        <p class="keep-lines"><%= about.mission %></p>
+      </section>
+      <section class="card">
+        <h2>Our vision</h2>
+        <p class="keep-lines"><%= about.vision %></p>
+      </section>
+    </div>
+    <section class="card section-gap">
+      <h2>Our story</h2>
+      <p class="keep-lines prose"><%= about.overview %></p>
+    </section>
+  <% } %>
+
+  <section class="section-gap" aria-labelledby="committees-title">
+    <div class="section-heading">
+      <h2 id="committees-title">Our committees</h2>
+    </div>
+    <% if (committees.length === 0) { %>
+      <div class="card empty-state">
+        <p>No committees listed yet.</p>
+      </div>
+    <% } else { %>
+      <div class="card-grid-3">
+        <% committees.forEach((c) => { %>
+          <section class="card">
+            <h3><%= c.name %></h3>
+            <% if (c.description) { %>
+              <p class="muted"><%= c.description %></p>
+            <% } %>
+          </section>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <div class="page-end">
+    <p>Want to know who to talk to?</p>
+    <a class="btn btn-secondary" href="/officers">See the officers <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

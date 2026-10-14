@@ -1,0 +1,1988 @@
+/* SSC Student Organization Management System - "CSPC SSC banner" theme
+   Deep royal/navy blue with a dark vignette, silver-white serif titles and gold as the accent.
+   Plain CSS only: no frameworks, no external fonts, no JavaScript.
+
+   Design rules used on every page:
+   - Z layout: title top-left, main action top-right, content in the middle,
+     closing "next step" bottom-left with its button bottom-right.
+   - Colour meaning: blue = trust (the base), gold = "look here" (accent only),
+     green = done, amber = waiting, red = stop / cannot undo.
+   - Only five text sizes (see --text-* below). */
+
+:root {
+  /* Tell the browser this is a dark page, so date pickers, dropdowns and scrollbars are dark too */
+  color-scheme: dark;
+
+  /* Background blues, from the bright centre of the banner to its dark edges */
+  --royal-glow: #1A3AD6;
+  --royal: #0B1D99;
+  --navy: #071270;
+  --night: #040A3D;
+  --night-deep: #02051F;
+
+  /* Surfaces (cards, forms, tables) */
+  --panel: #0C1868;
+  --panel-top: #121F7A;
+  --field: #060E48;
+  --line: rgba(197, 206, 236, 0.18);
+  --field-line: #7F8FD0;  /* input borders: 5:1 against the card */
+
+  /* Text */
+  --white: #FFFFFF;       /* body text (14:1 on a card) */
+  --silver: #E6EAF4;      /* headings */
+  --silver-dark: #AEB7CA;
+  --muted: #C5CEEC;       /* secondary text (about 9:1 on a card) */
+  --link: #AFC3FF;        /* links (about 8:1 on a card) */
+
+  /* Buttons */
+  --blue: #2A48D8;        /* primary button (white text 7:1) */
+  --blue-bright: #3557F0;
+  --danger: #C62828;      /* delete / reject (white text 5.6:1) */
+  --danger-dark: #A11F1F;
+
+  /* Gold is the accent only: glows, underlines, focus ring, small borders and gold text on blue */
+  --gold: #F2C14E;
+  --gold-soft: rgba(242, 193, 78, 0.35);
+  --gold-glow: 0 0 18px rgba(242, 193, 78, 0.35);
+
+  /* Five text sizes - nothing else on the site uses font-size */
+  --text-sm: 0.875rem;                                  /* labels, dates, pills */
+  --text-base: 1rem;                                    /* body text, small titles */
+  --text-lg: 1.25rem;                                   /* section and card titles */
+  --text-xl: clamp(1.625rem, 1.2rem + 1.6vw, 2.25rem);  /* page titles, big numbers */
+  --text-display: clamp(2rem, 1rem + 4.4vw, 3.6rem);    /* the home page title only */
+
+  --font-serif: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+
+  --tap: 44px;            /* smallest touch target (WCAG 2.5.5) */
+  --radius: 10px;
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.50);
+  --speed: 200ms;         /* all transitions stay between 150 and 300ms */
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--white);
+  background-color: var(--night);
+  /* The banner look: a bright royal-blue centre that fades to almost black at the edges */
+  background-image: radial-gradient(ellipse 90% 70% at 50% 25%,
+    var(--royal) 0%, var(--navy) 40%, var(--night) 75%, var(--night-deep) 100%);
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* width: 100% matters: main is a flex item with auto margins, and without it a wide table
+   would stretch main (and the whole page) instead of scrolling inside .table-wrap */
+main {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+/* The sticky header must not cover the top of the page after "Skip to main content" */
+#main {
+  scroll-margin-top: 90px;
+}
+
+h1,
+h2 {
+  font-family: var(--font-serif);
+  color: var(--silver);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+
+h1 {
+  font-size: var(--text-xl);
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: var(--text-lg);
+}
+
+h3 {
+  font-size: var(--text-base);
+  color: var(--white);
+  line-height: 1.35;
+}
+
+a {
+  color: var(--link);
+}
+
+a:hover {
+  color: var(--white);
+}
+
+/* Keyboard focus ring everywhere: gold outside, a dark ring against the element */
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--night-deep);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Hidden on screen but still read by screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Small uppercase label above a title */
+.eyebrow {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* ---------- Skip link ---------- */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  padding: 0.5rem 1rem;
+  background: var(--white);
+  color: var(--night-deep);
+  border: 2px solid var(--gold);
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ---------- Logo ---------- */
+.logo-img {
+  display: block;
+  height: 44px;
+  width: auto;
+  position: relative;
+}
+
+/* Fallback: browsers draw ::after on an <img> ONLY when the image fails to load */
+.logo-img::after {
+  content: "SSC";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--navy);
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-weight: 800;
+  font-size: var(--text-sm);
+}
+
+/* ---------- Header and nav ---------- */
+/* Top line of the Z: logo on the left, the account button (Register / Dashboard) on the far right */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: linear-gradient(180deg, var(--night-deep) 0%, var(--night) 100%);
+  color: var(--white);
+  border-bottom: 1px solid var(--gold-soft);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.5), 0 1px 12px rgba(242, 193, 78, 0.15);
+}
+
+.header-inner {
+  max-width: 1240px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--white);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand:hover {
+  color: var(--white);
+}
+
+.brand .logo-img {
+  filter: drop-shadow(0 0 6px rgba(242, 193, 78, 0.35));
+}
+
+.wordmark {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.wordmark-title {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--silver);
+}
+
+.wordmark-sub {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.site-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0 1.1rem;
+}
+
+.site-nav a,
+.site-nav .link-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--white);
+  text-decoration: none;
+}
+
+/* Gold underline that slides in from the left on hover, and stays on the active page */
+.site-nav a::after,
+.site-nav .link-button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(242, 193, 78, 0.8);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--speed) ease;
+}
+
+.site-nav a:hover,
+.site-nav .link-button:hover {
+  color: var(--white);
+}
+
+.site-nav a:hover::after,
+.site-nav .link-button:hover::after,
+.site-nav a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* The account button at the top-right corner of the Z: gold outline pill */
+.site-nav a.nav-cta {
+  min-height: 40px;
+  padding: 0 1rem;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  font-weight: 600;
+  transition: background-color var(--speed) ease, transform var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+.site-nav a.nav-cta::after {
+  display: none;
+}
+
+.site-nav a.nav-cta:hover,
+.site-nav a.nav-cta[aria-current="page"] {
+  background: rgba(242, 193, 78, 0.12);
+  box-shadow: var(--gold-glow);
+  transform: translateY(-1px);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* A form button that looks like a nav link (used for Log out) */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--white);
+  cursor: pointer;
+}
+
+/* Desktop shows the full nav; small screens use the "Menu" disclosure instead */
+.nav-mobile {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .nav-desktop {
+    display: none;
+  }
+
+  .nav-mobile {
+    display: block;
+  }
+}
+
+/* "Menu" button built from <details>/<summary> - opens without JavaScript */
+.nav-mobile summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--tap);
+  padding: 0 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+.nav-mobile summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-mobile summary:hover,
+.nav-mobile[open] summary {
+  border-color: var(--gold);
+  box-shadow: var(--gold-glow);
+}
+
+.nav-mobile summary svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-mobile .site-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: var(--night-deep);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  border-top: 1px solid var(--gold-soft);
+  padding: 0.5rem 1rem 1rem;
+  max-height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+.nav-mobile .site-nav ul {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.nav-mobile .site-nav li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-mobile .site-nav a,
+.nav-mobile .site-nav .link-button {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  text-align: left;
+}
+
+.nav-mobile .site-nav a::after,
+.nav-mobile .site-nav .link-button::after {
+  right: auto;
+  width: 2.5rem;
+}
+
+.nav-mobile .nav-user {
+  justify-content: space-between;
+}
+
+.nav-mobile .site-nav a.nav-cta {
+  display: inline-flex;
+  width: auto;
+  margin: 0.75rem 0 0;
+}
+
+@media (max-width: 520px) {
+  .wordmark-sub {
+    display: none;
+  }
+
+  /* Smaller title that may wrap to two lines, so the Menu button always fits */
+  .brand {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .wordmark-title {
+    font-size: var(--text-sm);
+    letter-spacing: 0.02em;
+  }
+
+  .nav-mobile {
+    flex-shrink: 0;
+  }
+
+  .brand .logo-img {
+    height: 36px;
+  }
+}
+
+/* ---------- Page layout (the Z) ---------- */
+/* Top line of the Z: title and one short sentence on the left, the main action on the right */
+.page-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.page-heading > div:first-child {
+  flex: 1 1 22rem;
+}
+
+.page-lead {
+  margin: 0;
+  color: var(--muted);
+  max-width: 40rem;
+}
+
+/* Bottom line of the Z: a short "what next" on the left, one button on the right */
+.page-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.page-end p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Detail pages: the content on the left, a sticky "key facts + action" box on the right.
+   The eye reads the title, jumps right to the action, then reads down. */
+.split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.5rem;
+  }
+
+  .split-aside {
+    position: sticky;
+    top: 90px;
+  }
+}
+
+/* On phones the action box comes FIRST, so the most important thing is never below the fold */
+@media (max-width: 899px) {
+  .split-aside {
+    order: -1;
+  }
+}
+
+.split-aside .card {
+  border-top: 3px solid var(--gold);
+}
+
+.split-aside h2 {
+  margin: 0 0 0.75rem;
+}
+
+.split-aside .btn:not(.btn-sm) {
+  width: 100%;
+  justify-content: center;
+}
+
+/* "Back to ..." link with an arrow that nudges left on hover */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--tap);
+  margin-top: 0.5rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back-link span {
+  display: inline-block;
+  transition: transform var(--speed) ease;
+}
+
+.back-link:hover span {
+  transform: translateX(-3px);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: linear-gradient(180deg, var(--panel-top) 0%, var(--panel) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.card > :last-child {
+  margin-bottom: 0;
+}
+
+.card-grid,
+.card-grid-2,
+.card-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.card-grid > .card,
+.card-grid-2 > .card,
+.card-grid-3 > .card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 700px) {
+  .card-grid,
+  .card-grid-2,
+  .card-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .card-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .card-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* A whole card that is one link: lifts on hover, presses down on tap */
+.link-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--white);
+  text-decoration: none;
+  transition: transform var(--speed) ease, box-shadow var(--speed) ease, border-color var(--speed) ease;
+}
+
+.link-card:hover {
+  color: var(--white);
+  border-color: var(--gold-soft);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md), var(--gold-glow);
+}
+
+.link-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.link-card h2,
+.link-card h3 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--white);
+}
+
+.link-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* "View ->" at the bottom of a card; the arrow slides right on hover (a pointing cue) */
+.card-link {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  color: var(--link);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.arrow {
+  display: inline-block;
+  transition: transform var(--speed) ease;
+}
+
+.link-card:hover .arrow,
+.feature-card:hover .arrow,
+.btn:hover .arrow,
+.text-link:hover .arrow {
+  transform: translateX(4px);
+}
+
+.text-link {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Keeps the line breaks people typed in a textarea (text is still escaped) */
+.keep-lines {
+  white-space: pre-line;
+}
+
+/* Long text stays at a comfortable reading width */
+.prose {
+  max-width: 68ch;
+}
+
+/* ---------- Swipe rows (phones) ---------- */
+/* On small screens a row of cards becomes a sideways strip you can swipe.
+   scroll-snap makes each card stop neatly; the next card peeks in to show there is more. */
+@media (max-width: 699px) {
+  /* "div." raises specificity so this wins over .feature-grid / .card-grid-3 column rules */
+  div.swipe-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 82%;
+    grid-template-columns: none;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0.25rem 0.25rem 0.75rem;
+    margin: 0 -0.25rem;
+    overscroll-behavior-x: contain;
+  }
+
+  div.swipe-row > * {
+    scroll-snap-align: start;
+  }
+
+  /* "p." so this beats the display: none rule written below */
+  p.swipe-hint {
+    display: flex;
+  }
+}
+
+/* "Swipe for more ->" label: only shown on phones */
+.swipe-hint {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Officers ---------- */
+.officer-card {
+  text-align: center;
+}
+
+.officer-initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 0.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--gold-soft);
+  background: rgba(242, 193, 78, 0.10);
+  color: var(--gold);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+
+.officer-name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+}
+
+.officer-position {
+  margin: 0 0 0.25rem;
+  color: var(--gold);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.officer-card p {
+  margin: 0;
+}
+
+/* ---------- Dashboard numbers ---------- */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  text-decoration: none;
+  color: var(--white);
+  transition: transform var(--speed) ease, box-shadow var(--speed) ease, border-color var(--speed) ease;
+}
+
+/* Only cards that ARE links react to hover - a moving card that does nothing would mislead */
+a.stat-card:hover {
+  border-color: var(--gold-soft);
+  color: var(--white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), var(--gold-glow);
+}
+
+a.stat-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Something to do: a gold left edge plus the number itself (not colour alone) */
+.stat-card-active {
+  border-left: 4px solid var(--gold);
+}
+
+.stat-number {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--silver);
+  line-height: 1;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* Shortcut chips (dashboard management links) */
+.chip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--white);
+  text-decoration: none;
+  transition: border-color var(--speed) ease, background-color var(--speed) ease;
+}
+
+.chip-list a:hover {
+  border-color: var(--gold);
+  background: rgba(242, 193, 78, 0.08);
+}
+
+/* ---------- Lists and details ---------- */
+.section-gap {
+  margin-top: 2rem;
+}
+
+.meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 0.5rem;
+  margin-right: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--silver);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* Label / value pairs */
+.details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.details dt {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  padding-top: 0.1rem;
+}
+
+.details dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* The aside stacks label above value so long values never squeeze */
+.split-aside .details {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.split-aside .details dd {
+  margin-bottom: 0.6rem;
+}
+
+.plain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plain-list li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.plain-list li:last-child {
+  border-bottom: none;
+}
+
+.plain-list a {
+  font-weight: 600;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Status filters: pill-shaped tabs, big enough to tap */
+.filter-links {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filter-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--white);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: border-color var(--speed) ease, background-color var(--speed) ease;
+}
+
+.filter-links a:hover {
+  border-color: var(--gold-soft);
+}
+
+.filter-links a[aria-current="page"] {
+  border-color: var(--gold);
+  background: rgba(242, 193, 78, 0.12);
+}
+
+/* ---------- Progress steps (concerns and requests) ---------- */
+/* State is shown by a symbol (check / dot / cross) and by text, not by colour alone */
+.steps {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* The thin line joining one step to the next */
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 2rem;
+  height: calc(100% - 1.4rem);
+  width: 2px;
+  background: var(--line);
+}
+
+.step-dot {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--night);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.step-done {
+  color: var(--white);
+}
+
+.step-done .step-dot {
+  border-color: #86EFAC;
+  background: #166534;
+  color: #FFFFFF;
+}
+
+.step-done .step-dot::before {
+  content: "\2713"; /* check mark */
+}
+
+.step-done:not(:last-child)::after {
+  background: #86EFAC;
+}
+
+.step-current {
+  color: var(--white);
+  font-weight: 700;
+}
+
+.step-current .step-dot {
+  border-color: var(--gold);
+  box-shadow: var(--gold-glow);
+}
+
+.step-current .step-dot::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.step-stopped .step-dot {
+  border-color: #FCA5A5;
+  background: #991B1B;
+  box-shadow: none;
+}
+
+.step-stopped .step-dot::before {
+  content: "\2715"; /* cross */
+  width: auto;
+  height: auto;
+  background: none;
+  color: #FFFFFF;
+}
+
+/* ---------- Home: hero ---------- */
+.hero-band {
+  position: relative;
+  overflow: hidden;
+  color: var(--white);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1.5px),
+    radial-gradient(ellipse 65% 60% at 70% 35%, var(--royal-glow) 0%, var(--royal) 40%, transparent 100%);
+  background-size: 22px 22px, 100% 100%;
+}
+
+/* The hero is a Z: title (top-left) -> seal (top-right) -> contact (bottom-left) -> buttons (bottom-right) */
+.hero-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  max-width: 1100px;
+  padding-top: 2.5rem;
+  padding-bottom: 6rem; /* room for the feature cards that overlap the bottom */
+  text-align: center;
+  justify-items: center;
+}
+
+@media (min-width: 800px) {
+  .hero-inner {
+    grid-template-columns: 1.4fr 1fr;
+    grid-template-areas:
+      "text seal"
+      "contact cta";
+    align-items: center;
+    text-align: left;
+    justify-items: start;
+    padding-top: 3.5rem;
+  }
+
+  .hero-text-block { grid-area: text; }
+  .hero-seal { grid-area: seal; justify-self: center; }
+  .hero-contact { grid-area: contact; }
+  .hero-cta { grid-area: cta; justify-self: end; }
+}
+
+.hero-seal {
+  position: relative;
+}
+
+.hero-seal .logo-img {
+  height: 120px;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 14px rgba(242, 193, 78, 0.25));
+}
+
+@media (min-width: 800px) {
+  .hero-seal .logo-img {
+    height: 210px;
+  }
+}
+
+.hero-seal .logo-img::after {
+  font-size: var(--text-xl);
+  border-width: 3px;
+}
+
+/* A gold "lens flare" sparkle on the seal's top-right corner */
+.hero-seal::after {
+  content: "";
+  position: absolute;
+  top: -18px;
+  right: -34px;
+  width: 90px;
+  height: 90px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, #FFFFFF 0 2px, rgba(255, 233, 170, 0.75) 4px, rgba(242, 193, 78, 0.25) 16px, transparent 44px),
+    linear-gradient(90deg, transparent, rgba(255, 240, 200, 0.9), transparent) center / 100% 1.5px no-repeat,
+    linear-gradient(0deg, transparent, rgba(255, 240, 200, 0.8), transparent) center / 1.5px 60% no-repeat;
+}
+
+.hero-title {
+  position: relative;
+  z-index: 0;
+  margin: 0.35rem 0 0.75rem;
+  font-family: var(--font-serif);
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+  color: var(--silver);
+}
+
+/* Silver effect painted inside the letters */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .hero-title {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F4FA 42%, var(--silver-dark) 55%, #F7F9FC 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45));
+  }
+}
+
+/* Gold light streak under the title; draws itself once on load */
+.hero-title::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -6%;
+  right: -6%;
+  bottom: -0.35rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(242, 193, 78, 0.65) 25%,
+    #FFF6DC 50%, rgba(242, 193, 78, 0.65) 75%, transparent 100%);
+  box-shadow: 0 0 14px 2px rgba(242, 193, 78, 0.45);
+  animation: streak-in 900ms ease-out both;
+}
+
+@keyframes streak-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.hero-text {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--muted);
+  font-size: var(--text-lg);
+}
+
+.contact-line {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.75rem;
+}
+
+@media (min-width: 800px) {
+  .contact-line {
+    justify-content: flex-start;
+  }
+}
+
+.contact-line li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.contact-line svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+.contact-line a {
+  color: var(--white);
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+}
+
+.contact-line a:hover {
+  text-decoration-color: var(--gold);
+}
+
+.hero-cta {
+  justify-content: center;
+}
+
+/* Content fades up gently once, when the page loads */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 300ms ease-out both;
+}
+
+.fade-up-delay-1 {
+  animation-delay: 80ms;
+}
+
+.fade-up-delay-2 {
+  animation-delay: 160ms;
+}
+
+/* ---------- Home: feature cards ---------- */
+.feature-grid {
+  position: relative;
+  z-index: 1;
+  margin-top: -4rem; /* overlap the bottom of the hero */
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 700px) {
+  .feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .feature-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.feature-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--white);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--speed) ease, box-shadow var(--speed) ease, border-color var(--speed) ease;
+}
+
+/* Gold top border that grows in from the centre on hover */
+.feature-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(242, 193, 78, 0.8);
+  transform: scaleX(0);
+  transition: transform var(--speed) ease;
+}
+
+.feature-card:hover,
+.feature-card:focus-visible {
+  color: var(--white);
+  border-color: var(--gold-soft);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), var(--gold-glow);
+}
+
+.feature-card:focus-visible {
+  box-shadow: 0 0 0 2px var(--night-deep), var(--shadow-lg);
+}
+
+.feature-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.feature-card:hover::before,
+.feature-card:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.feature-card h3 {
+  margin: 0.25rem 0 0;
+  font-size: var(--text-lg);
+  color: var(--silver);
+}
+
+.feature-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Icon in a small gold-edged square */
+.icon-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(242, 193, 78, 0.10);
+  border: 1px solid var(--gold-soft);
+  color: var(--gold);
+}
+
+.icon-tile svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---------- Section headings ---------- */
+.home-section {
+  margin-top: 2.5rem;
+}
+
+.section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--gold); /* short gold underline as accent */
+}
+
+/* ---------- Event date badge ---------- */
+/* The date is the first thing people look for, so it gets its own block */
+.event-card {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.event-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.date-badge {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  padding: 0.4rem 0;
+  border: 1px solid var(--gold-soft);
+  border-radius: 8px;
+  background: rgba(242, 193, 78, 0.08);
+  line-height: 1.1;
+}
+
+.date-badge-month {
+  color: var(--gold);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.date-badge-day {
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--silver);
+}
+
+/* "12 spots left" / "Full" line */
+.spots {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* ---------- Empty state ---------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 2rem 1.25rem;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* ---------- Error pages ---------- */
+.error-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.error-card {
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.error-card .logo-img {
+  height: 96px;
+  margin: 0 auto 1rem;
+  filter: drop-shadow(0 0 12px rgba(242, 193, 78, 0.25));
+}
+
+.error-card .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.error-card p {
+  color: var(--muted);
+}
+
+.error-card .action-row {
+  justify-content: center;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: var(--tap);
+  padding: 0 1.2rem;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid var(--blue);
+  transition: background-color var(--speed) ease, border-color var(--speed) ease,
+    color var(--speed) ease, transform var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+/* Hover: slightly raised. Pressed: back down and a little smaller. */
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--night-deep);
+}
+
+/* One primary style for the main action on a page. The thin gold edge pulls the eye to it. */
+.btn-primary {
+  background: var(--blue);
+  border-color: var(--gold-soft);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background: var(--blue-bright);
+  border-color: var(--gold);
+  color: var(--white);
+  box-shadow: var(--shadow-md), var(--gold-glow);
+}
+
+/* Secondary actions are outlined */
+.btn-secondary {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.6);
+  color: var(--white);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--white);
+  color: var(--white);
+}
+
+/* Red means "stop / cannot undo" and is used for nothing else */
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--white);
+}
+
+.btn-danger:hover {
+  background: var(--danger-dark);
+  border-color: var(--danger-dark);
+  color: var(--white);
+}
+
+/* Silver button for the hero */
+.btn-light {
+  background: linear-gradient(180deg, #FFFFFF 0%, #C9D0DE 100%);
+  border-color: #FFFFFF;
+  color: var(--night-deep);
+}
+
+.btn-light:hover {
+  border-color: var(--gold);
+  color: var(--night-deep);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), var(--gold-glow);
+}
+
+.btn-outline-light {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.85);
+  color: var(--white);
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--white);
+  color: var(--white);
+}
+
+/* Small buttons inside table rows (still 36px tall) */
+.btn-sm {
+  min-height: 36px;
+  padding: 0 0.8rem;
+  font-size: var(--text-sm);
+}
+
+/* ---------- Status pills (word + soft tint, never colour alone) ---------- */
+.pill {
+  display: inline-block;
+  padding: 0.1rem 0.65rem;
+  border-radius: 999px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill-draft { background: #E2E8F0; color: #334155; }
+.pill-pending,
+.pill-submitted { background: #FEF3C7; color: #92400E; }
+.pill-under-review { background: #DBEAFE; color: #1E3A8A; }
+.pill-responded { background: #E0E7FF; color: #3730A3; }
+.pill-approved,
+.pill-resolved,
+.pill-completed { background: #DCFCE7; color: #166534; }
+.pill-rejected,
+.pill-cancelled { background: #FEE2E2; color: #991B1B; }
+.pill-published { background: #1E5AA8; color: #FFFFFF; border: 1px solid var(--gold-soft); }
+
+/* ---------- Tables ---------- */
+.table-wrap {
+  overflow-x: auto;
+  padding: 0.25rem 0.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+th {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom-color: var(--gold-soft);
+}
+
+tbody tr {
+  transition: background-color var(--speed) ease;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+td a {
+  font-weight: 600;
+}
+
+td.actions {
+  white-space: nowrap;
+}
+
+td.actions .inline-form,
+td.actions .btn {
+  margin-right: 0.35rem;
+}
+
+th.num,
+td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------- Forms ---------- */
+.form-card {
+  max-width: 640px;
+}
+
+.form-page {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.form-field {
+  margin-bottom: 1.1rem;
+  flex: 1;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 600px) {
+  .form-row {
+    flex-direction: row;
+    gap: 1rem;
+  }
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.optional {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: var(--text-sm);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  color: var(--white);
+  background: var(--field);
+  border: 1px solid var(--field-line);
+  border-radius: 6px;
+  transition: border-color var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9AA6D6;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--gold-soft);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--gold);
+}
+
+.form-group {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.75rem 1rem 0;
+  margin: 0 0 1.1rem;
+}
+
+.form-group legend {
+  padding: 0 0.35rem;
+  font-weight: 600;
+  color: var(--silver);
+}
+
+/* Checkbox beside its label */
+.checkbox-field {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 0.6rem;
+}
+
+.checkbox-field input {
+  width: 1.4rem;
+  height: 1.4rem;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
+.checkbox-field label {
+  margin: 0;
+}
+
+.checkbox-field .hint {
+  grid-column: 2;
+}
+
+.hint {
+  margin: 0.3rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* Main button on the right, Cancel beside it (bottom-right of the Z) */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.form-footer {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.inline-form {
+  display: inline;
+  margin: 0;
+}
+
+/* ---------- Messages ---------- */
+.alert,
+.flash {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border: 1px solid;
+  margin: 0 0 1rem;
+}
+
+.alert ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.alert p {
+  margin: 0;
+}
+
+.alert-error,
+.flash-error {
+  background: #FEE2E2;
+  color: #991B1B;
+  border-color: #FCA5A5;
+}
+
+.alert-info {
+  background: #DBEAFE;
+  color: #1E3A8A;
+  border-color: #93C5FD;
+}
+
+.flash-success,
+.alert-success {
+  background: #DCFCE7;
+  color: #166534;
+  border-color: #86EFAC;
+}
+
+.alert a,
+.flash a {
+  color: inherit;
+}
+
+.flash {
+  margin-top: 0.5rem;
+}
+
+/* ---------- Footer ---------- */
+.site-footer {
+  margin-top: 3rem;
+  background: linear-gradient(180deg, var(--night) 0%, var(--night-deep) 100%);
+  border-top: 1px solid var(--gold-soft);
+  box-shadow: 0 -1px 14px rgba(242, 193, 78, 0.12);
+  color: var(--white);
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  padding-top: 2.5rem;
+  padding-bottom: 2rem;
+}
+
+@media (min-width: 750px) {
+  .footer-grid {
+    grid-template-columns: 1.4fr 1fr 1fr;
+  }
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.footer-brand .logo-img {
+  height: 56px;
+  filter: drop-shadow(0 0 8px rgba(242, 193, 78, 0.3));
+}
+
+.site-footer h2 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-sans);
+  color: var(--gold);
+  font-size: var(--text-sm);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.site-footer p {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+}
+
+.footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+}
+
+.site-footer a {
+  color: var(--white);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--speed) ease;
+}
+
+.site-footer a:hover {
+  color: var(--white);
+  text-decoration-color: var(--gold);
+}
+
+.footer-contact {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.footer-contact li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.footer-contact svg {
+  width: 20px;
+  height: 20px;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+.footer-contact small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.footer-bottom .container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Reduced motion (accessibility) ---------- */
+/* People who ask their device for less motion get no animations or transitions at all. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn:hover,
+  .btn:active,
+  .stat-card:hover,
+  .stat-card:active,
+  .link-card:hover,
+  .link-card:active,
+  .feature-card:hover,
+  .feature-card:focus-visible,
+  .feature-card:active,
+  .site-nav a.nav-cta:hover,
+  .link-card:hover .arrow,
+  .feature-card:hover .arrow,
+  .btn:hover .arrow,
+  .text-link:hover .arrow,
+  .back-link:hover span {
+    transform: none;
+  }
+}

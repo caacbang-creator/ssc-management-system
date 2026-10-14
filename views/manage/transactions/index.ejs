@@ -1,0 +1,83 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const statusFilters = [
+    { value: '', label: 'All' },
+    { value: 'pending', label: 'New' },
+    { value: 'under_review', label: 'Under review' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'cancelled', label: 'Cancelled' }
+  ];
+  // Keeps the other filter when one is clicked
+  const link = (s, t) => {
+    const parts = [];
+    if (s) parts.push('status=' + s);
+    if (t) parts.push('type=' + t);
+    return '/manage/transactions' + (parts.length ? '?' + parts.join('&') : '');
+  };
+%>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officer tools</p>
+      <h1>Requests</h1>
+      <p class="page-lead">Appointments and item borrowing from students.</p>
+    </div>
+    <% if (['pro', 'president'].includes(currentUser.role)) { %>
+      <a class="btn btn-secondary" href="/manage/items">Manage items</a>
+    <% } %>
+  </div>
+
+  <nav aria-label="Filter by status">
+    <ul class="filter-links">
+      <% statusFilters.forEach((f) => { %>
+        <li><a href="<%= link(f.value, type) %>"<% if (status === f.value) { %> aria-current="page"<% } %>><%= f.label %></a></li>
+      <% }) %>
+    </ul>
+  </nav>
+  <nav aria-label="Filter by type">
+    <ul class="filter-links">
+      <li><a href="<%= link(status, '') %>"<% if (type === '') { %> aria-current="page"<% } %>>All types</a></li>
+      <% Object.keys(transactionTypes).forEach((key) => { %>
+        <li><a href="<%= link(status, key) %>"<% if (type === key) { %> aria-current="page"<% } %>><%= transactionTypes[key] %></a></li>
+      <% }) %>
+    </ul>
+  </nav>
+
+  <% if (transactions.length === 0) { %>
+    <div class="card empty-state">
+      <p>No requests match these filters.</p>
+    </div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Request</th>
+            <th scope="col">Status</th>
+            <th scope="col">From</th>
+            <th scope="col">Date</th>
+            <th scope="col">Code</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% transactions.forEach((t) => { %>
+            <tr>
+              <td><a href="/manage/transactions/<%= t.id %>"><%= transactionTypes[t.type] %></a></td>
+              <td><%- include('../../partials/status-pill', { status: t.status }) %></td>
+              <td><%= t.requester_name %></td>
+              <td><%= formatDate(t.preferred_date) %></td>
+              <td class="muted"><%= t.reference_no %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../../partials/foot') %>

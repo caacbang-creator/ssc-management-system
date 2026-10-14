@@ -1,0 +1,29 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/manage/events/<%= event.id %>"><span aria-hidden="true">&larr;</span> Back to the event</a>
+
+  <section class="card">
+    <p class="eyebrow"><%= event.title %> &middot; <%= formatDate(event.event_date) %></p>
+    <h1>How did it go?</h1>
+    <p class="muted">This appears on the public event page.</p>
+
+    <%- include('../../partials/form-errors') %>
+
+    <form method="post" action="/manage/events/<%= event.id %>/documentation" novalidate>
+      <div class="form-field">
+        <label for="documentation">Write-up</label>
+        <textarea id="documentation" name="documentation" rows="8" maxlength="5000"
+          aria-describedby="documentation-hint" required><%= old.documentation %></textarea>
+        <p class="hint" id="documentation-hint">For example: how many came, highlights, what came out of it.</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save write-up</button>
+        <a class="btn btn-secondary" href="/manage/events/<%= event.id %>">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

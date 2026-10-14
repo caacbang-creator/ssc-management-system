@@ -1,0 +1,123 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  // Buttons shown here are a convenience only - every action is checked again on the server
+  const t = transaction;
+  const canProcess = ['pro', 'president'].includes(currentUser.role);
+  const canDecide = ['vp_internal', 'president'].includes(currentUser.role);
+
+  let steps = ['Received', 'Under review', 'Approved', 'Completed'];
+  let current = ['pending', 'under_review', 'approved', 'completed'].indexOf(t.status);
+  let stopped = false;
+  if (t.status === 'rejected') {
+    steps = ['Received', 'Under review', 'Rejected'];
+    current = 2;
+    stopped = true;
+  } else if (t.status === 'cancelled') {
+    steps = ['Received', 'Cancelled by the student'];
+    current = 1;
+    stopped = true;
+  }
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/transactions"><span aria-hidden="true">&larr;</span> Requests</a>
+
+  <div class="page-heading">
+    <div>
+      <h1><%= transactionTypes[t.type] %></h1>
+      <p class="page-lead"><%= t.reference_no %> &middot; from <%= t.requester_name %></p>
+    </div>
+    <%- include('../../partials/status-pill', { status: t.status }) %>
+  </div>
+
+  <div class="split">
+    <div>
+      <% if (t.remarks) { %>
+        <div class="alert alert-info">
+          <p><strong>Remarks (the student can see these):</strong></p>
+          <p class="keep-lines"><%= t.remarks %></p>
+        </div>
+      <% } %>
+
+      <section class="card">
+        <h2>Details</h2>
+        <dl class="details">
+          <dt>Date</dt>
+          <dd><%= formatDate(t.preferred_date) %><% if (t.preferred_time) { %>, <%= formatTime(t.preferred_time) %><% } %></dd>
+          <% if (t.type === 'item_borrowing') { %>
+            <dt>Item</dt>
+            <dd><%= t.item_name || 'No longer listed' %> &times; <%= t.quantity %><% if (t.item_stock !== null) { %> <span class="muted">(stock: <%= t.item_stock %>)</span><% } %></dd>
+            <dt>Return by</dt>
+            <dd><%= formatDate(t.return_date) %></dd>
+          <% } %>
+          <dt>Purpose</dt>
+          <dd class="keep-lines"><%= t.purpose %></dd>
+          <dt>Student</dt>
+          <dd><%= t.requester_name %> (<%= t.requester_student_no %>, <%= t.requester_email %>)</dd>
+          <dt>Sent on</dt>
+          <dd><%= formatDate(t.created_at) %></dd>
+          <% if (t.reviewer_name) { %>
+            <dt>Decided by</dt>
+            <dd><%= t.reviewer_name %></dd>
+          <% } %>
+        </dl>
+      </section>
+    </div>
+
+    <aside class="split-aside" aria-labelledby="next-title">
+      <div class="card">
+        <h2 id="next-title">Next step</h2>
+        <%- include('../../partials/steps', { steps, current, stopped }) %>
+        <%- include('../../partials/form-errors') %>
+
+        <% if (t.status === 'pending') { %>
+          <% if (canProcess) { %>
+            <form method="post" action="/manage/transactions/<%= t.id %>/review" novalidate>
+              <div class="form-field">
+                <label for="remarks">Remarks for the student <span class="optional">(optional)</span></label>
+                <textarea id="remarks" name="remarks" rows="3" maxlength="500"><%= oldRemarks %></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Start review <span class="arrow" aria-hidden="true">&rarr;</span></button>
+            </form>
+          <% } else { %>
+            <p class="muted">Waiting for the PRO to start the review.</p>
+          <% } %>
+
+        <% } else if (t.status === 'under_review') { %>
+          <% if (canDecide) { %>
+            <form method="post" novalidate>
+              <div class="form-field">
+                <label for="remarks">Remarks for the student</label>
+                <textarea id="remarks" name="remarks" rows="3" maxlength="500" aria-describedby="decision-hint"><%= oldRemarks %></textarea>
+                <p class="hint" id="decision-hint">Optional if you approve. If you reject, say why.</p>
+              </div>
+              <div class="action-row">
+                <button type="submit" class="btn btn-primary" formaction="/manage/transactions/<%= t.id %>/approve">Approve</button>
+                <button type="submit" class="btn btn-danger btn-sm" formaction="/manage/transactions/<%= t.id %>/reject">Reject</button>
+              </div>
+            </form>
+          <% } else { %>
+            <p class="muted">Waiting for the VP for Internal Affairs or the President to decide.</p>
+          <% } %>
+
+        <% } else if (t.status === 'approved') { %>
+          <% if (canProcess) { %>
+            <p class="hint">Once the appointment happened or the item came back, close it.</p>
+            <form method="post" action="/manage/transactions/<%= t.id %>/complete">
+              <button type="submit" class="btn btn-primary">Mark as completed</button>
+            </form>
+          <% } else { %>
+            <p class="muted">Approved. The PRO will mark it completed.</p>
+          <% } %>
+
+        <% } else { %>
+          <p class="muted">This request is closed. Requests are kept on record and never deleted.</p>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

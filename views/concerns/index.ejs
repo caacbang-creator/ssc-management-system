@@ -1,0 +1,41 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Concerns</p>
+      <h1>We're here to listen</h1>
+      <p class="page-lead">Tell us about a problem on campus. You can use your name or stay anonymous.</p>
+    </div>
+    <a class="btn btn-primary" href="/concerns/new">Raise a concern <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+
+  <%# Ordered by what most people come here to do %>
+  <div class="card-grid-3">
+    <a class="card link-card" href="/concerns/new">
+      <h2>Raise a concern</h2>
+      <p>A short form. You'll need to log in first.</p>
+      <span class="card-link">Start <span class="arrow" aria-hidden="true">&rarr;</span></span>
+    </a>
+    <a class="card link-card" href="/concerns/my">
+      <h2>My concerns</h2>
+      <p>See our replies to the concerns you sent with your name.</p>
+      <span class="card-link">Open <span class="arrow" aria-hidden="true">&rarr;</span></span>
+    </a>
+    <a class="card link-card" href="/concerns/track">
+      <h2>Track with a code</h2>
+      <p>Sent one anonymously? Use your reference code. No login needed.</p>
+      <span class="card-link">Track <span class="arrow" aria-hidden="true">&rarr;</span></span>
+    </a>
+  </div>
+
+  <% if (currentUser && ['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
+    <div class="page-end">
+      <p>For officers: review and answer concerns.</p>
+      <a class="btn btn-secondary" href="/manage/concerns">Manage concerns</a>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../partials/foot') %>

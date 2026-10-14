@@ -1,0 +1,22 @@
+<%
+  // Progress tracker for concerns and requests.
+  // Usage: include('partials/steps', { steps: ['Sent', 'Being reviewed', 'Done'], current: 1, stopped: false })
+  // current = index of the step the record is on now. stopped = true when it ended early (rejected / cancelled).
+  // A step that is finished shows a check mark, the current one a gold dot, a stopped one a cross,
+  // and screen readers hear "(done)" / "(current step)" - never colour alone.
+%>
+<ol class="steps">
+  <% steps.forEach((label, i) => { %>
+    <%
+      let state = '';
+      if (i < current) state = 'step-done';
+      else if (i === current) state = stopped ? 'step-current step-stopped' : 'step-current';
+      // The last step is "done" rather than "current" once it is reached and the record is closed
+      if (i === current && i === steps.length - 1 && !stopped) state = 'step-done';
+    %>
+    <li class="step <%= state %>"<% if (i === current) { %> aria-current="step"<% } %>>
+      <span class="step-dot" aria-hidden="true"></span>
+      <span><%= label %><% if (state === 'step-done') { %><span class="visually-hidden"> (done)</span><% } else if (i === current) { %><span class="visually-hidden"> (current step)</span><% } %></span>
+    </li>
+  <% }) %>
+</ol>

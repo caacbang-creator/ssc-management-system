@@ -1,0 +1,49 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  const concernSteps = ['Received', 'Being reviewed', 'We replied', 'Resolved'];
+  const stepIndex = ['submitted', 'under_review', 'responded', 'resolved'].indexOf(concern.status);
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/concerns/my"><span aria-hidden="true">&larr;</span> My concerns</a>
+
+  <div class="page-heading">
+    <div>
+      <h1><%= concern.subject %></h1>
+      <p class="page-lead">Code <%= concern.reference_no %></p>
+    </div>
+    <%- include('../partials/status-pill', { status: concern.status }) %>
+  </div>
+
+  <div class="split">
+    <div>
+      <%# Our reply is what the student came back for, so it goes first %>
+      <section class="card">
+        <h2>Our reply</h2>
+        <% if (concern.response) { %>
+          <p class="meta">Replied <%= formatDate(concern.responded_at) %></p>
+          <p class="keep-lines prose"><%= concern.response %></p>
+        <% } else { %>
+          <p class="muted">No reply yet. We'll post it here as soon as we can.</p>
+        <% } %>
+      </section>
+
+      <section class="card">
+        <h2>What you sent</h2>
+        <p class="meta"><%= (concern.category.charAt(0).toUpperCase() + concern.category.slice(1)).replace('_', ' ') %> &middot; <%= formatDate(concern.created_at) %></p>
+        <p class="keep-lines prose"><%= concern.message %></p>
+      </section>
+    </div>
+
+    <aside class="split-aside" aria-labelledby="progress-title">
+      <div class="card">
+        <h2 id="progress-title">Progress</h2>
+        <%- include('../partials/steps', { steps: concernSteps, current: stepIndex, stopped: false }) %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

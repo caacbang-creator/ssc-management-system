@@ -1,0 +1,43 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<% const r = report; %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/documents"><span aria-hidden="true">&larr;</span> Reports and documents</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Financial report</p>
+      <h1><%= r.title %></h1>
+      <p class="page-lead"><%= formatDate(r.period_start) %> &ndash; <%= formatDate(r.period_end) %></p>
+    </div>
+  </div>
+
+  <%# The three numbers people want, big and side by side %>
+  <div class="card-grid-3">
+    <div class="card stat-card">
+      <span class="stat-number"><%= formatMoney(r.budget) %></span>
+      <span class="stat-label">Budget</span>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-number"><%= formatMoney(r.expenses) %></span>
+      <span class="stat-label">Spent</span>
+    </div>
+    <div class="card stat-card stat-card-active">
+      <span class="stat-number"><%= formatMoney(r.remaining_balance) %></span>
+      <span class="stat-label"><%= Number(r.remaining_balance) < 0 ? 'Over budget' : 'Left' %></span>
+    </div>
+  </div>
+
+  <% if (r.notes) { %>
+    <section class="card section-gap">
+      <h2>Notes</h2>
+      <p class="keep-lines prose"><%= r.notes %></p>
+    </section>
+  <% } %>
+
+  <p class="meta section-gap">Published <%= formatDate(r.published_at) %></p>
+</main>
+
+<%- include('../partials/foot') %>

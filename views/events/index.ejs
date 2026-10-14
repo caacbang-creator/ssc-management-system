@@ -1,0 +1,61 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Events</p>
+      <h1>What's coming up</h1>
+      <p class="page-lead">Pick an event and save your spot before it fills up.</p>
+    </div>
+    <div class="action-row">
+      <% if (currentUser && ['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
+        <a class="btn btn-secondary" href="/manage/events">Manage events</a>
+      <% } %>
+      <% if (currentUser) { %>
+        <a class="btn btn-primary" href="/events/my-registrations">My events <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (upcoming.length === 0) { %>
+    <div class="card empty-state">
+      <p>No events scheduled yet. We'll post them here first.</p>
+    </div>
+  <% } else { %>
+    <div class="card-grid-2">
+      <% upcoming.forEach((e) => { %>
+        <%- include('../partials/event-card', { e }) %>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <section class="section-gap" aria-labelledby="past-title">
+    <div class="section-heading">
+      <h2 id="past-title">Past events</h2>
+    </div>
+    <% if (completed.length === 0) { %>
+      <p class="muted">No past events yet.</p>
+    <% } else { %>
+      <div class="card">
+        <ul class="plain-list">
+          <% completed.forEach((e) => { %>
+            <li>
+              <a href="/events/<%= e.id %>"><%= e.title %></a>
+              <span class="meta"> &middot; <%= formatDate(e.event_date) %> &middot; <%= e.venue %></span>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+  </section>
+
+  <% if (!currentUser) { %>
+    <div class="page-end">
+      <p>Log in to register for events.</p>
+      <a class="btn btn-primary" href="/login">Log in <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../partials/foot') %>

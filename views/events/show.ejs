@@ -1,0 +1,75 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  const spotsLeft = event.capacity - event.registered_count;
+  // Same rule as the server: published, not past, not full. The server checks again on submit.
+  const d = new Date();
+  const todayText = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const isOpen = event.status === 'published' && event.event_date >= todayText;
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/events"><span aria-hidden="true">&larr;</span> All events</a>
+
+  <%# Z on a detail page: title (left) -> "Save your spot" box (right) -> description below %>
+  <div class="page-heading">
+    <div>
+      <h1><%= event.title %></h1>
+    </div>
+    <% if (event.status !== 'published') { %>
+      <%- include('../partials/status-pill', { status: event.status }) %>
+    <% } %>
+  </div>
+
+  <div class="split">
+    <article class="card">
+      <h2>About this event</h2>
+      <p class="keep-lines prose"><%= event.description %></p>
+
+      <% if (event.status === 'completed' && event.documentation) { %>
+        <h2 class="section-gap">How it went</h2>
+        <p class="keep-lines prose"><%= event.documentation %></p>
+      <% } %>
+    </article>
+
+    <aside class="split-aside" aria-labelledby="when-title">
+      <div class="card">
+        <h2 id="when-title">When and where</h2>
+        <dl class="details">
+          <dt>Date</dt>
+          <dd><%= formatDate(event.event_date) %></dd>
+          <dt>Time</dt>
+          <dd><%= formatTime(event.start_time) %><% if (event.end_time) { %> &ndash; <%= formatTime(event.end_time) %><% } %></dd>
+          <dt>Venue</dt>
+          <dd><%= event.venue %></dd>
+          <% if (event.status === 'published') { %>
+            <dt>Spots</dt>
+            <dd><%= spotsLeft > 0 ? spotsLeft + ' of ' + event.capacity + ' left' : 'Full' %></dd>
+          <% } %>
+        </dl>
+
+        <%# The one action on this page, right next to the facts people need to decide %>
+        <% if (event.status === 'cancelled') { %>
+          <p class="alert alert-error">Sorry, this event was cancelled.</p>
+        <% } else if (event.status === 'completed') { %>
+          <p class="muted">This event already happened.</p>
+        <% } else if (registered) { %>
+          <p class="alert alert-success"><strong>You're in!</strong> See you there.</p>
+        <% } else if (!isOpen) { %>
+          <p class="muted">Registration is closed.</p>
+        <% } else if (spotsLeft <= 0) { %>
+          <p class="muted">Sorry, this event is full.</p>
+        <% } else if (!currentUser) { %>
+          <a class="btn btn-primary" href="/login">Log in to register <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        <% } else { %>
+          <form method="post" action="/events/<%= event.id %>/register">
+            <button type="submit" class="btn btn-primary">Save my spot <span class="arrow" aria-hidden="true">&rarr;</span></button>
+          </form>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

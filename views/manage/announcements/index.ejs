@@ -1,0 +1,66 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const canWrite = ['pro', 'president'].includes(currentUser.role);
+  const filters = [
+    { value: '', label: 'All' },
+    { value: 'pending', label: 'Waiting for approval' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'published', label: 'Published' }
+  ];
+%>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officer tools</p>
+      <h1>Announcements</h1>
+      <p class="page-lead">Write, review and publish news for students.</p>
+    </div>
+    <% if (canWrite) { %>
+      <a class="btn btn-primary" href="/manage/announcements/new">Write an announcement <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    <% } %>
+  </div>
+
+  <nav aria-label="Filter by status">
+    <ul class="filter-links">
+      <% filters.forEach((f) => { %>
+        <li><a href="/manage/announcements<%= f.value ? '?status=' + f.value : '' %>"<% if (status === f.value) { %> aria-current="page"<% } %>><%= f.label %></a></li>
+      <% }) %>
+    </ul>
+  </nav>
+
+  <% if (announcements.length === 0) { %>
+    <div class="card empty-state">
+      <p><%= status ? 'Nothing here right now.' : 'No announcements yet.' %></p>
+    </div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Status</th>
+            <th scope="col">Category</th>
+            <th scope="col">By</th>
+            <th scope="col">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% announcements.forEach((a) => { %>
+            <tr>
+              <td><a href="/manage/announcements/<%= a.id %>"><%= a.title %></a></td>
+              <td><%- include('../../partials/status-pill', { status: a.status }) %></td>
+              <td><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></td>
+              <td><%= a.author_name %></td>
+              <td><%= formatDate(a.updated_at) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../../partials/foot') %>

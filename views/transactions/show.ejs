@@ -1,0 +1,75 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  const t = transaction;
+  // Progress for the student. A rejected or cancelled request stops early (shown with a cross).
+  let steps = ['Sent', 'Being reviewed', 'Approved', 'Completed'];
+  let current = ['pending', 'under_review', 'approved', 'completed'].indexOf(t.status);
+  let stopped = false;
+  if (t.status === 'rejected') {
+    steps = ['Sent', 'Being reviewed', 'Not approved'];
+    current = 2;
+    stopped = true;
+  } else if (t.status === 'cancelled') {
+    steps = ['Sent', 'Cancelled by you'];
+    current = 1;
+    stopped = true;
+  }
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/transactions"><span aria-hidden="true">&larr;</span> My requests</a>
+
+  <div class="page-heading">
+    <div>
+      <h1><%= transactionTypes[t.type] %></h1>
+      <p class="page-lead">Code <%= t.reference_no %></p>
+    </div>
+    <%- include('../partials/status-pill', { status: t.status }) %>
+  </div>
+
+  <div class="split">
+    <div>
+      <% if (t.remarks) { %>
+        <div class="alert alert-info">
+          <p><strong>A note from the SSC:</strong></p>
+          <p class="keep-lines"><%= t.remarks %></p>
+        </div>
+      <% } %>
+
+      <section class="card">
+        <h2>Details</h2>
+        <dl class="details">
+          <dt>Date</dt>
+          <dd><%= formatDate(t.preferred_date) %><% if (t.preferred_time) { %>, <%= formatTime(t.preferred_time) %><% } %></dd>
+          <% if (t.type === 'item_borrowing') { %>
+            <dt>Item</dt>
+            <dd><%= t.item_name || 'No longer listed' %> &times; <%= t.quantity %></dd>
+            <dt>Return by</dt>
+            <dd><%= formatDate(t.return_date) %></dd>
+          <% } %>
+          <dt>Purpose</dt>
+          <dd class="keep-lines"><%= t.purpose %></dd>
+          <dt>Sent on</dt>
+          <dd><%= formatDate(t.created_at) %></dd>
+        </dl>
+      </section>
+    </div>
+
+    <aside class="split-aside" aria-labelledby="progress-title">
+      <div class="card">
+        <h2 id="progress-title">Progress</h2>
+        <%- include('../partials/steps', { steps, current, stopped }) %>
+        <% if (t.status === 'pending') { %>
+          <p class="hint">Changed your mind? You can cancel until we start reviewing it.</p>
+          <form method="post" action="/transactions/<%= t.id %>/cancel">
+            <button type="submit" class="btn btn-danger">Cancel request</button>
+          </form>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

@@ -1,0 +1,34 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/about"><span aria-hidden="true">&larr;</span> About page</a>
+
+  <section class="card">
+    <h1>Edit the About page</h1>
+    <p class="muted">Short and friendly works best. Students read this first.</p>
+    <%- include('../../partials/form-errors') %>
+
+    <form method="post" action="/manage/about" novalidate>
+      <div class="form-field">
+        <label for="mission">Mission</label>
+        <textarea id="mission" name="mission" rows="3" maxlength="2000" required><%= old.mission %></textarea>
+      </div>
+      <div class="form-field">
+        <label for="vision">Vision</label>
+        <textarea id="vision" name="vision" rows="3" maxlength="2000" required><%= old.vision %></textarea>
+      </div>
+      <div class="form-field">
+        <label for="overview">Overview</label>
+        <textarea id="overview" name="overview" rows="6" maxlength="5000" aria-describedby="overview-hint" required><%= old.overview %></textarea>
+        <p class="hint" id="overview-hint">Shown as "Our story".</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save changes</button>
+        <a class="btn btn-secondary" href="/about">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

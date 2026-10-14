@@ -1,0 +1,52 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">President only</p>
+      <h1>Officer role requests</h1>
+      <p class="page-lead">Approve to give the role right away. Reject to keep them as a student.</p>
+    </div>
+  </div>
+
+  <% if (requests.length === 0) { %>
+    <div class="card empty-state">
+      <p>No requests waiting. You're all caught up.</p>
+    </div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Wants to be</th>
+            <th scope="col">Student number</th>
+            <th scope="col">E-mail</th>
+            <th scope="col">Decision</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% requests.forEach((r) => { %>
+            <tr>
+              <td><strong><%= r.first_name %> <%= r.last_name %></strong></td>
+              <td><%= roleLabels[r.requested_role] || r.requested_role %></td>
+              <td><%= r.student_no %></td>
+              <td><%= r.email %></td>
+              <td class="actions">
+                <form method="post" action="/manage/officer-requests/<%= r.id %>/approve" class="inline-form">
+                  <button type="submit" class="btn btn-secondary btn-sm">Approve</button>
+                </form>
+                <form method="post" action="/manage/officer-requests/<%= r.id %>/reject" class="inline-form">
+                  <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../../partials/foot') %>

@@ -1,0 +1,46 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<% const r = resolution; %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/resolutions"><span aria-hidden="true">&larr;</span> Resolutions</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow"><%= r.resolution_no %></p>
+      <h1><%= r.title %></h1>
+      <p class="page-lead">Adopted <%= formatDate(r.date_adopted) %></p>
+    </div>
+    <%- include('../../partials/status-pill', { status: r.status }) %>
+  </div>
+
+  <div class="split">
+    <div>
+      <% if (r.review_remarks) { %>
+        <div class="alert alert-info">
+          <p><strong>Notes from the President:</strong></p>
+          <p class="keep-lines"><%= r.review_remarks %></p>
+        </div>
+      <% } %>
+      <article class="card">
+        <p class="keep-lines prose"><%= r.body %></p>
+      </article>
+      <p class="meta">
+        By <%= r.author_name %>
+        <% if (r.reviewer_name) { %> &middot; reviewed by <%= r.reviewer_name %><% } %>
+      </p>
+    </div>
+
+    <aside class="split-aside" aria-label="Next step">
+      <%- include('../../partials/review-actions', {
+        base: '/manage/resolutions', id: r.id, status: r.status, label: 'resolution',
+        canWrite: ['secretary', 'president'].includes(currentUser.role),
+        canPublish: currentUser.role === 'president',
+        publicUrl: '/documents/resolutions/' + r.id
+      }) %>
+    </aside>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

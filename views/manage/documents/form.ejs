@@ -1,0 +1,45 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/manage/documents"><span aria-hidden="true">&larr;</span> Documents</a>
+
+  <section class="card">
+    <h1><%= title %></h1>
+    <p class="muted">Saved as a draft. You can send it to the President afterwards.</p>
+
+    <% if (remarks) { %>
+      <div class="alert alert-info">
+        <p><strong>Notes from the President:</strong></p>
+        <p class="keep-lines"><%= remarks %></p>
+      </div>
+    <% } %>
+
+    <%- include('../../partials/form-errors') %>
+
+    <form method="post" action="<%= action %>" novalidate>
+      <div class="form-field">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" value="<%= old.title || '' %>" maxlength="150" required>
+      </div>
+      <div class="form-field">
+        <label for="doc_type">Document type</label>
+        <select id="doc_type" name="doc_type">
+          <% docTypes.forEach((t) => { %>
+            <option value="<%= t %>"<% if (old.doc_type === t) { %> selected<% } %>><%= t.charAt(0).toUpperCase() + t.slice(1) %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="body">Document text</label>
+        <textarea id="body" name="body" rows="12" maxlength="10000" required><%= old.body || '' %></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save draft</button>
+        <a class="btn btn-secondary" href="/manage/documents">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

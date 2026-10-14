@@ -1,0 +1,58 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officer tools</p>
+      <h1>Officer directory</h1>
+      <p class="page-lead">Who students see on the <a href="/officers">Officers page</a>.</p>
+    </div>
+    <a class="btn btn-primary" href="/manage/officers/new">Add an officer <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+
+  <% if (officers.length === 0) { %>
+    <div class="card empty-state">
+      <p>The directory is empty. Add the first officer.</p>
+    </div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Position</th>
+            <th scope="col">Committee</th>
+            <th scope="col">Term</th>
+            <th scope="col" class="num">Order</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% officers.forEach((o) => { %>
+            <tr>
+              <td><strong><%= o.full_name %></strong></td>
+              <td><%= o.position %></td>
+              <td><%= o.committee_name || '—' %></td>
+              <td><%= o.term %></td>
+              <td class="num"><%= o.sort_order %></td>
+              <td class="actions">
+                <a class="btn btn-secondary btn-sm" href="/manage/officers/<%= o.id %>/edit">Edit</a>
+                <form method="post" action="/manage/officers/<%= o.id %>/delete" class="inline-form">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <div class="page-end">
+    <p>Need a new committee first?</p>
+    <a class="btn btn-secondary" href="/manage/committees">Committees <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

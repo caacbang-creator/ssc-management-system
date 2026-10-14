@@ -1,0 +1,35 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  const u = currentUser;
+  const requestText = {
+    none: 'None',
+    pending: 'Waiting for the President',
+    rejected: 'Not approved'
+  };
+%>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/dashboard"><span aria-hidden="true">&larr;</span> My dashboard</a>
+
+  <section class="card">
+    <p class="eyebrow">My profile</p>
+    <h1><%= u.first_name %> <%= u.last_name %></h1>
+    <dl class="details">
+      <dt>Student number</dt>
+      <dd><%= u.student_no %></dd>
+      <dt>E-mail</dt>
+      <dd><%= u.email %></dd>
+      <dt>Role</dt>
+      <dd><%= roleLabels[u.role] %></dd>
+      <% if (u.officer_request_status !== 'none') { %>
+        <dt>Officer request</dt>
+        <dd><%= roleLabels[u.requested_role] || '' %> &middot; <%= requestText[u.officer_request_status] %></dd>
+      <% } %>
+    </dl>
+    <p class="hint">Something wrong here? Let the SSC office know and they'll fix it.</p>
+  </section>
+</main>
+
+<%- include('../partials/foot') %>

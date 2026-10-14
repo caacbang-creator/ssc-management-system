@@ -1,0 +1,23 @@
+<%
+  // One upcoming event as a clickable card. Usage: include('partials/event-card', { e: event })
+  // The date comes first because "when is it?" is the first thing people ask.
+  const badge = dateBadge(e.event_date);
+  const spotsLeft = e.capacity - e.registered_count;
+%>
+<a class="card link-card event-card" href="/events/<%= e.id %>">
+  <span class="date-badge" aria-hidden="true">
+    <span class="date-badge-month"><%= badge.month %></span>
+    <span class="date-badge-day"><%= badge.day %></span>
+  </span>
+  <div class="event-card-body">
+    <h3><%= e.title %></h3>
+    <span class="meta"><%= formatDate(e.event_date) %> &middot; <%= formatTime(e.start_time) %> &middot; <%= e.venue %></span>
+    <% if (e.status === 'cancelled') { %>
+      <span><%- include('status-pill', { status: 'cancelled' }) %></span>
+    <% } else if (spotsLeft > 0) { %>
+      <span class="spots"><%= spotsLeft %> <%= spotsLeft === 1 ? 'spot' : 'spots' %> left</span>
+    <% } else { %>
+      <span class="spots">Full</span>
+    <% } %>
+  </div>
+</a>

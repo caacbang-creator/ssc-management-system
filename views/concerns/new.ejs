@@ -1,0 +1,43 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/concerns"><span aria-hidden="true">&larr;</span> Concerns</a>
+
+  <section class="card">
+    <h1>Raise a concern</h1>
+    <p class="muted">Tell us what happened. We'll reply as soon as we can.</p>
+    <%- include('../partials/form-errors') %>
+
+    <form method="post" action="/concerns" novalidate>
+      <div class="form-field">
+        <label for="category">Category</label>
+        <select id="category" name="category">
+          <option value="">Choose a topic</option>
+          <% categories.forEach((c) => { %>
+            <option value="<%= c %>"<% if (old.category === c) { %> selected<% } %>><%= (c.charAt(0).toUpperCase() + c.slice(1)).replace('_', ' ') %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" value="<%= old.subject || '' %>" maxlength="150" required>
+      </div>
+      <div class="form-field">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="7" maxlength="5000" required><%= old.message || '' %></textarea>
+      </div>
+      <div class="form-field checkbox-field">
+        <input type="checkbox" id="anonymous" name="anonymous" value="1" aria-describedby="anonymous-hint"<% if (old.anonymous) { %> checked<% } %>>
+        <label for="anonymous">Keep my name private</label>
+        <p class="hint" id="anonymous-hint">We won't save your name. Keep the reference code we show you, since it's the only way to follow up.</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Send concern <span class="arrow" aria-hidden="true">&rarr;</span></button>
+        <a class="btn btn-secondary" href="/concerns">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('../partials/foot') %>

@@ -1,0 +1,57 @@
+<%
+  // Draft -> pending -> published actions, shared by financial reports, resolutions and documents.
+  // Usage: include('partials/review-actions', { base, id, status, canWrite, canPublish, publicUrl, label })
+  // Shown as the "Next step" box beside the record. Buttons are a convenience only -
+  // every action is checked again on the server.
+%>
+<div class="card">
+  <h2>Next step</h2>
+  <%- include('steps', {
+    steps: ['Draft', 'With the President', 'Published'],
+    current: ['draft', 'pending', 'published'].indexOf(status),
+    stopped: false
+  }) %>
+
+  <% if (status === 'draft' && canWrite) { %>
+    <p class="hint">Happy with it? Send it to the President.</p>
+    <form method="post" action="<%= base %>/<%= id %>/submit">
+      <button type="submit" class="btn btn-primary">Send to the President <span class="arrow" aria-hidden="true">&rarr;</span></button>
+    </form>
+    <div class="action-row section-gap">
+      <a class="btn btn-secondary btn-sm" href="<%= base %>/<%= id %>/edit">Edit draft</a>
+      <form method="post" action="<%= base %>/<%= id %>/delete" class="inline-form">
+        <button type="submit" class="btn btn-danger btn-sm">Delete draft</button>
+      </form>
+    </div>
+  <% } else if (status === 'draft') { %>
+    <p class="muted">Still a draft.</p>
+  <% } %>
+
+  <% if (status === 'pending' && canPublish) { %>
+    <form method="post" action="<%= base %>/<%= id %>/publish">
+      <button type="submit" class="btn btn-primary">Publish <span class="arrow" aria-hidden="true">&rarr;</span></button>
+    </form>
+
+    <h3 class="section-gap">Needs changes?</h3>
+    <%- include('form-errors') %>
+    <form method="post" action="<%= base %>/<%= id %>/return" novalidate>
+      <div class="form-field">
+        <label for="remarks">Remarks</label>
+        <textarea id="remarks" name="remarks" rows="3" maxlength="500" aria-describedby="remarks-hint" required><%= oldRemarks %></textarea>
+        <p class="hint" id="remarks-hint">Say what should change. Required, up to 500 characters.</p>
+      </div>
+      <button type="submit" class="btn btn-secondary">Send back with notes</button>
+    </form>
+  <% } else if (status === 'pending') { %>
+    <p class="muted">Waiting for the President to publish or return this <%= label %>.</p>
+  <% } %>
+
+  <% if (status === 'published') { %>
+    <p><a class="text-link" href="<%= publicUrl %>">See the public page <span class="arrow" aria-hidden="true">&rarr;</span></a></p>
+    <% if (canPublish) { %>
+      <form method="post" action="<%= base %>/<%= id %>/unpublish">
+        <button type="submit" class="btn btn-secondary">Unpublish</button>
+      </form>
+    <% } %>
+  <% } %>
+</div>

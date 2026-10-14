@@ -1,0 +1,15 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/documents"><span aria-hidden="true">&larr;</span> Reports and documents</a>
+
+  <article class="card">
+    <p class="eyebrow"><%= resolution.resolution_no %></p>
+    <h1><%= resolution.title %></h1>
+    <p class="meta">Adopted <%= formatDate(resolution.date_adopted) %> &middot; published <%= formatDate(resolution.published_at) %></p>
+    <p class="keep-lines prose"><%= resolution.body %></p>
+  </article>
+</main>
+
+<%- include('../partials/foot') %>

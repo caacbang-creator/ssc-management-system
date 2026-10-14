@@ -1,0 +1,81 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const c = concern;
+  const stepIndex = ['submitted', 'under_review', 'responded', 'resolved'].indexOf(c.status);
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/concerns"><span aria-hidden="true">&larr;</span> Concerns</a>
+
+  <div class="page-heading">
+    <div>
+      <h1><%= c.subject %></h1>
+      <p class="page-lead">
+        <%= c.reference_no %> &middot;
+        <%= (c.category.charAt(0).toUpperCase() + c.category.slice(1)).replace('_', ' ') %> &middot;
+        sent <%= formatDate(c.created_at) %>
+      </p>
+    </div>
+    <%- include('../../partials/status-pill', { status: c.status }) %>
+  </div>
+
+  <div class="split">
+    <div>
+      <article class="card">
+        <h2>What they said</h2>
+        <p class="meta">
+          From:
+          <% if (c.is_anonymous) { %>
+            Anonymous
+          <% } else { %>
+            <%= c.submitter_name %> (<%= c.submitter_student_no %>, <%= c.submitter_email %>)
+          <% } %>
+        </p>
+        <p class="keep-lines prose"><%= c.message %></p>
+      </article>
+
+      <% if (c.response) { %>
+        <section class="card">
+          <h2>Our reply</h2>
+          <p class="meta">By <%= c.responder_name || 'a former officer' %> on <%= formatDate(c.responded_at) %></p>
+          <p class="keep-lines prose"><%= c.response %></p>
+        </section>
+      <% } %>
+    </div>
+
+    <aside class="split-aside" aria-labelledby="next-title">
+      <div class="card">
+        <h2 id="next-title">Next step</h2>
+        <%- include('../../partials/steps', { steps: ['Received', 'Being reviewed', 'Replied', 'Resolved'], current: stepIndex, stopped: false }) %>
+
+        <% if (c.status === 'submitted') { %>
+          <p class="hint">Let the student know someone is on it.</p>
+          <form method="post" action="/manage/concerns/<%= c.id %>/review">
+            <button type="submit" class="btn btn-primary">Start review <span class="arrow" aria-hidden="true">&rarr;</span></button>
+          </form>
+        <% } else if (c.status === 'under_review') { %>
+          <%- include('../../partials/form-errors') %>
+          <form method="post" action="/manage/concerns/<%= c.id %>/respond" novalidate>
+            <div class="form-field">
+              <label for="response">Response</label>
+              <textarea id="response" name="response" rows="6" maxlength="5000" aria-describedby="response-hint" required><%= oldResponse %></textarea>
+              <p class="hint" id="response-hint">Anyone with the code can read this. Don't include names or personal details.</p>
+            </div>
+            <button type="submit" class="btn btn-primary">Send reply <span class="arrow" aria-hidden="true">&rarr;</span></button>
+          </form>
+        <% } else if (c.status === 'responded') { %>
+          <p class="hint">Once the issue is fixed, close it.</p>
+          <form method="post" action="/manage/concerns/<%= c.id %>/resolve">
+            <button type="submit" class="btn btn-primary">Mark as resolved</button>
+          </form>
+        <% } else { %>
+          <p class="muted">All done. Concerns are kept on record and never deleted.</p>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

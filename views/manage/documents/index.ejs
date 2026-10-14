@@ -1,0 +1,59 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const filters = [
+    { value: '', label: 'All' },
+    { value: 'pending', label: 'With the President' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'published', label: 'Published' }
+  ];
+%>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officer tools</p>
+      <h1>Other documents</h1>
+      <p class="page-lead">Minutes, memos, letters and other official papers.</p>
+    </div>
+    <a class="btn btn-primary" href="/manage/documents/new">Write a document <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+
+  <nav aria-label="Filter by status">
+    <ul class="filter-links">
+      <% filters.forEach((f) => { %>
+        <li><a href="/manage/documents<%= f.value ? '?status=' + f.value : '' %>"<% if (status === f.value) { %> aria-current="page"<% } %>><%= f.label %></a></li>
+      <% }) %>
+    </ul>
+  </nav>
+
+  <% if (documents.length === 0) { %>
+    <div class="card empty-state"><p><%= status ? 'Nothing here right now.' : 'No documents yet.' %></p></div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Status</th>
+            <th scope="col">Type</th>
+            <th scope="col">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% documents.forEach((d) => { %>
+            <tr>
+              <td><a href="/manage/documents/<%= d.id %>"><%= d.title %></a></td>
+              <td><%- include('../../partials/status-pill', { status: d.status }) %></td>
+              <td><%= d.doc_type.charAt(0).toUpperCase() + d.doc_type.slice(1) %></td>
+              <td><%= formatDate(d.updated_at) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../../partials/foot') %>

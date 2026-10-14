@@ -1,0 +1,39 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">News</p>
+      <h1>News and announcements</h1>
+      <p class="page-lead">The latest from your student council, newest first.</p>
+    </div>
+    <% if (currentUser && ['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
+      <a class="btn btn-secondary" href="/manage/announcements">Manage announcements</a>
+    <% } %>
+  </div>
+
+  <% if (announcements.length === 0) { %>
+    <div class="card empty-state">
+      <p>Nothing new right now. Check back soon.</p>
+    </div>
+  <% } else { %>
+    <div class="card-grid-2">
+      <% announcements.forEach((a) => { %>
+        <a class="card link-card" href="/announcements/<%= a.id %>">
+          <span class="meta"><span class="tag"><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></span> <%= formatDate(a.published_at) %></span>
+          <h2><%= a.title %></h2>
+          <p><%= a.body.length > 140 ? a.body.slice(0, 140).trim() + '…' : a.body %></p>
+          <span class="card-link">Read more <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div class="page-end">
+    <p>Don't miss what's next.</p>
+    <a class="btn btn-primary" href="/events">See upcoming events <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

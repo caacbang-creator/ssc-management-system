@@ -1,0 +1,14 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/documents"><span aria-hidden="true">&larr;</span> Reports and documents</a>
+
+  <article class="card">
+    <p class="meta"><span class="tag"><%= doc.doc_type.charAt(0).toUpperCase() + doc.doc_type.slice(1) %></span> Published <%= formatDate(doc.published_at) %></p>
+    <h1><%= doc.title %></h1>
+    <p class="keep-lines prose"><%= doc.body %></p>
+  </article>
+</main>
+
+<%- include('../partials/foot') %>

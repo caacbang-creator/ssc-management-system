@@ -1,0 +1,56 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officer tools</p>
+      <h1>Items to borrow</h1>
+      <p class="page-lead">What students can ask to borrow from the SSC.</p>
+    </div>
+    <a class="btn btn-primary" href="/manage/items/new">Add an item <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+
+  <% if (items.length === 0) { %>
+    <div class="card empty-state">
+      <p>No items yet. Add something students can borrow.</p>
+    </div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col">Details</th>
+            <th scope="col" class="num">Stock</th>
+            <th scope="col" class="num">Open requests</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach((i) => { %>
+            <tr>
+              <td><strong><%= i.name %></strong></td>
+              <td class="muted"><%= i.description || '' %></td>
+              <td class="num"><%= i.quantity %></td>
+              <td class="num"><%= i.active_requests %></td>
+              <td class="actions">
+                <a class="btn btn-secondary btn-sm" href="/manage/items/<%= i.id %>/edit">Edit</a>
+                <form method="post" action="/manage/items/<%= i.id %>/delete" class="inline-form">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+
+  <div class="page-end">
+    <p>Check who asked to borrow what.</p>
+    <a class="btn btn-secondary" href="/manage/transactions?type=item_borrowing">Borrowing requests <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

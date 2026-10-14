@@ -1,0 +1,106 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  const role = currentUser ? currentUser.role : '';
+  const docTypeLabel = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+%>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Transparency</p>
+      <h1>Reports and documents</h1>
+      <p class="page-lead">See how student funds are used and what the council has decided.</p>
+    </div>
+    <% if (['treasurer', 'secretary', 'vp_internal', 'president'].includes(role)) { %>
+      <div class="action-row">
+        <% if (['treasurer', 'vp_internal', 'president'].includes(role)) { %>
+          <a class="btn btn-secondary" href="/manage/financial-reports">Manage reports</a>
+        <% } %>
+        <% if (['secretary', 'vp_internal', 'president'].includes(role)) { %>
+          <a class="btn btn-secondary" href="/manage/resolutions">Manage resolutions</a>
+        <% } %>
+        <% if (['secretary', 'president'].includes(role)) { %>
+          <a class="btn btn-secondary" href="/manage/documents">Manage documents</a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <%# Money first: it's what students ask about most %>
+  <section aria-labelledby="money-title">
+    <div class="section-heading">
+      <h2 id="money-title">Where the money goes</h2>
+    </div>
+    <% if (reports.length === 0) { %>
+      <div class="card empty-state"><p>No financial reports published yet.</p></div>
+    <% } else { %>
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Report</th>
+              <th scope="col">Period</th>
+              <th scope="col" class="num">Budget</th>
+              <th scope="col" class="num">Spent</th>
+              <th scope="col" class="num">Left</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% reports.forEach((r) => { %>
+              <tr>
+                <td><a href="/documents/financial-reports/<%= r.id %>"><%= r.title %></a></td>
+                <td><%= formatDate(r.period_start) %> &ndash; <%= formatDate(r.period_end) %></td>
+                <td class="num"><%= formatMoney(r.budget) %></td>
+                <td class="num"><%= formatMoney(r.expenses) %></td>
+                <td class="num"><strong><%= formatMoney(r.remaining_balance) %></strong><% if (Number(r.remaining_balance) < 0) { %> (over budget)<% } %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <div class="card-grid-2 section-gap">
+    <section class="card" aria-labelledby="resolutions-title">
+      <h2 id="resolutions-title">Resolutions</h2>
+      <% if (resolutions.length === 0) { %>
+        <p class="muted">None published yet.</p>
+      <% } else { %>
+        <ul class="plain-list">
+          <% resolutions.forEach((r) => { %>
+            <li>
+              <a href="/documents/resolutions/<%= r.id %>"><%= r.title %></a>
+              <div class="meta"><%= r.resolution_no %> &middot; adopted <%= formatDate(r.date_adopted) %></div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+
+    <section class="card" aria-labelledby="other-title">
+      <h2 id="other-title">Other documents</h2>
+      <% if (documents.length === 0) { %>
+        <p class="muted">None published yet.</p>
+      <% } else { %>
+        <ul class="plain-list">
+          <% documents.forEach((d) => { %>
+            <li>
+              <a href="/documents/other/<%= d.id %>"><%= d.title %></a>
+              <div class="meta"><span class="tag"><%= docTypeLabel(d.doc_type) %></span> <%= formatDate(d.published_at) %></div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+
+  <div class="page-end">
+    <p>Have a question about a report?</p>
+    <a class="btn btn-primary" href="/concerns/new">Ask the SSC <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

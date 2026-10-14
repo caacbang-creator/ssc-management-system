@@ -1,0 +1,43 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Officers</p>
+      <h1>Meet your officers</h1>
+      <p class="page-lead">The people you can reach out to this school year.</p>
+    </div>
+    <% if (currentUser && ['pro', 'president'].includes(currentUser.role)) { %>
+      <a class="btn btn-secondary" href="/manage/officers">Manage directory</a>
+    <% } %>
+  </div>
+
+  <% if (officers.length === 0) { %>
+    <div class="card empty-state">
+      <p>We'll introduce the officers here soon.</p>
+    </div>
+  <% } else { %>
+    <div class="card-grid">
+      <% officers.forEach((o) => { %>
+        <%
+          // Initials stand in for a photo (no photos are stored)
+          const initials = o.full_name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+        %>
+        <section class="card officer-card">
+          <span class="officer-initials" aria-hidden="true"><%= initials %></span>
+          <p class="officer-position"><%= o.position %></p>
+          <h2 class="officer-name"><%= o.full_name %></h2>
+          <p class="meta"><% if (o.committee_name) { %><%= o.committee_name %> &middot; <% } %><%= o.term %></p>
+        </section>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div class="page-end">
+    <p>Need help from one of them?</p>
+    <a class="btn btn-primary" href="/concerns/new">Send a concern <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

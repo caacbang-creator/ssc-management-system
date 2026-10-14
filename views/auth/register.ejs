@@ -1,0 +1,74 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  const roleOptions = [
+    { value: '', label: 'No, I\'m a student' },
+    { value: 'pro', label: 'Public Relations Officer (PRO)' },
+    { value: 'vp_internal', label: 'Vice President for Internal Affairs' },
+    { value: 'treasurer', label: 'Treasurer' },
+    { value: 'secretary', label: 'Secretary' }
+  ];
+%>
+
+<main id="main" class="container form-page">
+  <section class="card">
+    <p class="eyebrow">Join the SSC portal</p>
+    <h1>Create your account</h1>
+    <p class="muted">You can start using it right away.</p>
+    <%- include('../partials/form-errors') %>
+
+    <form method="post" action="/register" novalidate>
+      <div class="form-row">
+        <div class="form-field">
+          <label for="firstName">First name</label>
+          <input type="text" id="firstName" name="firstName" value="<%= old.firstName || '' %>"
+            maxlength="60" autocomplete="given-name" required>
+        </div>
+        <div class="form-field">
+          <label for="lastName">Last name</label>
+          <input type="text" id="lastName" name="lastName" value="<%= old.lastName || '' %>"
+            maxlength="60" autocomplete="family-name" required>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="studentNo">Student number</label>
+        <input type="text" id="studentNo" name="studentNo" value="<%= old.studentNo || '' %>"
+          maxlength="20" required>
+      </div>
+      <div class="form-field">
+        <label for="email">CSPC e-mail</label>
+        <input type="email" id="email" name="email" value="<%= old.email || '' %>"
+          maxlength="120" autocomplete="email" aria-describedby="email-hint" placeholder="you@my.cspc.edu.ph" required>
+        <p class="hint" id="email-hint">Must end in @my.cspc.edu.ph</p>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="new-password"
+            aria-describedby="password-hint" required>
+          <p class="hint" id="password-hint">8 to 72 characters</p>
+        </div>
+        <div class="form-field">
+          <label for="confirmPassword">Confirm password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="requestedRole">Are you an SSC officer?</label>
+        <select id="requestedRole" name="requestedRole" aria-describedby="role-hint">
+          <% roleOptions.forEach((option) => { %>
+            <option value="<%= option.value %>"<% if ((old.requestedRole || '') === option.value) { %> selected<% } %>><%= option.label %></option>
+          <% }) %>
+        </select>
+        <p class="hint" id="role-hint">The President confirms officer roles. Until then, you'll use the portal as a student.</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Create account <span class="arrow" aria-hidden="true">&rarr;</span></button>
+      </div>
+    </form>
+  </section>
+  <p class="form-footer">Already have an account? <a href="/login">Log in</a></p>
+</main>
+
+<%- include('../partials/foot') %>

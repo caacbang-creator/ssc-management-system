@@ -1,0 +1,47 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/events/<%= event.id %>"><span aria-hidden="true">&larr;</span> Back to the event</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Who's coming</p>
+      <h1><%= event.title %></h1>
+      <p class="page-lead"><%= formatDate(event.event_date) %> &middot; <strong><%= registrants.length %> of <%= event.capacity %></strong> spots taken</p>
+    </div>
+  </div>
+
+  <% if (registrants.length === 0) { %>
+    <div class="card empty-state">
+      <p>No one has signed up yet.</p>
+    </div>
+  <% } else { %>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Name</th>
+            <th scope="col">Student number</th>
+            <th scope="col">E-mail</th>
+            <th scope="col">Signed up</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% registrants.forEach((r, i) => { %>
+            <tr>
+              <td class="muted"><%= i + 1 %></td>
+              <td><strong><%= r.last_name %>, <%= r.first_name %></strong></td>
+              <td><%= r.student_no %></td>
+              <td><%= r.email %></td>
+              <td><%= formatDate(r.registered_at) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../../partials/foot') %>

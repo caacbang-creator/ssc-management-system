@@ -1,0 +1,24 @@
+{
+  "name": "ssc-student-organization-management-system",
+  "version": "0.1.0",
+  "description": "Supreme Student Council (SSC) Student Organization Management System - CCIT 106 Campus System",
+  "main": "app.js",
+  "private": true,
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "db:reset": "node database/seed.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^18.0.5",
+    "ejs": "^6.0.1",
+    "express": "^4.22.3",
+    "express-session": "^1.19.0",
+    "mysql2": "^3.24.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

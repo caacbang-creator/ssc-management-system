@@ -1,0 +1,44 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/concerns"><span aria-hidden="true">&larr;</span> Concerns</a>
+
+  <section class="card">
+    <h1>Track a concern</h1>
+    <p class="muted">Enter the code you got when you sent it.</p>
+    <%- include('../partials/form-errors') %>
+
+    <form method="get" action="/concerns/track" novalidate>
+      <div class="form-field">
+        <label for="ref">Reference code</label>
+        <input type="text" id="ref" name="ref" value="<%= ref %>" maxlength="20"
+          aria-describedby="ref-hint" autocomplete="off" placeholder="C-2026-0001" required>
+        <p class="hint" id="ref-hint">It looks like C-2026-0001</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Check status <span class="arrow" aria-hidden="true">&rarr;</span></button>
+      </div>
+    </form>
+  </section>
+
+  <% if (concern) { %>
+    <%# Only status and response are shown here - never the subject, message or who sent it %>
+    <%
+      const stepIndex = ['submitted', 'under_review', 'responded', 'resolved'].indexOf(concern.status);
+    %>
+    <section class="card" aria-labelledby="result-title">
+      <h2 id="result-title">Concern <%= concern.reference_no %></h2>
+      <%- include('../partials/steps', { steps: ['Received', 'Being reviewed', 'We replied', 'Resolved'], current: stepIndex, stopped: false }) %>
+      <h3>Our reply</h3>
+      <% if (concern.response) { %>
+        <p class="meta">Replied <%= formatDate(concern.responded_at) %></p>
+        <p class="keep-lines"><%= concern.response %></p>
+      <% } else { %>
+        <p class="muted">No reply yet. Please check again later.</p>
+      <% } %>
+    </section>
+  <% } %>
+</main>
+
+<%- include('../partials/foot') %>
