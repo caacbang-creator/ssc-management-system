@@ -1,0 +1,30 @@
+<%#
+  Full-screen photo viewer, shared by event galleries and news posters.
+  Needs: photos (file_path, caption), title, label ('photo' or 'poster').
+  It uses the CSS :target selector, no JavaScript: a link to "#photo-3" makes
+  <div id="photo-3"> visible. "Close" links back to "#photos".
+%>
+<%
+  const total = photos.length;
+%>
+<% photos.forEach((photo, i) => { %>
+  <%
+    const prev = i === 0 ? total : i;          // wraps from the first photo to the last
+    const next = i === total - 1 ? 1 : i + 2;  // and from the last back to the first
+  %>
+  <div class="lightbox" id="photo-<%= i + 1 %>" role="dialog" aria-label="<%= label %> <%= i + 1 %> of <%= total %>" tabindex="-1">
+    <a class="lightbox-backdrop" href="#photos" tabindex="-1" aria-hidden="true"></a>
+    <figure class="lightbox-figure">
+      <img src="<%= photo.file_path %>" alt="<%= photo.caption || `${title}, ${label} ${i + 1} of ${total}` %>" loading="lazy">
+      <figcaption>
+        <% if (photo.caption) { %><span><%= photo.caption %></span><% } %>
+        <span class="lightbox-count"><%= i + 1 %> of <%= total %></span>
+      </figcaption>
+    </figure>
+    <% if (total > 1) { %>
+      <a class="lightbox-nav lightbox-prev" href="#photo-<%= prev %>"><span aria-hidden="true">&lsaquo;</span> Prev</a>
+      <a class="lightbox-nav lightbox-next" href="#photo-<%= next %>">Next <span aria-hidden="true">&rsaquo;</span></a>
+    <% } %>
+    <a class="lightbox-close" href="#photos"><span aria-hidden="true">&times;</span> Close</a>
+  </div>
+<% }) %>

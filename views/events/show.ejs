@@ -23,15 +23,22 @@
   </div>
 
   <div class="split">
-    <article class="card">
-      <h2>About this event</h2>
-      <p class="keep-lines prose"><%= event.description %></p>
-
-      <% if (event.status === 'completed' && event.documentation) { %>
-        <h2 class="section-gap">How it went</h2>
-        <p class="keep-lines prose"><%= event.documentation %></p>
+    <div>
+      <%# Completed events with photos: the gallery comes first, the text below it %>
+      <% if (photos.length > 0) { %>
+        <%- include('../partials/photo-gallery', { photos, title: event.title }) %>
       <% } %>
-    </article>
+
+      <article class="card">
+        <h2>About this event</h2>
+        <p class="keep-lines prose"><%= event.description %></p>
+
+        <% if (event.status === 'completed' && event.documentation) { %>
+          <h2 class="section-gap">How it went</h2>
+          <p class="keep-lines prose"><%= event.documentation %></p>
+        <% } %>
+      </article>
+    </div>
 
     <aside class="split-aside" aria-labelledby="when-title">
       <div class="card">

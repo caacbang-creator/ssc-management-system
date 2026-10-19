@@ -1,6 +1,7 @@
 // Public event pages, plus student registration (login required)
 const express = require('express');
 const eventModel = require('../models/eventModel');
+const eventPhotoModel = require('../models/eventPhotoModel');
 const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -40,7 +41,9 @@ router.get('/:id', async (req, res, next) => {
     const event = id ? await eventModel.findPublicById(id) : null;
     if (!event) return notFound(res);
     const registered = req.user ? await eventModel.isRegistered(id, req.user.id) : false;
-    res.render('events/show', { title: event.title, event, registered });
+    // The gallery is part of the documentation, so only completed events show photos
+    const photos = event.status === 'completed' ? await eventPhotoModel.listForEvent(id) : [];
+    res.render('events/show', { title: event.title, event, registered, photos });
   } catch (err) {
     next(err);
   }

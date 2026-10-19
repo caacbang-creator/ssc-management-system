@@ -1,0 +1,52 @@
+<%#
+  Event photo mosaic. Needs: photos (file_path, caption), title.
+  Each tile links to "#photo-N", which opens that photo in partials/photo-viewer.
+%>
+<%
+  const total = photos.length;
+  const shown = Math.min(total, 10);
+
+  // Tile shapes on the 4-column grid, chosen so every row is filled with no gaps.
+  // '' = 1x1, wide = 2x1, tall = 1x2, big = 2x2, row = full width
+  let shapes;
+  if (shown === 1) shapes = ['big row'];
+  else if (shown === 2) shapes = ['big', 'big'];
+  else if (shown === 3) shapes = ['big', 'wide', 'wide'];
+  else {
+    shapes = ['big', '', '', 'wide'];
+    const rest = shown - 4;
+    if (rest === 6) {
+      shapes.push('tall', '', '', '', 'wide', '');
+    } else {
+      for (let i = 0; i < rest - (rest % 4); i++) shapes.push('');
+      if (rest % 4 === 1) shapes.push('row');
+      if (rest % 4 === 2) shapes.push('wide', 'wide');
+      if (rest % 4 === 3) shapes.push('wide', '', '');
+    }
+  }
+
+  const altFor = (photo, i) => photo.caption || `${title}, photo ${i + 1} of ${total}`;
+%>
+<section class="card gallery" id="photos" aria-labelledby="photos-title">
+  <h2 id="photos-title">Photos <span class="muted">(<%= total %>)</span></h2>
+
+  <div class="mosaic">
+    <% for (let i = 0; i < shown; i++) { %>
+      <%
+        const classes = ['mosaic-tile'];
+        shapes[i].split(' ').filter(Boolean).forEach((s) => classes.push('tile-' + s));
+        // Phones use 2 columns: the first photo is full width; an odd one out at the end is too
+        if (i === shown - 1 && (shown - 1) % 2 === 1) classes.push('tile-m-wide');
+        const moreCount = (i === shown - 1 && total > shown) ? total - shown + 1 : 0;
+      %>
+      <a class="<%= classes.join(' ') %>" href="#photo-<%= i + 1 %>">
+        <img src="<%= photos[i].file_path %>" alt="<%= altFor(photos[i], i) %>" loading="lazy">
+        <% if (moreCount > 0) { %>
+          <span class="mosaic-more">+<%= moreCount %> <span class="visually-hidden">more photos</span></span>
+        <% } %>
+      </a>
+    <% } %>
+  </div>
+</section>
+
+<%- include('photo-viewer', { photos, title, label: 'Photo' }) %>

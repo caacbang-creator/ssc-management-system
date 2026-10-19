@@ -1957,6 +1957,171 @@ textarea:focus {
   font-size: var(--text-sm);
 }
 
+/* ---------- Event photo mosaic ---------- */
+/* 4 columns on wide screens. The tile shapes (big, wide, tall, row) are chosen in
+   partials/photo-gallery.ejs so the rows always fill with no gaps. */
+.mosaic {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 120px;
+  gap: 0.5rem;
+}
+
+.mosaic-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.mosaic-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop to fill the tile instead of stretching */
+  transition: transform var(--speed) ease;
+}
+
+.mosaic-tile:hover img,
+.mosaic-tile:focus-visible img {
+  transform: scale(1.05);
+}
+
+.tile-big { grid-column: span 2; grid-row: span 2; }
+.tile-wide { grid-column: span 2; }
+.tile-tall { grid-row: span 2; }
+.tile-row { grid-column: 1 / -1; }
+
+/* "+3" over the last tile when there are more photos than tiles */
+.mosaic-more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 5, 31, 0.65);
+  color: var(--white);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+/* Phones: 2 columns, first photo full width, the others square-ish */
+@media (max-width: 699px) {
+  .mosaic {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 130px;
+  }
+
+  .mosaic-tile {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .mosaic-tile:first-child,
+  .mosaic-tile.tile-m-wide {
+    grid-column: 1 / -1;
+  }
+
+  .mosaic-tile:first-child {
+    grid-row: span 2;
+  }
+}
+
+/* ---------- Photo viewer (lightbox) ---------- */
+/* Hidden until its id is the URL's #fragment; :target then shows it. No JavaScript. */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* above the sticky header */
+  padding: 3.5rem 1rem 1rem;
+  background: rgba(2, 5, 31, 0.94);
+}
+
+.lightbox:target {
+  display: grid;
+  place-items: center;
+  animation: lightbox-in var(--speed) ease;
+}
+
+@keyframes lightbox-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Clicking the dark area around the photo also closes the viewer */
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.lightbox-figure {
+  position: relative; /* sits above the backdrop link */
+  margin: 0;
+  text-align: center;
+}
+
+.lightbox-figure img {
+  display: block;
+  max-width: min(90vw, 1000px);
+  max-height: 75vh;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.lightbox-figure figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  color: var(--white);
+}
+
+.lightbox-count {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.lightbox-nav,
+.lightbox-close {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--tap);
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--white);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--speed) ease;
+}
+
+.lightbox-nav:hover,
+.lightbox-close:hover {
+  background: var(--blue);
+}
+
+.lightbox-close { top: 0.75rem; right: 1rem; }
+.lightbox-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+.lightbox-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+/* Phones: Prev / Next move to the bottom so they do not cover the photo */
+@media (max-width: 699px) {
+  .lightbox {
+    padding-bottom: 4.5rem;
+  }
+
+  .lightbox-prev,
+  .lightbox-next {
+    top: auto;
+    bottom: 1rem;
+    transform: none;
+  }
+}
+
 /* ---------- Reduced motion (accessibility) ---------- */
 /* People who ask their device for less motion get no animations or transitions at all. */
 @media (prefers-reduced-motion: reduce) {
@@ -1982,7 +2147,9 @@ textarea:focus {
   .feature-card:hover .arrow,
   .btn:hover .arrow,
   .text-link:hover .arrow,
-  .back-link:hover span {
+  .back-link:hover span,
+  .mosaic-tile:hover img,
+  .mosaic-tile:focus-visible img {
     transform: none;
   }
 }

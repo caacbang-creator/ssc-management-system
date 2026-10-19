@@ -15,6 +15,7 @@ DROP TABLE IF EXISTS financial_reports;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS concerns;
+DROP TABLE IF EXISTS event_photos;
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS announcements;
@@ -148,6 +149,20 @@ CREATE TABLE event_registrations (
     REFERENCES events (id) ON DELETE CASCADE,
   CONSTRAINT fk_registrations_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Photos of a completed event, shown as a gallery on the public event page.
+-- Round 1 has no uploads (decision C2): the team places the image files in public/img/
+-- and this table stores only the path, the order and an optional caption.
+CREATE TABLE event_photos (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  event_id INT UNSIGNED NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  caption VARCHAR(150) NULL,
+  sort_order INT UNSIGNED NOT NULL,
+  UNIQUE KEY uq_event_photo_order (event_id, sort_order),
+  CONSTRAINT fk_event_photos_event FOREIGN KEY (event_id)
+    REFERENCES events (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------
