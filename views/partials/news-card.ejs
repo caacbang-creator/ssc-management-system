@@ -1,0 +1,22 @@
+<%# One news post as a clickable card. Needs: a (from listPublished), featured (true/false). %>
+<a class="card link-card news-card<%= featured ? ' news-featured' : '' %>" href="/announcements/<%= a.id %>">
+  <% if (a.cover_path) { %>
+    <span class="poster-frame">
+      <%# The title is right next to the image, so the poster itself is decorative here %>
+      <img src="<%= a.cover_path %>" alt="" loading="lazy">
+      <% if (a.photo_count > 1) { %>
+        <span class="slide-badge"><%= a.photo_count %> slides</span>
+      <% } %>
+    </span>
+  <% } %>
+  <span class="news-card-body">
+    <span class="meta"><span class="tag"><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></span> <%= formatDate(a.published_at) %></span>
+    <% if (featured) { %>
+      <h2><%= a.title %></h2>
+    <% } else { %>
+      <h3><%= a.title %></h3>
+    <% } %>
+    <p><%= a.body.length > 140 ? a.body.slice(0, 140).trim() + '…' : a.body %></p>
+    <span class="card-link">Read more <span class="arrow" aria-hidden="true">&rarr;</span></span>
+  </span>
+</a>

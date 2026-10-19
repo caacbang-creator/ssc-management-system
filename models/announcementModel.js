@@ -4,12 +4,17 @@
 const pool = require('../db');
 
 // ---------- Public (published only) ----------
+// cover_path = the first poster (NULL when there is none); photo_count > 1 means a carousel
 async function listPublished() {
   const [rows] = await pool.query(
-    `SELECT id, title, category, body, published_at
-     FROM announcements
-     WHERE status = 'published'
-     ORDER BY published_at DESC`
+    `SELECT a.id, a.title, a.category, a.body, a.published_at,
+            (SELECT p.file_path FROM announcement_photos p
+             WHERE p.announcement_id = a.id ORDER BY p.sort_order LIMIT 1) AS cover_path,
+            (SELECT COUNT(*) FROM announcement_photos p
+             WHERE p.announcement_id = a.id) AS photo_count
+     FROM announcements a
+     WHERE a.status = 'published'
+     ORDER BY a.published_at DESC`
   );
   return rows;
 }

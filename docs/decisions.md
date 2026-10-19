@@ -9,6 +9,9 @@ official photos the CSPC Supreme Student Council already published on its public
 They are stored in `public/img/<number><EventName>/` and committed to the repository.
 The `event_photos` table stores only the file path, the display order and an optional caption.
 
+The same applies to news posters (official SSC pubmats) in `public/newsimg/<number><Post>/`,
+stored in the `announcement_photos` table. Several posters on one post form a carousel.
+
 **Why:**
 - Decision C2 (no file uploads) still applies, so officers cannot upload photos yet.
   The team adds the files; `express.static` serves them.

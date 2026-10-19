@@ -18,6 +18,7 @@ DROP TABLE IF EXISTS concerns;
 DROP TABLE IF EXISTS event_photos;
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS announcement_photos;
 DROP TABLE IF EXISTS announcements;
 DROP TABLE IF EXISTS officers;
 DROP TABLE IF EXISTS committees;
@@ -107,6 +108,19 @@ CREATE TABLE announcements (
     REFERENCES users (id) ON DELETE RESTRICT,
   CONSTRAINT fk_announcements_reviewer FOREIGN KEY (reviewed_by)
     REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Posters (pubmats) of an announcement; sort_order 1 is the cover. Several rows = a carousel.
+-- Same idea as event_photos: the files are in public/newsimg/ (decision C2: no uploads).
+CREATE TABLE announcement_photos (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  announcement_id INT UNSIGNED NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  caption VARCHAR(150) NULL,
+  sort_order INT UNSIGNED NOT NULL,
+  UNIQUE KEY uq_announcement_photo_order (announcement_id, sort_order),
+  CONSTRAINT fk_announcement_photos_announcement FOREIGN KEY (announcement_id)
+    REFERENCES announcements (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------
