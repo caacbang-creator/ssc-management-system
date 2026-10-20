@@ -55,6 +55,7 @@ CREATE TABLE about_ssc (
   overview TEXT NOT NULL,
   mission TEXT NOT NULL,
   vision TEXT NOT NULL,
+  goals TEXT NOT NULL,          -- one goal per line; the About page shows them as a list (a, b, c...)
   updated_by INT UNSIGNED NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT chk_about_single_row CHECK (id = 1),

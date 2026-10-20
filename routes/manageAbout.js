@@ -5,7 +5,7 @@ const aboutModel = require('../models/aboutModel');
 
 const router = express.Router();
 
-const LIMITS = { overview: 5000, mission: 2000, vision: 2000 };
+const LIMITS = { overview: 5000, mission: 2000, vision: 2000, goals: 5000 };
 
 router.get('/', async (req, res, next) => {
   try {
@@ -13,7 +13,7 @@ router.get('/', async (req, res, next) => {
     res.render('manage/about/edit', {
       title: 'Edit About SSC',
       errors: [],
-      old: about || { overview: '', mission: '', vision: '' }
+      old: about || { overview: '', mission: '', vision: '', goals: '' }
     });
   } catch (err) {
     next(err);
@@ -25,7 +25,8 @@ router.post('/', async (req, res, next) => {
     const old = {
       overview: String(req.body.overview ?? '').trim(),
       mission: String(req.body.mission ?? '').trim(),
-      vision: String(req.body.vision ?? '').trim()
+      vision: String(req.body.vision ?? '').trim(),
+      goals: String(req.body.goals ?? '').trim()
     };
 
     const errors = [];
@@ -37,6 +38,9 @@ router.post('/', async (req, res, next) => {
     }
     if (old.vision === '' || old.vision.length > LIMITS.vision) {
       errors.push(`Vision is required (up to ${LIMITS.vision} characters).`);
+    }
+    if (old.goals === '' || old.goals.length > LIMITS.goals) {
+      errors.push(`Goals are required (up to ${LIMITS.goals} characters).`);
     }
     if (errors.length > 0) {
       return res.status(422).render('manage/about/edit', { title: 'Edit About SSC', errors, old });

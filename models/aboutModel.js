@@ -3,15 +3,15 @@ const pool = require('../db');
 
 async function get() {
   const [rows] = await pool.query(
-    'SELECT overview, mission, vision, updated_at FROM about_ssc WHERE id = 1'
+    'SELECT overview, mission, vision, goals, updated_at FROM about_ssc WHERE id = 1'
   );
   return rows[0] || null;
 }
 
 async function update(about, userId) {
   const [result] = await pool.query(
-    'UPDATE about_ssc SET overview = ?, mission = ?, vision = ?, updated_by = ? WHERE id = 1',
-    [about.overview, about.mission, about.vision, userId]
+    'UPDATE about_ssc SET overview = ?, mission = ?, vision = ?, goals = ?, updated_by = ? WHERE id = 1',
+    [about.overview, about.mission, about.vision, about.goals, userId]
   );
   return result.affectedRows;
 }

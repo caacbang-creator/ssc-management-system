@@ -19,9 +19,14 @@
         <textarea id="vision" name="vision" rows="3" maxlength="2000" required><%= old.vision %></textarea>
       </div>
       <div class="form-field">
+        <label for="goals">Goals and objectives</label>
+        <textarea id="goals" name="goals" rows="8" maxlength="5000" aria-describedby="goals-hint" required><%= old.goals %></textarea>
+        <p class="hint" id="goals-hint">One goal per line. They are lettered a, b, c… automatically, so do not type the letters.</p>
+      </div>
+      <div class="form-field">
         <label for="overview">Overview</label>
         <textarea id="overview" name="overview" rows="6" maxlength="5000" aria-describedby="overview-hint" required><%= old.overview %></textarea>
-        <p class="hint" id="overview-hint">Shown as "Our story".</p>
+        <p class="hint" id="overview-hint">One or two sentences, shown as the intro at the top of the About page.</p>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save changes</button>

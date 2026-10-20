@@ -78,14 +78,29 @@ async function main() {
 
     // ---------- About SSC (the single row) ----------
     await conn.query(
-      'INSERT INTO about_ssc (id, overview, mission, vision, updated_by) VALUES (1, ?, ?, ?, ?)',
+      'INSERT INTO about_ssc (id, overview, mission, vision, goals, updated_by) VALUES (1, ?, ?, ?, ?, ?)',
       [
         'The Supreme Student Council (SSC) is the highest student governing body of Camarines Sur ' +
           'Polytechnic Colleges. It represents all students and works with the administration on ' +
           'student welfare, activities and services.',
-        'To serve every student through transparent leadership, responsive services and meaningful activities.',
-        'An empowered, united and inclusive student community.',
-        andrea
+        // Mission, vision and goals: the SSC's official text
+        'To establish a student-led organization that actively engage, supports, and advocates for ' +
+          'student voices while promoting a sense of community, leadership, and personal development ' +
+          'among students.',
+        'To empower, represent, and advocate for the rights and interests of the student body, ' +
+          'thereby fostering a positive and inclusive school environment.',
+        [
+          'Support Institutionally Recognized and Accredited Student Organizations whose goals do not ' +
+            'violate the law, public order, or educational Institutional policy and foster student ' +
+            'leadership and sense of responsibility among student leaders;',
+          'Develop moral character and personal discipline among the students for the welfare of this ' +
+            'educational Institution;',
+          'Establish and sustain avenues for students to express feedback on school policy, events, and ' +
+            'issues; and',
+          'Organize inclusive events and activities that reflect the student body’s different interests ' +
+            'and backgrounds.'
+        ].join('\n'),
+        president
       ]
     );
 

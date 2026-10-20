@@ -2329,6 +2329,166 @@ a.poster-frame:hover {
   flex: 1 1 220px;
 }
 
+/* ---------- About page ---------- */
+/* Header: SSC seal beside the title on wide screens (uses .photo-hero below) */
+.about-hero-inner {
+  display: grid;
+  gap: 1.25rem;
+  justify-items: start;
+}
+
+.about-seal {
+  height: 96px;
+  filter: drop-shadow(0 0 18px rgba(242, 193, 78, 0.35));
+}
+
+@media (min-width: 800px) {
+  .about-hero-inner {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .about-seal {
+    height: 150px;
+  }
+}
+
+/* Mission and vision: two cards pulled up over the bottom of the header */
+.mv-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: -3.5rem;
+}
+
+@media (min-width: 800px) {
+  .mv-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.mv-card {
+  margin-bottom: 0;
+  border-top: 3px solid var(--gold);
+  box-shadow: var(--shadow-md);
+}
+
+.mv-card h2 {
+  margin: 0.75rem 0 0.5rem;
+}
+
+.mv-text {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  line-height: 1.6;
+  color: var(--silver);
+}
+
+/* Goals: lettered cards (a, b, c...) in 2 columns */
+.goal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 800px) {
+  .goal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.goal-card {
+  margin-bottom: 0;
+  transition: border-color var(--speed) ease, transform var(--speed) ease;
+}
+
+.goal-card:hover {
+  border-color: var(--gold-soft);
+  transform: translateY(-2px);
+}
+
+.goal-card p {
+  margin: 0.75rem 0 0;
+  line-height: 1.6;
+}
+
+.goal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goal-letter {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+/* Officers preview: initials in a circle (there are no officer photos, by design) */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .team-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.team-avatar {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.4rem;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: linear-gradient(135deg, var(--royal-glow) 0%, var(--night) 100%);
+  color: var(--white);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.team-name {
+  font-weight: 700;
+  color: var(--white);
+}
+
+.team-position {
+  color: var(--gold);
+  font-size: var(--text-sm);
+}
+
 /* ---------- Dashboard ---------- */
 /* Hero: the latest event photo, darkened by a navy overlay so white text stays readable */
 .photo-hero {
@@ -2669,6 +2829,7 @@ a.poster-frame:hover {
   .mosaic-tile:focus-visible img,
   .past-event-card:hover .event-cover img,
   .quick-tile:hover,
+  .goal-card:hover,
   .photo-strip-item:hover img {
     transform: none;
   }
