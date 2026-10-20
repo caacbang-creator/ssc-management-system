@@ -1,0 +1,93 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  // Step 2 of borrowing: one item (photo, details, availability) beside the request form (C26, C27).
+  // Availability only; who borrowed it stays in the custodian's log.
+  const inOffice = Math.max(0, item.quantity - Number(item.units_out));
+  const canRequest = item.status === 'available';
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/items"><span aria-hidden="true">&larr;</span> All items</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Services &middot; Item borrowing</p>
+      <h1>Borrow: <%= item.name %></h1>
+      <p class="page-lead">Send a request. Once it's approved, pick the item up from the Property Custodian at the SSC office.</p>
+    </div>
+  </div>
+
+  <ol class="steps-bar" aria-label="Steps">
+    <li class="done"><span>1</span> Choose an item</li>
+    <li class="current" aria-current="step"><span>2</span> Your details</li>
+    <li><span>3</span> Pick up at the office</li>
+  </ol>
+
+  <div class="borrow-layout">
+    <section class="card borrow-item" aria-labelledby="item-title">
+      <%- include('../partials/item-photo', { item }) %>
+      <h2 id="item-title"><%= item.name %></h2>
+      <% if (item.description) { %><p class="muted"><%= item.description %></p><% } %>
+
+      <p class="item-status">
+        <% if (!canRequest) { %>
+          <span class="pill pill-rejected">Not available</span>
+          <span class="meta"><%= item.status_note %></span>
+        <% } else if (inOffice === 0) { %>
+          <span class="pill pill-pending">All out on loan</span>
+          <span class="meta">You can still request it for a later date.</span>
+        <% } else { %>
+          <span class="pill pill-approved">Available</span>
+        <% } %>
+      </p>
+
+      <dl class="item-facts">
+        <div><dt>In the office now</dt><dd><strong><%= inOffice %></strong> of <%= item.quantity %></dd></div>
+        <div><dt>You can borrow</dt><dd>Up to <%= item.quantity %></dd></div>
+      </dl>
+    </section>
+
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title">Your request</h2>
+      <%- include('../partials/form-errors') %>
+
+      <% if (!canRequest) { %>
+        <p>This item can't be requested right now. <a href="/items">See other items</a>.</p>
+      <% } else { %>
+        <form method="post" action="/transactions/new/borrow" novalidate>
+          <input type="hidden" name="item_id" value="<%= item.id %>">
+          <div class="form-field">
+            <label for="quantity">How many?</label>
+            <input type="number" id="quantity" name="quantity" value="<%= old.quantity || '' %>" min="1"
+              max="<%= item.quantity %>" step="1" inputmode="numeric" required>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="preferred_date">Pick-up date</label>
+              <input type="date" id="preferred_date" name="preferred_date" value="<%= old.preferred_date || '' %>"
+                min="<%= minDate %>" required>
+            </div>
+            <div class="form-field">
+              <label for="return_date">Return date</label>
+              <input type="date" id="return_date" name="return_date" value="<%= old.return_date || '' %>"
+                min="<%= minDate %>" required>
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="purpose">What will you use it for?</label>
+            <textarea id="purpose" name="purpose" rows="3" maxlength="500" aria-describedby="purpose-hint" required><%= old.purpose || '' %></textarea>
+            <p class="hint" id="purpose-hint">For example: "Org booth at the CCS Week, Room 204"</p>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Send request <span class="arrow" aria-hidden="true">&rarr;</span></button>
+            <a class="btn btn-secondary" href="/items">Cancel</a>
+          </div>
+        </form>
+      <% } %>
+    </section>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

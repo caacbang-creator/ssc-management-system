@@ -14,7 +14,7 @@ const UNITS_OUT =
 // Public list (students): status and units out, but never who borrowed what
 async function listAll() {
   const [rows] = await pool.query(
-    `SELECT i.id, i.name, i.description, i.quantity, i.status, i.status_note, ${UNITS_OUT}, ${ACTIVE_COUNT}
+    `SELECT i.id, i.name, i.description, i.quantity, i.status, i.status_note, i.photo_path, ${UNITS_OUT}, ${ACTIVE_COUNT}
      FROM items i
      ORDER BY i.name ASC`
   );
@@ -24,7 +24,7 @@ async function listAll() {
 // Custodian list: also the last borrower (the newest loan of each item) and when
 async function listForCustodian() {
   const [rows] = await pool.query(
-    `SELECT i.id, i.name, i.description, i.quantity, i.status, i.status_note, ${UNITS_OUT}, ${ACTIVE_COUNT},
+    `SELECT i.id, i.name, i.description, i.quantity, i.status, i.status_note, i.photo_path, ${UNITS_OUT}, ${ACTIVE_COUNT},
             CONCAT(u.first_name, ' ', u.last_name) AS last_borrower,
             l.released_at AS last_released_at, l.returned_at AS last_returned_at
      FROM items i
@@ -39,7 +39,7 @@ async function listForCustodian() {
 
 async function findById(id) {
   const [rows] = await pool.query(
-    `SELECT i.id, i.name, i.description, i.quantity, i.status, i.status_note, ${UNITS_OUT}
+    `SELECT i.id, i.name, i.description, i.quantity, i.status, i.status_note, i.photo_path, ${UNITS_OUT}
      FROM items i WHERE i.id = ?`,
     [id]
   );
@@ -54,18 +54,20 @@ async function nameExists(name, excludeId) {
   return rows.length > 0;
 }
 
+// photoPath: '/uploads/items/...' or null (no photo yet, C27)
 async function create(item) {
   const [result] = await pool.query(
-    'INSERT INTO items (name, description, quantity) VALUES (?, ?, ?)',
-    [item.name, item.description, item.quantity]
+    'INSERT INTO items (name, description, quantity, photo_path) VALUES (?, ?, ?, ?)',
+    [item.name, item.description, item.quantity, item.photoPath]
   );
   return result.insertId;
 }
 
+// The route passes the photo to keep: the old one, a new upload, or null when removed
 async function update(id, item) {
   const [result] = await pool.query(
-    'UPDATE items SET name = ?, description = ?, quantity = ? WHERE id = ?',
-    [item.name, item.description, item.quantity, id]
+    'UPDATE items SET name = ?, description = ?, quantity = ?, photo_path = ? WHERE id = ?',
+    [item.name, item.description, item.quantity, item.photoPath, id]
   );
   return result.affectedRows;
 }

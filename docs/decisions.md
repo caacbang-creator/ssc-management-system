@@ -305,3 +305,40 @@ it, so the app has **no QR, camera or chart code at all**. **No new npm packages
 
 **Sample data:** the seed adds six weeks of **made-up** attendance for the seeded officers (some late, one
 missing time-out, one missed duty). It is not their real record; tell the officers before a demo.
+
+## C26 — Each service has its own page; appointments use an Officer of the Day calendar
+
+**Status:** proposed by caacbang-creator, needs the team's confirmation.
+
+**Decision:** "Services" (`/transactions`) shows three service cards and the student's own requests.
+Each service has its **own page and form** instead of one shared form:
+
+- **Clearance appointment** (`/transactions/new/clearance`) and **SSC appointment** (`/transactions/new/ssc`)
+  show a **month calendar** built on the server from the duty schedule (C25). Each day shows the
+  **Officer(s) of the Day** and how many appointments are already booked (numbers only, never names).
+- **Item borrowing** starts at the photo catalog (`/items`), then `/transactions/new/borrow?item=N` shows that
+  item's photo, details and availability beside the form.
+
+**Defaults:**
+- A day is **Open** when it is not in the past **and** at least one officer is scheduled that weekday.
+  The server checks this again on submit; a closed day is refused with 422.
+- Office hours for appointments are **8:00 AM to 5:00 PM**. Any time in that range is accepted
+  (still no fixed slots, C11). There is **no daily limit**; the booked count is information only.
+- The calendar goes up to **5 months ahead**. Later dates are refused.
+- The request type comes from the **URL**, never from a form field. The `transactions` table is unchanged.
+- Old links (`/transactions/new?type=...`) redirect to the new pages.
+- No JavaScript: picking a day is a normal link (`?date=...`), so the form appears after the day is chosen.
+
+## C27 — The Property Custodian uploads one photo per item
+
+**Status:** proposed by caacbang-creator, needs the team's confirmation.
+
+**Decision:** `items.photo_path` (nullable). The Property Custodian (or President) adds, replaces or removes
+one photo per item on the item form. Items start **without** a photo and show a blank "No photo yet"
+placeholder. Same upload rules as C13: JPG/PNG/WebP, 5 MB, first bytes checked, server-chosen name,
+saved in `public/uploads/items/` (git-ignored). The old file is deleted after a replace, a removal or
+an item delete. Students see the photo and availability, never who borrowed it; the custodian keeps
+the borrowing log (C19).
+
+**Existing databases:** `ALTER TABLE items ADD COLUMN photo_path VARCHAR(255) NULL AFTER status_note;`
+or run `npm run db:reset`.

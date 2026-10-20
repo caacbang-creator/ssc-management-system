@@ -8,14 +8,17 @@
     <h1><%= title %></h1>
     <%- include('../../partials/form-errors') %>
 
-    <form method="post" action="<%= action %>" novalidate>
+    <%# multipart: the form can carry the item's photo (C27) %>
+    <form method="post" action="<%= action %>" enctype="multipart/form-data" novalidate>
       <div class="form-field">
         <label for="name">Item name</label>
         <input type="text" id="name" name="name" value="<%= old.name || '' %>" maxlength="100" required>
       </div>
       <div class="form-field">
         <label for="description">Description <span class="optional">(optional)</span></label>
-        <input type="text" id="description" name="description" value="<%= old.description || '' %>" maxlength="255">
+        <input type="text" id="description" name="description" value="<%= old.description || '' %>" maxlength="255"
+          aria-describedby="description-hint">
+        <p class="hint" id="description-hint">What students should know, e.g. "With HDMI cable and remote"</p>
       </div>
       <div class="form-field">
         <label for="quantity">Quantity</label>
@@ -23,6 +26,31 @@
           maxlength="4" aria-describedby="quantity-hint" required>
         <p class="hint" id="quantity-hint">How many the SSC owns (1 to 9999)</p>
       </div>
+
+      <fieldset class="form-group">
+        <legend>Photo <span class="optional">(optional)</span></legend>
+        <div class="item-photo-field">
+          <div class="item-photo item-photo-sm">
+            <% if (currentPhoto) { %>
+              <img src="<%= currentPhoto %>" alt="Current photo of <%= old.name || 'this item' %>">
+            <% } else { %>
+              <span class="item-photo-blank"><%- include('../../partials/icon', { name: 'box' }) %>No photo yet</span>
+            <% } %>
+          </div>
+          <div>
+            <label for="photo"><%= currentPhoto ? 'Replace the photo' : 'Add a photo' %></label>
+            <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint">
+            <p class="hint" id="photo-hint">JPG, PNG or WebP, up to 5 MB. Students see it on the borrowing page.</p>
+            <% if (currentPhoto) { %>
+              <div class="checkbox-field">
+                <input type="checkbox" id="remove_photo" name="remove_photo" value="1">
+                <label for="remove_photo">Remove the photo</label>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </fieldset>
+
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save item</button>
         <a class="btn btn-secondary" href="/manage/items">Cancel</a>

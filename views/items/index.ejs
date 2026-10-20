@@ -1,61 +1,70 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
+<%
+  // Step 1 of borrowing: the catalog. Availability only; who borrowed what stays in the custodian's log.
+  const availableCount = items.filter((i) => i.status === 'available').length;
+%>
+
 <main id="main" class="container">
+  <a class="back-link" href="/transactions"><span aria-hidden="true">&larr;</span> Services</a>
+
   <div class="page-heading">
     <div>
-      <p class="eyebrow">Services</p>
+      <p class="eyebrow">Services &middot; Item borrowing</p>
       <h1>Things you can borrow</h1>
-      <p class="page-lead">Send a request, then pick it up from the Property Custodian at the SSC office once it's approved.</p>
+      <p class="page-lead">Choose an item and send a request. Pick it up from the Property Custodian at the SSC office once it's approved.</p>
     </div>
-    <a class="btn btn-primary" href="/transactions/new?type=item_borrowing">Borrow an item <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    <% if (['property_custodian', 'president'].includes(currentUser.role)) { %>
+      <a class="btn btn-secondary" href="/manage/items">Manage items</a>
+    <% } %>
   </div>
+
+  <ol class="steps-bar" aria-label="Steps">
+    <li class="current" aria-current="step"><span>1</span> Choose an item</li>
+    <li><span>2</span> Your details</li>
+    <li><span>3</span> Pick up at the office</li>
+  </ol>
 
   <% if (items.length === 0) { %>
     <div class="card empty-state">
       <p>Nothing to borrow right now. Check back later.</p>
     </div>
   <% } else { %>
-    <%# Availability only; who borrowed what stays in the custodian's log %>
-    <div class="item-grid">
+    <p class="meta catalog-count"><%= availableCount %> of <%= items.length %> items available</p>
+    <div class="catalog-grid">
       <% items.forEach((i) => { %>
         <% const inOffice = Math.max(0, i.quantity - Number(i.units_out)); %>
-        <article class="card item-card<%= i.status === 'available' ? '' : ' item-card-off' %>">
-          <div class="item-card-head">
-            <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: 'box' }) %></span>
-            <div>
-              <h2 class="item-name"><%= i.name %></h2>
-              <% if (i.description) { %><p class="meta"><%= i.description %></p><% } %>
-            </div>
-          </div>
-          <p class="item-status">
-            <% if (i.status !== 'available') { %>
-              <span class="pill pill-rejected">Not available</span>
-              <span class="meta"><%= i.status_note %></span>
-            <% } else if (inOffice === 0) { %>
-              <span class="pill pill-pending">All out on loan</span>
-              <span class="meta">You can still request it for a later date.</span>
+        <article class="card catalog-card<%= i.status === 'available' ? '' : ' catalog-card-off' %>">
+          <%- include('../partials/item-photo', { item: i }) %>
+          <div class="catalog-body">
+            <h2 class="item-name"><%= i.name %></h2>
+            <% if (i.description) { %><p class="meta"><%= i.description %></p><% } %>
+            <p class="item-status">
+              <% if (i.status !== 'available') { %>
+                <span class="pill pill-rejected">Not available</span>
+                <span class="meta"><%= i.status_note %></span>
+              <% } else if (inOffice === 0) { %>
+                <span class="pill pill-pending">All out on loan</span>
+              <% } else { %>
+                <span class="pill pill-approved">Available</span>
+                <span class="meta"><%= inOffice %> of <%= i.quantity %> in the office</span>
+              <% } %>
+            </p>
+            <% if (i.status === 'available') { %>
+              <a class="btn btn-secondary btn-sm catalog-action" href="/transactions/new/borrow?item=<%= i.id %>">Borrow <span class="visually-hidden"><%= i.name %></span> <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <% } else { %>
-              <span class="pill pill-approved">Available</span>
-              <span class="meta"><%= inOffice %> of <%= i.quantity %> in the office</span>
+              <span class="btn btn-secondary btn-sm catalog-action is-disabled" aria-hidden="true">Can't be borrowed</span>
             <% } %>
-          </p>
-          <% if (i.status === 'available') { %>
-            <a class="btn btn-secondary btn-sm" href="/transactions/new?type=item_borrowing&item=<%= i.id %>">Request <span class="visually-hidden"><%= i.name %></span></a>
-          <% } %>
+          </div>
         </article>
       <% }) %>
     </div>
   <% } %>
 
   <div class="page-end">
-    <p>Already borrowed something? Check its status.</p>
-    <div class="action-row">
-      <% if (['property_custodian', 'president'].includes(currentUser.role)) { %>
-        <a class="btn btn-secondary" href="/manage/items">Manage items</a>
-      <% } %>
-      <a class="btn btn-secondary" href="/transactions">My requests <span class="arrow" aria-hidden="true">&rarr;</span></a>
-    </div>
+    <p>Already sent a request? Check its status.</p>
+    <a class="btn btn-secondary" href="/transactions#my-requests">My requests <span class="arrow" aria-hidden="true">&rarr;</span></a>
   </div>
 </main>
 

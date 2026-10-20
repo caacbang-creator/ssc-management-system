@@ -249,7 +249,7 @@ CREATE TABLE concerns (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------
--- items: things students can borrow (managed by PRO / President)
+-- items: things students can borrow (managed by the Property Custodian / President)
 -- ---------------------------------------------------------------
 CREATE TABLE items (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -259,6 +259,7 @@ CREATE TABLE items (
   -- Set by the Property Custodian (C19). "Units out" is computed from item_loans, never stored.
   status ENUM('available', 'unavailable') NOT NULL DEFAULT 'available',
   status_note VARCHAR(150) NULL,            -- why it is not available, e.g. "Under repair"
+  photo_path VARCHAR(255) NULL,             -- uploaded by the Property Custodian (C27); NULL = blank placeholder
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_items_name (name)

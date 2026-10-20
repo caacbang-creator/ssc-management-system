@@ -1,0 +1,12 @@
+<%
+  // An item's photo, or a blank placeholder until the Property Custodian uploads one (C27).
+  // Usage: include('partials/item-photo', { item, size: 'sm' }); item needs name and photo_path.
+  // size is optional: 'sm' is a small square thumbnail.
+%>
+<div class="item-photo<%= locals.size ? ' item-photo-' + size : '' %>">
+  <% if (item.photo_path) { %>
+    <img src="<%= item.photo_path %>" alt="<%= item.name %>" loading="lazy">
+  <% } else { %>
+    <span class="item-photo-blank"><%- include('icon', { name: 'box' }) %>No photo yet</span>
+  <% } %>
+</div>

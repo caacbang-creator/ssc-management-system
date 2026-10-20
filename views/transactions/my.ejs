@@ -1,20 +1,45 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
+<%
+  // Each service has its own page (C26). The cards say what happens, so students pick the right one.
+  const services = [
+    { href: '/transactions/new/clearance', icon: 'check', title: 'Clearance appointment',
+      text: 'Have your SSC clearance signed. See which officer is on duty and pick an open day.',
+      cta: 'Pick a day' },
+    { href: '/items', icon: 'box', title: 'Borrow an item',
+      text: 'Projectors, chairs, extension cords and more. See photos and what is available now.',
+      cta: 'See items' },
+    { href: '/transactions/new/ssc', icon: 'users', title: 'SSC appointment',
+      text: 'Meet the SSC about a concern, a proposal or an activity on a day an officer is in.',
+      cta: 'Pick a day' }
+  ];
+%>
+
 <main id="main" class="container">
   <div class="page-heading">
     <div>
       <p class="eyebrow">Services</p>
-      <h1>My requests</h1>
-      <p class="page-lead">Book a clearance or SSC appointment, or borrow an item.</p>
+      <h1>What do you need?</h1>
+      <p class="page-lead">Choose a service. Each one has its own short form, and you can follow every request below.</p>
     </div>
-    <a class="btn btn-primary" href="/transactions/new">Make a request <span class="arrow" aria-hidden="true">&rarr;</span></a>
   </div>
 
+  <div class="service-grid">
+    <% services.forEach((s) => { %>
+      <a class="card feature-card service-card" href="<%= s.href %>">
+        <span class="icon-tile"><%- include('../partials/icon', { name: s.icon }) %></span>
+        <h2><%= s.title %></h2>
+        <p><%= s.text %></p>
+        <span class="card-link"><%= s.cta %> <span class="arrow" aria-hidden="true">&rarr;</span></span>
+      </a>
+    <% }) %>
+  </div>
+
+  <h2 class="section-heading" id="my-requests">My requests</h2>
   <% if (transactions.length === 0) { %>
     <div class="card empty-state">
-      <p>You haven't made any requests yet.</p>
-      <a class="btn btn-secondary" href="/items">See what you can borrow</a>
+      <p>You haven't made any requests yet. Choose a service above to start.</p>
     </div>
   <% } else { %>
     <div class="card table-wrap">
@@ -41,15 +66,12 @@
     </div>
   <% } %>
 
-  <div class="page-end">
-    <p>Need to borrow something? See what's available.</p>
-    <div class="action-row">
-      <% if (['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
-        <a class="btn btn-secondary" href="/manage/transactions">Manage requests</a>
-      <% } %>
-      <a class="btn btn-secondary" href="/items">Items you can borrow <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  <% if (['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
+    <div class="page-end">
+      <p>Officers review everyone's requests on the manage page.</p>
+      <a class="btn btn-secondary" href="/manage/transactions">Manage requests <span class="arrow" aria-hidden="true">&rarr;</span></a>
     </div>
-  </div>
+  <% } %>
 </main>
 
 <%- include('../partials/foot') %>

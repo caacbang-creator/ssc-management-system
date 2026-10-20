@@ -22,13 +22,14 @@
     <div class="item-grid">
       <% items.forEach((i) => { %>
         <% const inOffice = i.quantity - Number(i.units_out); %>
-        <article class="card item-card<%= i.status === 'available' ? '' : ' item-card-off' %>">
-          <div class="item-card-head">
-            <span class="icon-tile icon-tile-sm"><%- include('../../partials/icon', { name: 'box' }) %></span>
-            <div>
-              <h2 class="item-name"><%= i.name %></h2>
-              <% if (i.description) { %><p class="meta"><%= i.description %></p><% } %>
-            </div>
+        <article class="card item-card item-card-photo<%= i.status === 'available' ? '' : ' item-card-off' %>">
+          <%- include('../../partials/item-photo', { item: i }) %>
+          <div>
+            <h2 class="item-name"><%= i.name %></h2>
+            <% if (i.description) { %><p class="meta"><%= i.description %></p><% } %>
+            <% if (!i.photo_path) { %>
+              <a class="meta" href="/manage/items/<%= i.id %>/edit">Add a photo<span class="visually-hidden"> of <%= i.name %></span></a>
+            <% } %>
           </div>
 
           <p class="item-status">

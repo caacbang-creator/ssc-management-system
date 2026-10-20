@@ -6,8 +6,12 @@ const express = require('express');
 const itemModel = require('../models/itemModel');
 const itemLoanModel = require('../models/itemLoanModel');
 const userModel = require('../models/userModel');
+const { singlePhotoUpload, isRealImage, removeFiles, removeUploadedPhoto } = require('../middleware/upload');
 
 const router = express.Router();
+
+// One optional photo per item, saved in public/uploads/items/ (C27)
+const itemPhoto = singlePhotoUpload('items');
 
 const CONDITIONS = ['good', 'damaged', 'lost'];
 
@@ -64,12 +68,25 @@ async function validate(body, excludeId) {
   return { old, errors };
 }
 
-function toRecord(old) {
-  return { name: old.name, description: old.description || null, quantity: Number(old.quantity) };
+function toRecord(old, photoPath) {
+  return { name: old.name, description: old.description || null, quantity: Number(old.quantity), photoPath };
 }
 
-function renderForm(res, status, title, action, errors, old) {
-  res.status(status).render('manage/items/form', { title, action, errors, old });
+// currentPhoto: the saved photo shown on the edit form (null when adding)
+function renderForm(res, status, title, action, errors, old, currentPhoto = null) {
+  res.status(status).render('manage/items/form', { title, action, errors, old, currentPhoto });
+}
+
+// Checks the uploaded photo (optional). Returns an error message, or null when it is fine or absent.
+// A refused or fake file is deleted from disk at once.
+function checkPhoto(req) {
+  if (req.uploadError) return req.uploadError;
+  if (req.skippedFiles) return 'The photo must be a JPG, PNG or WebP image.';
+  if (req.file && !isRealImage(req.file.path)) {
+    removeFiles([req.file]);
+    return 'That file is not a real JPG, PNG or WebP image.';
+  }
+  return null;
 }
 
 router.get('/', async (req, res, next) => {
@@ -85,14 +102,21 @@ router.get('/new', (req, res) => {
   renderForm(res, 200, 'Add item', '/manage/items', [], {});
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', itemPhoto, async (req, res, next) => {
   try {
     const { old, errors } = await validate(req.body, null);
-    if (errors.length > 0) return renderForm(res, 422, 'Add item', '/manage/items', errors, old);
-    await itemModel.create(toRecord(old));
+    const photoError = checkPhoto(req);
+    if (photoError) errors.push(photoError);
+    if (errors.length > 0) {
+      removeFiles([req.file]); // the form is shown again, so this upload is not kept
+      return renderForm(res, 422, 'Add item', '/manage/items', errors, old);
+    }
+    const photoPath = req.file ? `/uploads/items/${req.file.filename}` : null;
+    await itemModel.create(toRecord(old, photoPath));
     req.session.flash = { type: 'success', message: 'Item added.' };
     res.redirect(303, '/manage/items');
   } catch (err) {
+    removeFiles([req.file]);
     // UNIQUE(name) is the final check if two people add the same name at once
     if (err.code === 'ER_DUP_ENTRY') {
       return renderForm(res, 422, 'Add item', '/manage/items', ['An item with that name already exists.'], req.body);
@@ -278,28 +302,49 @@ router.get('/:id/edit', async (req, res, next) => {
     const id = parseId(req.params.id);
     const item = id ? await itemModel.findById(id) : null;
     if (!item) return notFound(res);
-    renderForm(res, 200, 'Edit item', `/manage/items/${id}`, [], { ...item, quantity: String(item.quantity) });
+    renderForm(res, 200, 'Edit item', `/manage/items/${id}`, [], { ...item, quantity: String(item.quantity) },
+      item.photo_path);
   } catch (err) {
     next(err);
   }
 });
 
-router.post('/:id', async (req, res, next) => {
+router.post('/:id', itemPhoto, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
-    if (!id) return notFound(res);
+    const item = id ? await itemModel.findById(id) : null;
+    if (!item) {
+      removeFiles([req.file]);
+      return notFound(res);
+    }
     const { old, errors } = await validate(req.body, id);
     // The stock cannot drop below the units that are out on loan right now
-    const item = errors.length === 0 ? await itemModel.findById(id) : null;
-    if (item && Number(old.quantity) < Number(item.units_out)) {
+    if (errors.length === 0 && Number(old.quantity) < Number(item.units_out)) {
       errors.push(`${item.units_out} unit(s) are out on loan, so the quantity cannot be lower than that.`);
     }
-    if (errors.length > 0) return renderForm(res, 422, 'Edit item', `/manage/items/${id}`, errors, old);
-    const changed = await itemModel.update(id, toRecord(old));
-    if (changed === 0) return notFound(res);
+    const photoError = checkPhoto(req);
+    if (photoError) errors.push(photoError);
+    if (errors.length > 0) {
+      removeFiles([req.file]);
+      return renderForm(res, 422, 'Edit item', `/manage/items/${id}`, errors, old, item.photo_path);
+    }
+
+    // A new upload replaces the photo; the "Remove photo" box clears it; otherwise it stays
+    let photoPath = item.photo_path;
+    if (req.file) photoPath = `/uploads/items/${req.file.filename}`;
+    else if (req.body.remove_photo === '1') photoPath = null;
+
+    const changed = await itemModel.update(id, toRecord(old, photoPath));
+    if (changed === 0) {
+      removeFiles([req.file]);
+      return notFound(res);
+    }
+    // The old file is deleted only after the database points to the new one
+    if (item.photo_path && item.photo_path !== photoPath) removeUploadedPhoto(item.photo_path);
     req.session.flash = { type: 'success', message: 'Item updated.' };
     res.redirect(303, '/manage/items');
   } catch (err) {
+    removeFiles([req.file]);
     if (err.code === 'ER_DUP_ENTRY') {
       return renderForm(res, 422, 'Edit item', `/manage/items/${req.params.id}`,
         ['An item with that name already exists.'], req.body);
@@ -312,6 +357,7 @@ router.post('/:id/delete', async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
     if (!id) return notFound(res);
+    const before = await itemModel.findById(id);
     const changed = await itemModel.removeIfUnused(id);
     if (changed === 0) {
       const item = await itemModel.findById(id);
@@ -322,6 +368,7 @@ router.post('/:id/delete', async (req, res, next) => {
       };
       return res.redirect(303, '/manage/items');
     }
+    if (before && before.photo_path) removeUploadedPhoto(before.photo_path);
     req.session.flash = { type: 'success', message: 'Item deleted.' };
     res.redirect(303, '/manage/items');
   } catch (err) {

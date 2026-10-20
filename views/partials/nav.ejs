@@ -10,11 +10,12 @@
     { href: '/announcements', label: 'News' },
     { href: '/events', label: 'Events' },
     { href: '/concerns', label: 'Concerns' },
-    { href: '/transactions', label: 'Services' },
+    { href: '/transactions', label: 'Services', also: ['/items'] },  // the borrowing catalog is a service too
     { href: '/documents', label: 'Documents' }
   ];
   // A section stays underlined on its inner pages too (e.g. /events/3 keeps "Events" active)
   const isActive = (href) => href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
+  const linkActive = (link) => isActive(link.href) || (link.also || []).some(isActive);
 %>
 <header class="site-header">
   <div class="container header-inner">
@@ -43,7 +44,7 @@
     <nav class="site-nav nav-desktop" aria-label="Main">
       <ul>
         <% links.forEach((link) => { %>
-          <li><a href="<%= link.href %>"<% if (isActive(link.href)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
+          <li><a href="<%= link.href %>"<% if (linkActive(link)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
         <% }) %>
         <%# Office check-in is in the officer sidebar and on the dashboard, so the top menu stays one line %>
         <% if (user) { %>
@@ -74,7 +75,7 @@
             <li><a href="/dashboard"<% if (path === '/dashboard') { %> aria-current="page"<% } %>>My dashboard</a></li>
           <% } %>
           <% links.forEach((link) => { %>
-            <li><a href="<%= link.href %>"<% if (isActive(link.href)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
+            <li><a href="<%= link.href %>"<% if (linkActive(link)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
           <% }) %>
           <% if (user && user.role !== 'student') { %>
             <li><a href="/office/check-in"<% if (isActive('/office')) { %> aria-current="page"<% } %>>Office check-in</a></li>

@@ -76,4 +76,30 @@ async function listScheduledNotInToday() {
   return rows;
 }
 
-module.exports = { listWeek, listForUser, create, exists, remove, isScheduledToday, listScheduledNotInToday };
+// The weekly schedule for the appointment calendar (C26): who is on duty each weekday, with
+// the directory photo when the officer is linked to one. Students see names and roles only.
+async function listForCalendar() {
+  const [rows] = await pool.query(
+    `SELECT d.day_of_week, d.start_time, u.first_name, u.last_name, u.role, o.photo_path
+     FROM duty_schedule d
+     JOIN users u ON u.id = d.user_id
+     LEFT JOIN officers o ON o.user_id = u.id
+     ORDER BY d.day_of_week, d.start_time, u.first_name`
+  );
+  return rows;
+}
+
+// True when at least one officer is on duty on that date's weekday ('YYYY-MM-DD').
+// Used to refuse an appointment on a day the office has nobody (C26).
+async function hasDutyOn(date) {
+  const [rows] = await pool.query(
+    'SELECT 1 FROM duty_schedule WHERE day_of_week = DAYOFWEEK(?) LIMIT 1',
+    [date]
+  );
+  return rows.length > 0;
+}
+
+module.exports = {
+  listWeek, listForUser, create, exists, remove, isScheduledToday, listScheduledNotInToday,
+  listForCalendar, hasDutyOn
+};

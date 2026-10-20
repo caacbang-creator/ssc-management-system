@@ -51,6 +51,40 @@ function photoUpload(folder) {
   };
 }
 
+// ---------- One photo in the field "photo" (item photos, decision C27) ----------
+// Same rules as above (JPG/PNG/WebP, 5 MB), saved in public/uploads/<folder>/. The file is in req.file.
+function singlePhotoUpload(folder) {
+  const dir = path.join(__dirname, '..', 'public', 'uploads', folder);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: dir,
+      filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${EXTENSIONS[file.mimetype]}`);
+      }
+    }),
+    limits: { fileSize: MAX_SIZE, files: 1 },
+    fileFilter: (req, file, cb) => {
+      if (EXTENSIONS[file.mimetype]) return cb(null, true);
+      req.skippedFiles = (req.skippedFiles || 0) + 1;
+      cb(null, false);
+    }
+  });
+
+  return (req, res, next) => {
+    upload.single('photo')(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        req.uploadError = err.code === 'LIMIT_FILE_SIZE'
+          ? 'The photo must be 5 MB or smaller.'
+          : 'Upload one photo only.';
+        return next();
+      }
+      next(err);
+    });
+  };
+}
+
 // ---------- Videos: one per upload (decision C21) ----------
 const VIDEO_MAX_SIZE = 250 * 1024 * 1024;
 const VIDEO_EXTENSIONS = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
@@ -165,7 +199,7 @@ function isRealImage(filePath) {
 
 // Deletes uploaded files we are not keeping (fake images, or the request was refused)
 function removeFiles(files) {
-  (files || []).forEach((file) => fs.rm(file.path, { force: true }, () => {}));
+  (files || []).filter(Boolean).forEach((file) => fs.rm(file.path, { force: true }, () => {}));
 }
 
 // Deletes a photo or PDF from disk, but ONLY if it was uploaded (lives in /uploads/).
@@ -177,6 +211,6 @@ function removeUploadedPhoto(filePath) {
 }
 
 module.exports = {
-  photoUpload, videoUpload, resolutionFilesUpload, isRealImage, isRealVideo, isRealPdf,
+  photoUpload, singlePhotoUpload, videoUpload, resolutionFilesUpload, isRealImage, isRealVideo, isRealPdf,
   removeFiles, removeUploadedPhoto, MAX_FILES
 };

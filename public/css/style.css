@@ -4908,3 +4908,552 @@ img.team-avatar {
 .header-inner .brand {
   margin-right: auto;
 }
+
+/* ---------- Services: one page per service (C26) ---------- */
+.service-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 800px) {
+  .service-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.service-card h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  color: var(--silver);
+}
+
+.service-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* The "Pick a day" / "See items" link sits at the same height in all three cards */
+.service-card .card-link {
+  margin-top: auto;
+}
+
+/* Steps across the top of a service page: 1 done, 2 current, 3 next */
+.steps-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.steps-bar li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.steps-bar li span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--field-line);
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.steps-bar li.current {
+  color: var(--white);
+  font-weight: 700;
+}
+
+.steps-bar li.current span {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--night-deep);
+}
+
+.steps-bar li.done span {
+  border-color: var(--blue-bright);
+  background: var(--blue);
+  color: var(--white);
+}
+
+/* A button that cannot be used: shown for layout, hidden from screen readers */
+.btn.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.btn-link {
+  color: var(--link);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Appointment calendar ---------- */
+.booking-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1000px) {
+  .booking-layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1.5rem;
+  }
+}
+
+.calendar-card {
+  margin-bottom: 0;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cal-head h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.cal-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cal-key {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 3px;
+}
+
+.cal-key-open { background: rgba(53, 87, 240, 0.35); border: 1px solid var(--blue-bright); }
+.cal-key-closed { background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); }
+.cal-key-today { border: 2px solid var(--gold); }
+
+.cal {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+
+.cal th {
+  padding: 0.25rem 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: center;
+}
+
+.cal td {
+  padding: 0;
+  vertical-align: top;
+  border: 0;
+}
+
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-height: 3.25rem;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.cal-num {
+  font-weight: 700;
+  font-size: var(--text-base);
+  line-height: 1.2;
+}
+
+.cal-open {
+  background: rgba(53, 87, 240, 0.22);
+  border-color: rgba(53, 87, 240, 0.7);
+  color: var(--white);
+  transition: transform var(--speed) ease, background var(--speed) ease, border-color var(--speed) ease;
+}
+
+.cal-open:hover {
+  background: rgba(53, 87, 240, 0.4);
+  border-color: var(--gold-soft);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+.cal-selected,
+.cal-selected:hover {
+  background: var(--blue);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold-soft);
+}
+
+.cal-closed {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+}
+
+.cal-closed .cal-num {
+  opacity: 0.6;
+}
+
+.cal-note {
+  color: var(--muted);
+}
+
+/* Today: a gold ring on the day number */
+.cal-today .cal-num {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+}
+
+.cal-ootd {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.cal-ootd-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-booked {
+  margin-top: auto;
+  color: var(--gold);
+  font-size: 0.75rem;
+}
+
+/* Phones: seven columns are narrow, so a day shows only its number (names are in the side box) */
+@media (max-width: 699px) {
+  .cal {
+    border-spacing: 2px;
+  }
+
+  .cal-day {
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.3rem 0.1rem;
+  }
+
+  .cal-ootd,
+  .cal-note,
+  .cal-booked {
+    display: none;
+  }
+}
+
+@media (min-width: 700px) {
+  .cal-day {
+    min-height: 5.5rem;
+  }
+}
+
+.booking-aside .card {
+  border-top: 3px solid var(--gold);
+}
+
+.booking-aside h2 {
+  margin: 0 0 0.75rem;
+  font-size: var(--text-lg);
+}
+
+.booking-card .eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.ootd-title {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ootd-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ootd-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.ootd-list .meta {
+  display: block;
+}
+
+.booked-line {
+  margin: 0 0 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.booking-card .btn-primary {
+  width: 100%;
+  justify-content: center;
+}
+
+.change-day {
+  display: block;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.weekly-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weekly-list li {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.weekly-list li:last-child {
+  border-bottom: 0;
+}
+
+.weekly-day {
+  font-weight: 700;
+}
+
+.weekly-list li.is-off .weekly-day {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* ---------- Item photos and the borrowing catalog (C27) ---------- */
+.item-photo {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.item-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* No photo yet: a plain box icon and the words, so the card keeps its shape */
+.item-photo-blank {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.item-photo-blank svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  opacity: 0.6;
+}
+
+.item-photo-sm {
+  width: 96px;
+  flex: 0 0 96px;
+  aspect-ratio: 1;
+}
+
+.item-photo-sm .item-photo-blank {
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.item-photo-sm .item-photo-blank svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.catalog-count {
+  margin: 0 0 0.75rem;
+}
+
+.catalog-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 560px) {
+  .catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .catalog-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .catalog-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.catalog-card {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: transform var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+.catalog-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* The photo fills the top of the card, edge to edge */
+.catalog-card .item-photo {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.catalog-card-off .item-photo img {
+  filter: grayscale(0.8);
+  opacity: 0.6;
+}
+
+.catalog-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.catalog-body .meta {
+  margin: 0;
+}
+
+.catalog-action {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+/* Borrow page: the item on the left, the form on the right */
+.borrow-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .borrow-layout {
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.borrow-layout .card {
+  margin-bottom: 0;
+}
+
+.borrow-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.borrow-item h2,
+.borrow-item p {
+  margin: 0;
+}
+
+/* Custodian item cards: photo on top, edge to edge */
+.item-card-photo .item-photo {
+  margin: -1.25rem -1.25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+/* Item form: the current photo beside the file field */
+.item-photo-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.item-photo-field > div:last-child {
+  flex: 1 1 14rem;
+}
+
+/* Item history heading: the thumbnail, then the title (the title takes the space) */
+.item-heading {
+  align-items: center;
+}
+
+/* div.item-photo beats ".page-heading > div:first-child", which would stretch the thumbnail */
+.page-heading.item-heading > div.item-photo {
+  flex: 0 0 96px;
+}
+
+.item-heading > div:nth-child(2) {
+  flex: 1 1 18rem;
+}
+
+.detail-photo {
+  margin-bottom: 1rem;
+}

@@ -49,7 +49,7 @@ async function findOwn(id, userId) {
   const [rows] = await pool.query(
     `SELECT t.id, t.reference_no, t.type, t.purpose, t.preferred_date, t.preferred_time,
             t.quantity, t.return_date, t.status, t.remarks, t.created_at, t.updated_at,
-            i.name AS item_name
+            i.name AS item_name, i.photo_path AS item_photo
      FROM transactions t
      LEFT JOIN items i ON i.id = t.item_id
      WHERE t.id = ? AND t.user_id = ?`,
@@ -98,7 +98,7 @@ async function findById(id) {
   const [rows] = await pool.query(
     `SELECT t.id, t.reference_no, t.type, t.purpose, t.preferred_date, t.preferred_time,
             t.quantity, t.return_date, t.status, t.remarks, t.created_at, t.updated_at,
-            i.name AS item_name, i.quantity AS item_stock,
+            i.name AS item_name, i.quantity AS item_stock, i.photo_path AS item_photo,
             CONCAT(u.first_name, ' ', u.last_name) AS requester_name,
             u.student_no AS requester_student_no, u.email AS requester_email,
             CONCAT(r.first_name, ' ', r.last_name) AS reviewer_name
@@ -151,7 +151,23 @@ async function complete(id) {
   return result.affectedRows;
 }
 
+// Appointments already booked per day between two dates (calendar, C26). Cancelled and
+// rejected ones do not count. Only numbers leave this query, never who booked.
+async function countAppointmentsByDate(fromDate, toDate) {
+  const [rows] = await pool.query(
+    `SELECT DATE_FORMAT(preferred_date, '%Y-%m-%d') AS day, COUNT(*) AS booked
+     FROM transactions
+     WHERE type IN ('clearance_appointment', 'ssc_appointment')
+       AND status NOT IN ('cancelled', 'rejected')
+       AND preferred_date BETWEEN ? AND ?
+     GROUP BY preferred_date`,
+    [fromDate, toDate]
+  );
+  return rows;
+}
+
 module.exports = {
+  countAppointmentsByDate,
   create,
   listForUser,
   findOwn,

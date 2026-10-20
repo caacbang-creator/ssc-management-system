@@ -11,7 +11,8 @@
 <main id="main" class="container">
   <a class="back-link" href="/manage/items"><span aria-hidden="true">&larr;</span> Items</a>
 
-  <div class="page-heading">
+  <div class="page-heading item-heading">
+    <%- include('../../partials/item-photo', { item, size: 'sm' }) %>
     <div>
       <p class="eyebrow">Item</p>
       <h1><%= item.name %></h1>

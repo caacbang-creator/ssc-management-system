@@ -1,0 +1,175 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<%
+  // Clearance and SSC appointments share this page; only the words differ (C26)
+  const isClearance = service === 'clearance';
+  const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const sel = calendar.selected;
+  const base = `/transactions/new/${service}`;
+  const fullDate = (text) => {
+    const [y, m, d] = text.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long' }) + ', ' + formatDate(text);
+  };
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/transactions"><span aria-hidden="true">&larr;</span> Services</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Services &middot; Appointment</p>
+      <h1><%= isClearance ? 'Clearance appointment' : 'SSC appointment' %></h1>
+      <p class="page-lead">
+        <%= isClearance
+          ? 'Have your SSC clearance signed at the SSC office. Pick a day when an officer is on duty.'
+          : 'Meet the SSC about a concern, a proposal or an activity. Pick a day when an officer is on duty.' %>
+      </p>
+    </div>
+  </div>
+
+  <ol class="steps-bar" aria-label="Steps">
+    <li class="<%= sel ? 'done' : 'current' %>"<% if (!sel) { %> aria-current="step"<% } %>><span>1</span> Pick a day</li>
+    <li class="<%= sel ? 'current' : '' %>"<% if (sel) { %> aria-current="step"<% } %>><span>2</span> Your details</li>
+    <li><span>3</span> SSC reviews it</li>
+  </ol>
+
+  <%- include('../partials/form-errors') %>
+
+  <div class="booking-layout">
+    <%# ---------- Step 1: the month calendar ---------- %>
+    <section class="card calendar-card" aria-labelledby="cal-title">
+      <div class="cal-head">
+        <% if (calendar.prev) { %>
+          <a class="btn btn-secondary btn-sm" href="<%= base %>?month=<%= calendar.prev %>"><span aria-hidden="true">&larr;</span><span class="visually-hidden">Previous month</span></a>
+        <% } else { %>
+          <span class="btn btn-secondary btn-sm is-disabled" aria-hidden="true">&larr;</span>
+        <% } %>
+        <h2 id="cal-title"><%= calendar.label %></h2>
+        <% if (calendar.next) { %>
+          <a class="btn btn-secondary btn-sm" href="<%= base %>?month=<%= calendar.next %>"><span aria-hidden="true">&rarr;</span><span class="visually-hidden">Next month</span></a>
+        <% } else { %>
+          <span class="btn btn-secondary btn-sm is-disabled" aria-hidden="true">&rarr;</span>
+        <% } %>
+      </div>
+
+      <ul class="cal-legend" aria-label="Legend">
+        <li><span class="cal-key cal-key-open"></span> Open: an officer is on duty</li>
+        <li><span class="cal-key cal-key-closed"></span> No officer on duty</li>
+        <li><span class="cal-key cal-key-today"></span> Today</li>
+      </ul>
+
+      <table class="cal">
+        <caption class="visually-hidden"><%= calendar.label %>. Days marked Open can be booked.</caption>
+        <thead>
+          <tr><% WEEKDAYS.forEach((d) => { %><th scope="col"><%= d %></th><% }) %></tr>
+        </thead>
+        <tbody>
+          <% calendar.weeks.forEach((week) => { %>
+            <tr>
+              <% week.forEach((c) => { %>
+                <% if (!c) { %>
+                  <td class="cal-empty"></td>
+                <% } else if (c.open) { %>
+                  <td class="cal-cell<%= c.isToday ? ' cal-today' : '' %>">
+                    <a class="cal-day cal-open<%= c.selected ? ' cal-selected' : '' %>"
+                       href="<%= base %>?date=<%= c.date %>#book"<% if (c.selected) { %> aria-current="date"<% } %>>
+                      <span class="cal-num"><%= c.day %></span>
+                      <span class="visually-hidden"><%= fullDate(c.date) %>, open.</span>
+                      <span class="cal-ootd">
+                        <% c.officers.forEach((o) => { %>
+                          <span class="cal-ootd-name"><%= o.first_name %></span>
+                        <% }) %>
+                      </span>
+                      <% if (c.booked > 0) { %>
+                        <span class="cal-booked"><%= c.booked %> booked</span>
+                      <% } %>
+                    </a>
+                  </td>
+                <% } else { %>
+                  <td class="cal-cell<%= c.isToday ? ' cal-today' : '' %>">
+                    <span class="cal-day cal-closed">
+                      <span class="cal-num"><%= c.day %></span>
+                      <span class="cal-note"><%= c.past ? 'Past' : 'Closed' %></span>
+                      <span class="visually-hidden"><%= c.past ? 'past' : 'no officer on duty' %></span>
+                    </span>
+                  </td>
+                <% } %>
+              <% }) %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+
+    <%# ---------- Step 2: the chosen day and the form ---------- %>
+    <aside class="booking-aside" id="book" aria-labelledby="book-title">
+      <% if (sel) { %>
+        <section class="card booking-card">
+          <p class="eyebrow">Your day</p>
+          <h2 id="book-title"><%= fullDate(sel.date) %></h2>
+
+          <h3 class="ootd-title">Officer of the Day</h3>
+          <ul class="ootd-list">
+            <% sel.officers.forEach((o) => { %>
+              <li>
+                <%- include('../partials/avatar', { person: o, size: 'sm', duty: true }) %>
+                <span>
+                  <strong><%= o.first_name %> <%= o.last_name %></strong>
+                  <span class="meta"><%= roleLabels[o.role] || o.role %> &middot; from <%= formatTime(o.start_time) %></span>
+                </span>
+              </li>
+            <% }) %>
+          </ul>
+          <p class="meta booked-line">
+            <%= sel.booked === 0 ? 'No appointments booked yet.' : `${sel.booked} appointment${sel.booked === 1 ? '' : 's'} already booked.` %>
+          </p>
+
+          <form method="post" action="<%= base %>" novalidate>
+            <input type="hidden" name="preferred_date" value="<%= sel.date %>">
+            <div class="form-field">
+              <label for="preferred_time">Preferred time</label>
+              <input type="time" id="preferred_time" name="preferred_time" value="<%= old.preferred_time || '' %>"
+                min="<%= opens %>" max="<%= closes %>" aria-describedby="time-hint" required>
+              <p class="hint" id="time-hint">Office hours: <%= formatTime(opens) %> to <%= formatTime(closes) %></p>
+            </div>
+            <div class="form-field">
+              <label for="purpose"><%= isClearance ? 'What is the clearance for?' : 'What would you like to discuss?' %></label>
+              <textarea id="purpose" name="purpose" rows="3" maxlength="500" aria-describedby="purpose-hint" required><%= old.purpose || '' %></textarea>
+              <p class="hint" id="purpose-hint">
+                <%= isClearance ? 'For example: end-of-semester clearance, graduation, or transfer.' : 'A short note so the right officer can prepare.' %>
+              </p>
+            </div>
+            <button type="submit" class="btn btn-primary">Request appointment <span class="arrow" aria-hidden="true">&rarr;</span></button>
+            <a class="btn-link change-day" href="<%= base %>?month=<%= calendar.month %>">Choose another day</a>
+          </form>
+        </section>
+      <% } else { %>
+        <section class="card booking-card">
+          <h2 id="book-title">Pick a day</h2>
+          <p class="muted">Choose a day marked <strong>Open</strong> on the calendar. You'll see who is on duty, then add the time and your reason.</p>
+        </section>
+      <% } %>
+
+      <section class="card weekly-card" aria-labelledby="weekly-title">
+        <h2 id="weekly-title">Who's on duty each week</h2>
+        <ul class="weekly-list">
+          <% calendar.weekly.forEach((d) => { %>
+            <li class="<%= d.officers.length ? '' : 'is-off' %>">
+              <span class="weekly-day"><%= d.name %></span>
+              <span>
+                <% if (d.officers.length === 0) { %>
+                  <span class="meta">No officer on duty</span>
+                <% } else { %>
+                  <%= d.officers.map((o) => `${o.first_name} ${o.last_name}`).join(', ') %>
+                <% } %>
+              </span>
+            </li>
+          <% }) %>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<%- include('../partials/foot') %>

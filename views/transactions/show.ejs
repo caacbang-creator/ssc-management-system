@@ -40,6 +40,11 @@
 
       <section class="card">
         <h2>Details</h2>
+        <% if (t.type === 'item_borrowing' && t.item_name) { %>
+          <div class="detail-photo">
+            <%- include('../partials/item-photo', { item: { name: t.item_name, photo_path: t.item_photo }, size: 'sm' }) %>
+          </div>
+        <% } %>
         <dl class="details">
           <dt>Date</dt>
           <dd><%= formatDate(t.preferred_date) %><% if (t.preferred_time) { %>, <%= formatTime(t.preferred_time) %><% } %></dd>
