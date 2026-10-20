@@ -37,15 +37,10 @@
     <% if (completed.length === 0) { %>
       <p class="muted">No past events yet.</p>
     <% } else { %>
-      <div class="card">
-        <ul class="plain-list">
-          <% completed.forEach((e) => { %>
-            <li>
-              <a href="/events/<%= e.id %>"><%= e.title %></a>
-              <span class="meta"> &middot; <%= formatDate(e.event_date) %> &middot; <%= e.venue %></span>
-            </li>
-          <% }) %>
-        </ul>
+      <div class="card-grid-3">
+        <% completed.forEach((e) => { %>
+          <%- include('../partials/past-event-card', { e }) %>
+        <% }) %>
       </div>
     <% } %>
   </section>

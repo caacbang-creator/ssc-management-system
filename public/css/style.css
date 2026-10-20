@@ -2122,6 +2122,45 @@ textarea:focus {
   }
 }
 
+/* ---------- Past event cards ---------- */
+/* Photo on top (cropped to fill, unlike posters), title and date below */
+.event-cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--royal) 0%, var(--night) 100%);
+}
+
+.event-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--speed) ease;
+}
+
+.past-event-card:hover .event-cover img {
+  transform: scale(1.05);
+}
+
+/* No photos yet: a big date on the navy tile instead */
+.event-cover-date {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+
+.event-cover-date .date-badge-day {
+  font-size: var(--text-display);
+}
+
 /* ---------- News posters ---------- */
 /* Pubmats have text on them, so they are never cropped: a square frame with object-fit: contain */
 .poster-frame {
@@ -2264,7 +2303,8 @@ a.poster-frame:hover {
   .text-link:hover .arrow,
   .back-link:hover span,
   .mosaic-tile:hover img,
-  .mosaic-tile:focus-visible img {
+  .mosaic-tile:focus-visible img,
+  .past-event-card:hover .event-cover img {
     transform: none;
   }
 }
