@@ -54,21 +54,6 @@ const OFFICER_TASKS = {
   ]
 };
 
-// Management pages each officer role can open (shortcut links on the dashboard)
-const OFFICER_LINKS = {
-  pro: [['Announcements', '/manage/announcements'], ['Events', '/manage/events'], ['Concerns', '/manage/concerns'],
-    ['Requests', '/manage/transactions'], ['Officer directory', '/manage/officers']],
-  vp_internal: [['Announcements', '/manage/announcements'], ['Events', '/manage/events'], ['Concerns', '/manage/concerns'],
-    ['Requests', '/manage/transactions'], ['Financial reports', '/manage/financial-reports'], ['Resolutions', '/manage/resolutions']],
-  treasurer: [['Financial reports', '/manage/financial-reports']],
-  secretary: [['Resolutions', '/manage/resolutions'], ['Documents', '/manage/documents']],
-  property_custodian: [['Borrowing desk', '/manage/items/loans'], ['Items', '/manage/items']],
-  president: [['Office now', '/manage/duty/now'], ['Officer performance', '/manage/duty/performance'],
-    ['Officer of the Day', '/manage/duty'], ['Officer requests', '/manage/officer-requests'], ['About SSC', '/manage/about'],
-    ['Officer directory', '/manage/officers'], ['Announcements', '/manage/announcements'], ['Events', '/manage/events'],
-    ['Concerns', '/manage/concerns'], ['Requests', '/manage/transactions'], ['Items', '/manage/items'],
-    ['Financial reports', '/manage/financial-reports'], ['Resolutions', '/manage/resolutions'], ['Documents', '/manage/documents']]
-};
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -130,8 +115,7 @@ router.get('/dashboard', async (req, res, next) => {
       heroPhoto,
       hello: greeting(now),
       todayText: `${DAYS[now.getDay()]}, ${res.app.locals.formatDate(localDate(now))}`,
-      tasks,
-      officerLinks: OFFICER_LINKS[role] || []
+      tasks
     });
   } catch (err) {
     next(err);

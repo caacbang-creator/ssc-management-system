@@ -140,6 +140,14 @@ app.use((req, res, next) => {
 
 app.use(loadUser);
 
+// Officers get a left sidebar with their tools on My dashboard and the officer pages
+// (nav.ejs opens the layout, foot.ejs closes it). Cosmetic only: the routers check roles.
+app.use((req, res, next) => {
+  const officerPage = req.path === '/dashboard' || req.path.startsWith('/manage/') || req.path.startsWith('/office/');
+  res.locals.showSidebar = Boolean(req.user && req.user.role !== 'student' && officerPage);
+  next();
+});
+
 // Routes
 // Home shows the newest news and the next few events, so the most useful information is on the first page
 app.get('/', async (req, res, next) => {

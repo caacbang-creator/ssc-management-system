@@ -1,0 +1,67 @@
+<%
+  // Left sidebar with each officer's tools (the old "Go to" links on the dashboard).
+  // Shown by partials/nav.ejs on My dashboard, /manage/... and /office/... for officers only.
+  // Hiding a link here is cosmetic: every /manage router still checks the role on the server.
+  // Needs: user, path (set by nav.ejs).
+  const dashboardLinks = [['Dashboard', '/dashboard', 'check'], ['Office check-in', '/office/check-in', 'clipboard']];
+  const groups = {
+    president: [
+      ['Office duty', [['Office now', '/manage/duty/now', 'users'], ['Officer performance', '/manage/duty/performance', 'check'], ['Schedule and code', '/manage/duty', 'calendar']]],
+      ['People', [['Officer requests', '/manage/officer-requests', 'users'], ['Officer directory', '/manage/officers', 'users'], ['About SSC', '/manage/about', 'book']]],
+      ['Content', [['Announcements', '/manage/announcements', 'megaphone'], ['Events', '/manage/events', 'calendar']]],
+      ['Services', [['Concerns', '/manage/concerns', 'chat'], ['Requests', '/manage/transactions', 'clipboard'], ['Items', '/manage/items', 'box'], ['Borrowing desk', '/manage/items/loans', 'box']]],
+      ['Records', [['Financial reports', '/manage/financial-reports', 'money'], ['Resolutions', '/manage/resolutions', 'file'], ['Documents', '/manage/documents', 'file']]]
+    ],
+    pro: [
+      ['Content', [['Announcements', '/manage/announcements', 'megaphone'], ['Events', '/manage/events', 'calendar']]],
+      ['Services', [['Concerns', '/manage/concerns', 'chat'], ['Requests', '/manage/transactions', 'clipboard']]],
+      ['People', [['Officer directory', '/manage/officers', 'users']]]
+    ],
+    vp_internal: [
+      ['Approvals', [['Announcements', '/manage/announcements', 'megaphone'], ['Events', '/manage/events', 'calendar']]],
+      ['Services', [['Concerns', '/manage/concerns', 'chat'], ['Requests', '/manage/transactions', 'clipboard']]],
+      ['Records', [['Financial reports', '/manage/financial-reports', 'money'], ['Resolutions', '/manage/resolutions', 'file']]]
+    ],
+    treasurer: [
+      ['Records', [['Financial reports', '/manage/financial-reports', 'money'], ['Annual budget', '/manage/financial-reports/budget', 'money']]]
+    ],
+    secretary: [
+      ['Records', [['Resolutions', '/manage/resolutions', 'file'], ['Documents', '/manage/documents', 'file']]]
+    ],
+    property_custodian: [
+      ['Items', [['Borrowing desk', '/manage/items/loans', 'box'], ['Items', '/manage/items', 'box']]]
+    ]
+  };
+  const myGroups = groups[user.role] || [];
+
+  // The current page is the LONGEST link the address starts with, so /manage/duty/now marks
+  // "Office now" and not also "Schedule and code" (/manage/duty)
+  const allHrefs = [...dashboardLinks, ...myGroups.flatMap(([, links]) => links)].map(([, href]) => href);
+  const currentHref = allHrefs
+    .filter((href) => path === href || path.startsWith(href + '/'))
+    .sort((a, b) => b.length - a.length)[0];
+%>
+<%# The same menu twice: a sidebar on wide screens, a "My tools" box on phones (CSS shows one) %>
+<% ['side-nav', 'side-nav-mobile'].forEach((variant) => { %>
+  <% if (variant === 'side-nav-mobile') { %><details class="side-nav-mobile"><summary>My tools</summary><% } %>
+  <nav class="<%= variant === 'side-nav' ? 'side-nav' : 'side-nav-list' %>" aria-label="My tools<%= variant === 'side-nav-mobile' ? ' (small screens)' : '' %>">
+    <p class="side-nav-who">
+      <strong><%= user.first_name %></strong>
+      <span><%= roleLabels[user.role] || user.role %></span>
+    </p>
+    <ul>
+      <% dashboardLinks.forEach(([label, href, icon]) => { %>
+        <li><a href="<%= href %>"<% if (href === currentHref) { %> aria-current="page"<% } %>><span class="side-nav-icon"><%- include('icon', { name: icon }) %></span><%= label %></a></li>
+      <% }) %>
+    </ul>
+    <% myGroups.forEach(([groupLabel, links]) => { %>
+      <p class="side-nav-group"><%= groupLabel %></p>
+      <ul>
+        <% links.forEach(([label, href, icon]) => { %>
+          <li><a href="<%= href %>"<% if (href === currentHref) { %> aria-current="page"<% } %>><span class="side-nav-icon"><%- include('icon', { name: icon }) %></span><%= label %></a></li>
+        <% }) %>
+      </ul>
+    <% }) %>
+  </nav>
+  <% if (variant === 'side-nav-mobile') { %></details><% } %>
+<% }) %>
