@@ -41,8 +41,8 @@
     .filter((href) => path === href || path.startsWith(href + '/'))
     .sort((a, b) => b.length - a.length)[0];
 %>
-<%# The same menu twice: a slim icon rail on wide screens that opens on hover or keyboard focus,
-    and a "My tools" box on phones (CSS shows one). Labels stay in the page for screen readers. %>
+<%# The same menu twice: a sidebar on wide screens (shown or hidden with the header's Menu
+    button) and a "My tools" box on phones. CSS shows one of them. %>
 <% ['side-nav', 'side-nav-mobile'].forEach((variant) => { %>
   <% if (variant === 'side-nav-mobile') { %><details class="side-nav-mobile"><summary>My tools</summary><% } %>
   <nav class="<%= variant === 'side-nav' ? 'side-nav' : 'side-nav-list' %>" aria-label="My tools<%= variant === 'side-nav-mobile' ? ' (small screens)' : '' %>">

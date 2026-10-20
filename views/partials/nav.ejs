@@ -18,6 +18,18 @@
 %>
 <header class="site-header">
   <div class="container header-inner">
+    <%# Officer pages: show or hide the left sidebar. A small POST form that saves the choice in the
+        session and comes back to this page (no JavaScript). %>
+    <% if (locals.showSidebar) { %>
+      <form method="post" action="/preferences/sidebar" class="sidebar-toggle">
+        <input type="hidden" name="show" value="<%= locals.sidebarOpen ? '0' : '1' %>">
+        <input type="hidden" name="returnTo" value="<%= locals.currentUrl || path %>">
+        <button type="submit" aria-pressed="<%= locals.sidebarOpen ? 'true' : 'false' %>">
+          <span aria-hidden="true"><%= locals.sidebarOpen ? '✕' : '☰' %></span>
+          <%= locals.sidebarOpen ? 'Hide menu' : 'Menu' %>
+        </button>
+      </form>
+    <% } %>
     <a class="brand" href="/">
       <img class="logo-img" src="/img/SSC.png" alt="SSC logo" width="34" height="44">
       <span class="wordmark">
@@ -88,7 +100,7 @@
 </header>
 <%# Officer pages: sidebar on the left, the page on the right. foot.ejs closes these two divs. %>
 <% if (locals.showSidebar) { %>
-<div class="app-shell">
+<div class="app-shell<%= locals.sidebarOpen ? ' app-shell-open' : '' %>">
   <aside class="app-sidebar">
     <%- include('sidebar', { user, path }) %>
   </aside>

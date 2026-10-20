@@ -115,6 +115,17 @@ router.get('/dashboard', async (req, res, next) => {
   }
 });
 
+// The header's "Menu" button: show or hide the officer sidebar. The choice is kept in the
+// session, so it stays the same on every page until changed (no JavaScript, no cookie code).
+router.post('/preferences/sidebar', (req, res) => {
+  req.session.sidebarOpen = req.body.show === '1';
+  // Back to the page the button was on. Only a path on THIS site is accepted ('/manage/...');
+  // anything else ('//evil.example', 'https://...') goes to the dashboard (no open redirect).
+  const back = String(req.body.returnTo ?? '');
+  const safe = /^\/(?!\/)[A-Za-z0-9/_\-.?=&%]*$/.test(back) ? back : '/dashboard';
+  res.redirect(303, safe);
+});
+
 router.get('/profile', (req, res) => {
   // req.user comes from loadUser and never includes the password hash
   res.render('dashboard/profile', { title: 'My profile' });

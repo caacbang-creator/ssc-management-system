@@ -133,6 +133,7 @@ app.use(session({
 // Values every view can use: the current path and a one-time flash message
 app.use((req, res, next) => {
   res.locals.currentPath = req.path;
+  res.locals.currentUrl = req.originalUrl;   // path + query, so the Menu button returns to the same view
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
   next();
@@ -145,6 +146,8 @@ app.use(loadUser);
 app.use((req, res, next) => {
   const officerPage = req.path === '/dashboard' || req.path.startsWith('/manage/') || req.path.startsWith('/office/');
   res.locals.showSidebar = Boolean(req.user && req.user.role !== 'student' && officerPage);
+  // Shown or hidden with the header's Menu button (POST /preferences/sidebar); hidden by default
+  res.locals.sidebarOpen = Boolean(req.session.sidebarOpen);
   next();
 });
 
@@ -174,7 +177,7 @@ app.use('/documents', documentRoutes);
 app.use('/transactions', requireLogin, transactionRoutes);
 app.use('/items', requireLogin, itemRoutes);
 app.use('/office', requireLogin, officeRoutes);   // officers only (requireOfficer inside)
-app.use(['/dashboard', '/profile'], requireLogin);
+app.use(['/dashboard', '/profile', '/preferences'], requireLogin);
 app.use('/', dashboardRoutes);
 
 // Officer pages: the role check is attached here, so every route inside is protected
