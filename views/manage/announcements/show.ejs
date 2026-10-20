@@ -32,7 +32,8 @@
       </article>
       <p class="meta">
         By <%= a.author_name %> &middot; updated <%= formatDate(a.updated_at) %>
-        <% if (a.published_at) { %> &middot; published <%= formatDate(a.published_at) %><% } %>
+        &middot; news date <%= formatDate(a.news_date) %>
+        <% if (a.published_at) { %> &middot; published here <%= formatDate(a.published_at) %><% } %>
         <% if (a.reviewer_name) { %> &middot; reviewed by <%= a.reviewer_name %><% } %>
       </p>
     </div>

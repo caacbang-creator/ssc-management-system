@@ -10,7 +10,7 @@
     </span>
   <% } %>
   <span class="news-card-body">
-    <span class="meta"><span class="tag"><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></span> <%= formatDate(a.published_at) %></span>
+    <span class="meta"><span class="tag"><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></span> <%= formatDate(a.news_date) %></span>
     <% if (featured) { %>
       <h2><%= a.title %></h2>
     <% } else { %>

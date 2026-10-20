@@ -24,7 +24,7 @@
     <% } %>
 
     <div class="news-post-text">
-      <p class="meta"><span class="tag"><%= announcement.category.charAt(0).toUpperCase() + announcement.category.slice(1) %></span> Posted <%= formatDate(announcement.published_at) %></p>
+      <p class="meta"><span class="tag"><%= announcement.category.charAt(0).toUpperCase() + announcement.category.slice(1) %></span> <%= formatDate(announcement.news_date) %></p>
       <h1><%= announcement.title %></h1>
       <p class="keep-lines prose"><%= announcement.body %></p>
     </div>

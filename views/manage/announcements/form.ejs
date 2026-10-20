@@ -29,13 +29,21 @@
         <label for="title">Title</label>
         <input type="text" id="title" name="title" value="<%= old.title || '' %>" maxlength="150" required>
       </div>
-      <div class="form-field">
-        <label for="category">Category</label>
-        <select id="category" name="category">
-          <% categories.forEach((c) => { %>
-            <option value="<%= c %>"<% if (old.category === c) { %> selected<% } %>><%= c.charAt(0).toUpperCase() + c.slice(1) %></option>
-          <% }) %>
-        </select>
+      <div class="form-row">
+        <div class="form-field">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            <% categories.forEach((c) => { %>
+              <option value="<%= c %>"<% if (old.category === c) { %> selected<% } %>><%= c.charAt(0).toUpperCase() + c.slice(1) %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="news_date">Date of the news</label>
+          <input type="date" id="news_date" name="news_date" value="<%= old.news_date ? String(old.news_date).slice(0, 10) : '' %>"
+            aria-describedby="news-date-hint" required>
+          <p class="hint" id="news-date-hint">Shown on the post, e.g. the day it was announced. Not in the future.</p>
+        </div>
       </div>
       <div class="form-field">
         <label for="body">Announcement text</label>

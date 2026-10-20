@@ -104,6 +104,7 @@ CREATE TABLE announcements (
   title VARCHAR(150) NOT NULL,
   category ENUM('general', 'academic', 'advisory', 'opportunity') NOT NULL DEFAULT 'general',
   body TEXT NOT NULL,
+  news_date DATE NOT NULL,                -- the date shown on the post, set by the PRO (C24)
   status ENUM('draft', 'pending', 'published') NOT NULL DEFAULT 'draft',
   review_remarks VARCHAR(500) NULL,
   created_by INT UNSIGNED NOT NULL,

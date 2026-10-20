@@ -143,11 +143,11 @@ async function main() {
 
     // ---------- announcements (one per status) ----------
     await conn.query(
-      `INSERT INTO announcements (title, category, body, status, created_by, reviewed_by, published_at)
-       VALUES (?, ?, ?, 'published', ?, ?, ?)`,
+      `INSERT INTO announcements (title, category, body, news_date, status, created_by, reviewed_by, published_at)
+       VALUES (?, ?, ?, ?, 'published', ?, ?, ?)`,
       ['Enrollment advisory for the second semester', 'academic',
         'Enrollment for the second semester opens next month. Please settle your clearance early.',
-        pro, vpInternal, dayFromToday(-100)]
+        dayFromToday(-100), pro, vpInternal, dayFromToday(-100)]
     );
 
     // ---------- published news with posters ----------
@@ -168,9 +168,9 @@ async function main() {
     ];
     for (const [title, category, date, folder, files] of newsPosts) {
       const [post] = await conn.query(
-        `INSERT INTO announcements (title, category, body, status, created_by, reviewed_by, published_at)
-         VALUES (?, ?, ?, 'published', ?, ?, ?)`,
-        [title, category, 'Details to follow.', pro, vpInternal, date]
+        `INSERT INTO announcements (title, category, body, news_date, status, created_by, reviewed_by, published_at)
+         VALUES (?, ?, ?, ?, 'published', ?, ?, ?)`,
+        [title, category, 'Details to follow.', date, pro, vpInternal, date]
       );
       for (let i = 0; i < files.length; i++) {
         await conn.query(
@@ -180,15 +180,16 @@ async function main() {
       }
     }
     await conn.query(
-      `INSERT INTO announcements (title, category, body, status, created_by)
-       VALUES (?, ?, ?, 'pending', ?)`,
+      `INSERT INTO announcements (title, category, body, news_date, status, created_by)
+       VALUES (?, ?, ?, ?, 'pending', ?)`,
       ['Call for student volunteers', 'opportunity',
-        'The SSC is looking for volunteers for the upcoming foundation week.', pro]
+        'The SSC is looking for volunteers for the upcoming foundation week.', dayFromToday(-2), pro]
     );
     await conn.query(
-      `INSERT INTO announcements (title, category, body, status, created_by)
-       VALUES (?, ?, ?, 'draft', ?)`,
-      ['Library hours update', 'advisory', 'Draft: confirm the new library hours with the admin office.', pro]
+      `INSERT INTO announcements (title, category, body, news_date, status, created_by)
+       VALUES (?, ?, ?, ?, 'draft', ?)`,
+      ['Library hours update', 'advisory', 'Draft: confirm the new library hours with the admin office.',
+        dayFromToday(0), pro]
     );
 
     // ---------- events ----------

@@ -252,3 +252,14 @@ Everyone else keeps the safer options: Unpublish (news) and Cancel (events).
   "Delete draft", pending items cannot be deleted.
 - Registrations, photos and videos rows go with the record (ON DELETE CASCADE) and their uploaded files are
   deleted from disk. Concerns and transactions are still never deleted.
+
+## C24 — News posts show a date the PRO chooses
+
+**Date:** 2026-10-20 · **Status:** chosen by caacbang-creator; the other two members confirm in the PR review.
+
+**Decision:** `announcements.news_date` is the date shown on a post (e.g. the day the pubmat was posted
+or the news happened). The PRO sets it on the form; it defaults to today, may be in the past, and cannot be
+in the future. The News page, the dashboard and the post page show and sort by it. `published_at` still
+records when it was approved on this website (shown to officers as "published here").
+Changing the date of a live post sends it back for approval, like any other edit (C14).
+Existing posts started with their news date = the day they were published.

@@ -180,7 +180,7 @@
               <% } else { %>
                 <span class="poster-frame dash-news-empty"><span class="icon-tile"><%- include('../partials/icon', { name: 'megaphone' }) %></span></span>
               <% } %>
-              <span class="meta"><%= formatDate(a.published_at) %></span>
+              <span class="meta"><%= formatDate(a.news_date) %></span>
               <h3><%= a.title %></h3>
             </a>
           <% }) %>

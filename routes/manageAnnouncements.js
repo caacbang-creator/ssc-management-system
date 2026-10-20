@@ -29,13 +29,34 @@ function notFound(res) {
   res.status(404).render('errors/404', { title: 'Page not found' });
 }
 
+// True only for a real calendar date in 'YYYY-MM-DD' form (rejects 2026-02-30)
+function isValidDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+}
+
+// Today's date as 'YYYY-MM-DD' in local time
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function validate(body) {
   const old = {
     title: String(body.title ?? '').trim(),
     category: String(body.category ?? '').trim(),
-    body: String(body.body ?? '').trim()
+    body: String(body.body ?? '').trim(),
+    news_date: String(body.news_date ?? '').trim()
   };
   const errors = [];
+  // The date shown on the post (C24): when the news came out, not when it was approved here
+  if (!isValidDate(old.news_date)) {
+    errors.push('Enter the date of the news.');
+  } else if (old.news_date > today()) {
+    errors.push('The news date cannot be in the future.');
+  }
   if (old.title === '' || old.title.length > 150) {
     errors.push('Title is required (up to 150 characters).');
   }
@@ -75,7 +96,7 @@ router.get('/', async (req, res, next) => {
 router.get('/new', writersOnly, (req, res) => {
   res.render('manage/announcements/form', {
     title: 'New announcement', action: '/manage/announcements', categories: CATEGORIES,
-    errors: [], old: { category: 'general' }, remarks: null
+    errors: [], old: { category: 'general', news_date: today() }, remarks: null
   });
 });
 

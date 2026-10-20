@@ -7,21 +7,21 @@ const pool = require('../db');
 // cover_path = the first poster (NULL when there is none); photo_count > 1 means a carousel
 async function listPublished() {
   const [rows] = await pool.query(
-    `SELECT a.id, a.title, a.category, a.body, a.published_at,
+    `SELECT a.id, a.title, a.category, a.body, a.news_date, a.published_at,
             (SELECT p.file_path FROM announcement_photos p
              WHERE p.announcement_id = a.id ORDER BY p.sort_order LIMIT 1) AS cover_path,
             (SELECT COUNT(*) FROM announcement_photos p
              WHERE p.announcement_id = a.id) AS photo_count
      FROM announcements a
      WHERE a.status = 'published'
-     ORDER BY a.published_at DESC`
+     ORDER BY a.news_date DESC, a.published_at DESC`
   );
   return rows;
 }
 
 async function findPublishedById(id) {
   const [rows] = await pool.query(
-    `SELECT id, title, category, body, published_at
+    `SELECT id, title, category, body, news_date, published_at
      FROM announcements
      WHERE id = ? AND status = 'published'`,
     [id]
@@ -53,7 +53,7 @@ async function listForManage(status) {
 async function findById(id) {
   const [rows] = await pool.query(
     `SELECT a.id, a.title, a.category, a.body, a.status, a.review_remarks,
-            a.published_at, a.created_at, a.updated_at,
+            a.news_date, a.published_at, a.created_at, a.updated_at,
             CONCAT(u.first_name, ' ', u.last_name) AS author_name,
             CONCAT(r.first_name, ' ', r.last_name) AS reviewer_name
      FROM announcements a
@@ -67,9 +67,9 @@ async function findById(id) {
 
 async function create(announcement, userId) {
   const [result] = await pool.query(
-    `INSERT INTO announcements (title, category, body, status, created_by)
-     VALUES (?, ?, ?, 'draft', ?)`,
-    [announcement.title, announcement.category, announcement.body, userId]
+    `INSERT INTO announcements (title, category, body, news_date, status, created_by)
+     VALUES (?, ?, ?, ?, 'draft', ?)`,
+    [announcement.title, announcement.category, announcement.body, announcement.news_date, userId]
   );
   return result.insertId;
 }
@@ -77,9 +77,9 @@ async function create(announcement, userId) {
 // Only drafts can be edited
 async function updateDraft(id, announcement) {
   const [result] = await pool.query(
-    `UPDATE announcements SET title = ?, category = ?, body = ?
+    `UPDATE announcements SET title = ?, category = ?, body = ?, news_date = ?
      WHERE id = ? AND status = 'draft'`,
-    [announcement.title, announcement.category, announcement.body, id]
+    [announcement.title, announcement.category, announcement.body, announcement.news_date, id]
   );
   return result.affectedRows;
 }
@@ -88,9 +88,9 @@ async function updateDraft(id, announcement) {
 // status change happen in ONE query, so the public never sees unapproved text.
 async function updatePublished(id, announcement) {
   const [result] = await pool.query(
-    `UPDATE announcements SET title = ?, category = ?, body = ?, status = 'pending', review_remarks = NULL
+    `UPDATE announcements SET title = ?, category = ?, body = ?, news_date = ?, status = 'pending', review_remarks = NULL
      WHERE id = ? AND status = 'published'`,
-    [announcement.title, announcement.category, announcement.body, id]
+    [announcement.title, announcement.category, announcement.body, announcement.news_date, id]
   );
   return result.affectedRows;
 }
