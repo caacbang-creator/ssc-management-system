@@ -26,7 +26,7 @@
         <input type="hidden" name="returnTo" value="<%= locals.currentUrl || path %>">
         <button type="submit" aria-pressed="<%= locals.sidebarOpen ? 'true' : 'false' %>">
           <span aria-hidden="true"><%= locals.sidebarOpen ? '✕' : '☰' %></span>
-          <%= locals.sidebarOpen ? 'Hide menu' : 'Menu' %>
+          <span class="sidebar-toggle-text"><%= locals.sidebarOpen ? 'Hide menu' : 'Menu' %></span>
         </button>
       </form>
     <% } %>
@@ -45,10 +45,7 @@
         <% links.forEach((link) => { %>
           <li><a href="<%= link.href %>"<% if (isActive(link.href)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
         <% }) %>
-        <%# Officers only (cosmetic: /office refuses students on the server anyway) %>
-        <% if (user && user.role !== 'student') { %>
-          <li><a href="/office/check-in"<% if (isActive('/office')) { %> aria-current="page"<% } %>>Office check-in</a></li>
-        <% } %>
+        <%# Office check-in is in the officer sidebar and on the dashboard, so the top menu stays one line %>
         <% if (user) { %>
           <li class="nav-user">
             <form method="post" action="/logout" class="inline-form">

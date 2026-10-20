@@ -4807,3 +4807,104 @@ img.team-avatar {
   width: 18px;
   height: 18px;
 }
+
+/* ---------- Alignment fixes ---------- */
+/* The coloured part of a horizontal bar is a <span>: inline elements ignore width and height,
+   so it must be a block to show its width (the attendance bars were empty without this) */
+.bar-fill {
+  display: block;
+}
+
+/* Officer Performance: pickers in one row (officer, period, View), custom dates below,
+   and the title lined up with the bottom of the row instead of floating in the middle */
+.duty-heading {
+  align-items: flex-end;
+}
+
+@media (min-width: 900px) {
+  .perf-picker {
+    max-width: 640px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .perf-picker .perf-custom {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .perf-picker .btn {
+    grid-column: 3;
+    grid-row: 1;
+    min-height: 44px;
+  }
+}
+
+/* Header between 1024px (where the desktop menu starts) and 1279px: the logo, 7 links, Log out
+   and My dashboard did not fit on one line, so the end of the menu dropped to a second line.
+   Here the menu stays on one line: smaller gaps and text, no college name under the logo,
+   and the officer Menu button shows only its icon (its words stay for screen readers). */
+.site-nav .nav-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .header-inner {
+    gap: 0.75rem 1rem;
+  }
+
+  .nav-desktop ul {
+    flex-wrap: nowrap;
+    gap: 0 0.75rem;
+  }
+
+  .nav-desktop a,
+  .nav-desktop .link-button {
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+
+  .nav-desktop .nav-user {
+    gap: 0.75rem;
+  }
+
+  .wordmark-sub {
+    display: none;
+  }
+
+  .sidebar-toggle {
+    margin-right: 0.25rem;
+  }
+
+  .sidebar-toggle-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* 1024px-1151px: still too tight, so the words beside the logo are hidden visually
+   (the logo stays, and screen readers still hear "Supreme Student Council") */
+@media (min-width: 1024px) and (max-width: 1151px) {
+  .wordmark {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* With the officer Menu button there are three items in the header; the logo stays next to the
+   button instead of floating to the middle */
+.header-inner .brand {
+  margin-right: auto;
+}
