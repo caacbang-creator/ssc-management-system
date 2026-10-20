@@ -119,11 +119,41 @@ async function main() {
     // ---------- announcements (one per status) ----------
     await conn.query(
       `INSERT INTO announcements (title, category, body, status, created_by, reviewed_by, published_at)
-       VALUES (?, ?, ?, 'published', ?, ?, NOW())`,
+       VALUES (?, ?, ?, 'published', ?, ?, ?)`,
       ['Enrollment advisory for the second semester', 'academic',
         'Enrollment for the second semester opens next month. Please settle your clearance early.',
-        jasmine, marco]
+        jasmine, marco, dayFromToday(-100)]
     );
+
+    // ---------- published news with posters ----------
+    // The posters are in public/newsimg/<folder>/ (official SSC pubmats, see docs/decisions.md).
+    // Listed oldest first; the newest one becomes the featured post on the News page.
+    // Bodies are placeholders for the team to fill in.
+    const newsPosts = [
+      ['Call for SSC Assistants and Committee Directors', 'opportunity', dayFromToday(-95), '/newsimg/search',
+        ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eigth', 'nineth']
+          .map((name) => `${name}.jpg`)],
+      ['Orientation Seminar', 'general', dayFromToday(-80), '/newsimg/2Orsem',
+        ['757523965_1027779183439318_1344236409131355570_n.jpg']],
+      ['Happy birthday, Gab!', 'general', dayFromToday(-75), '/newsimg/3Gabbday', ['1.jpg']],
+      ['Orgbit 2026: The CSPC Organizational Fair', 'general', dayFromToday(-70), '/newsimg/4Orgbit', ['1.jpg']],
+      ['Saurbetes', 'general', dayFromToday(-50), '/newsimg/5Saurbetes', ['1.jpg']],
+      ['Meet your host', 'general', dayFromToday(-40), '/newsimg/6Meetyourhost', ['1.jpg']],
+      ['Happy birthday, Earl!', 'general', dayFromToday(-20), '/newsimg/7EarlBday', ['1.jpg']]
+    ];
+    for (const [title, category, date, folder, files] of newsPosts) {
+      const [post] = await conn.query(
+        `INSERT INTO announcements (title, category, body, status, created_by, reviewed_by, published_at)
+         VALUES (?, ?, ?, 'published', ?, ?, ?)`,
+        [title, category, 'Details to follow.', jasmine, marco, date]
+      );
+      for (let i = 0; i < files.length; i++) {
+        await conn.query(
+          'INSERT INTO announcement_photos (announcement_id, file_path, sort_order) VALUES (?, ?, ?)',
+          [post.insertId, `${folder}/${files[i]}`, i + 1]
+        );
+      }
+    }
     await conn.query(
       `INSERT INTO announcements (title, category, body, status, created_by)
        VALUES (?, ?, ?, 'pending', ?)`,
@@ -159,6 +189,36 @@ async function main() {
         'About 250 first-year students attended. Officers introduced SSC services.',
         jasmine, marco, dayFromToday(-45)]
     );
+
+    // ---------- completed events with photos ----------
+    // The image files are in public/img/<folder>/ (official SSC photos, see docs/decisions.md).
+    // Each file list is in chronological order; its position becomes sort_order.
+    // Descriptions, venues and times are placeholders for the team to fill in.
+    const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh'];
+    const photoEvents = [
+      ['Oath of Office', dayFromToday(-120), '/img/1Oathofoffice',
+        ORDINALS.slice(0, 6).map((name) => `${name}.jpg`)],
+      ['Search for SSC Assistants and Committee Directors', dayFromToday(-88), '/img/2SearchforAssandCom',
+        ORDINALS.slice(0, 7).map((name) => `${name}.jpg`)],
+      ['1st General Meeting', dayFromToday(-60), '/img/31stGeneralMeeting',
+        Array.from({ length: 10 }, (_, i) => `${i + 1}.jpg`)]
+    ];
+    for (const [title, date, folder, files] of photoEvents) {
+      const [photoEvent] = await conn.query(
+        `INSERT INTO events (title, description, venue, event_date, start_time, capacity,
+           documentation, status, created_by, reviewed_by, published_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)`,
+        [title, 'Details to follow.', 'CSPC Campus', date, '08:00', 100,
+          'Details to follow.', jasmine, marco, date]
+      );
+      for (let i = 0; i < files.length; i++) {
+        await conn.query(
+          'INSERT INTO event_photos (event_id, file_path, sort_order) VALUES (?, ?, ?)',
+          [photoEvent.insertId, `${folder}/${files[i]}`, i + 1]
+        );
+      }
+    }
+
     await conn.query(
       'INSERT INTO event_registrations (event_id, user_id) VALUES (?, ?)',
       [openEvent.insertId, paolo]

@@ -4,11 +4,35 @@
 <main id="main" class="container">
   <a class="back-link" href="/announcements"><span aria-hidden="true">&larr;</span> All news</a>
 
-  <article class="card">
-    <p class="meta"><span class="tag"><%= announcement.category.charAt(0).toUpperCase() + announcement.category.slice(1) %></span> Posted <%= formatDate(announcement.published_at) %></p>
-    <h1><%= announcement.title %></h1>
-    <p class="keep-lines prose"><%= announcement.body %></p>
+  <article class="card<%= photos.length > 0 ? ' news-post' : '' %>">
+    <%# Poster on the left (first slide big, the other slides as thumbnails), text on the right %>
+    <% if (photos.length > 0) { %>
+      <div class="news-posters" id="photos">
+        <a class="poster-frame" href="#photo-1">
+          <img src="<%= photos[0].file_path %>" alt="<%= photos[0].caption || `${announcement.title}, poster 1 of ${photos.length}` %>">
+        </a>
+        <% if (photos.length > 1) { %>
+          <div class="poster-thumbs">
+            <% photos.slice(1).forEach((photo, i) => { %>
+              <a class="poster-frame" href="#photo-<%= i + 2 %>">
+                <img src="<%= photo.file_path %>" alt="<%= photo.caption || `${announcement.title}, poster ${i + 2} of ${photos.length}` %>" loading="lazy">
+              </a>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="news-post-text">
+      <p class="meta"><span class="tag"><%= announcement.category.charAt(0).toUpperCase() + announcement.category.slice(1) %></span> Posted <%= formatDate(announcement.published_at) %></p>
+      <h1><%= announcement.title %></h1>
+      <p class="keep-lines prose"><%= announcement.body %></p>
+    </div>
   </article>
+
+  <% if (photos.length > 0) { %>
+    <%- include('../partials/photo-viewer', { photos, title: announcement.title, label: 'Poster' }) %>
+  <% } %>
 
   <div class="page-end">
     <p>Have a question about this?</p>

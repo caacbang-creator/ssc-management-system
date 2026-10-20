@@ -20,9 +20,13 @@ async function listUpcoming() {
   return rows;
 }
 
+// cover_path = the first photo (NULL when the event has none)
 async function listCompleted() {
   const [rows] = await pool.query(
-    `SELECT e.id, e.title, e.venue, e.event_date
+    `SELECT e.id, e.title, e.venue, e.event_date,
+            (SELECT p.file_path FROM event_photos p
+             WHERE p.event_id = e.id ORDER BY p.sort_order LIMIT 1) AS cover_path,
+            (SELECT COUNT(*) FROM event_photos p WHERE p.event_id = e.id) AS photo_count
      FROM events e
      WHERE e.status = 'completed'
      ORDER BY e.event_date DESC`
@@ -163,6 +167,20 @@ async function updateDraft(id, event) {
   return result.affectedRows;
 }
 
+// Editing a published event sends it back for approval (C14): the new details and the
+// status change happen in ONE query, so a live event can never show unapproved text.
+async function updatePublished(id, event) {
+  const [result] = await pool.query(
+    `UPDATE events
+     SET title = ?, description = ?, venue = ?, event_date = ?, start_time = ?, end_time = ?, capacity = ?,
+         status = 'pending', review_remarks = NULL
+     WHERE id = ? AND status = 'published'`,
+    [event.title, event.description, event.venue, event.eventDate, event.startTime,
+      event.endTime, event.capacity, id]
+  );
+  return result.affectedRows;
+}
+
 async function deleteDraft(id) {
   const [result] = await pool.query(
     `DELETE FROM events WHERE id = ? AND status = 'draft'`,
@@ -253,6 +271,7 @@ module.exports = {
   findById,
   create,
   updateDraft,
+  updatePublished,
   deleteDraft,
   submit,
   approve,

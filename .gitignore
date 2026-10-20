@@ -1,3 +1,6 @@
 node_modules/
 .env
 course-materials/
+
+# Photos uploaded through the app (user content, not part of the code)
+public/uploads/

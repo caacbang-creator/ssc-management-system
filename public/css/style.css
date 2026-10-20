@@ -1957,6 +1957,378 @@ textarea:focus {
   font-size: var(--text-sm);
 }
 
+/* ---------- Event photo mosaic ---------- */
+/* 4 columns on wide screens. The tile shapes (big, wide, tall, row) are chosen in
+   partials/photo-gallery.ejs so the rows always fill with no gaps. */
+.mosaic {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 120px;
+  gap: 0.5rem;
+}
+
+.mosaic-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.mosaic-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop to fill the tile instead of stretching */
+  transition: transform var(--speed) ease;
+}
+
+.mosaic-tile:hover img,
+.mosaic-tile:focus-visible img {
+  transform: scale(1.05);
+}
+
+.tile-big { grid-column: span 2; grid-row: span 2; }
+.tile-wide { grid-column: span 2; }
+.tile-tall { grid-row: span 2; }
+.tile-row { grid-column: 1 / -1; }
+
+/* "+3" over the last tile when there are more photos than tiles */
+.mosaic-more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 5, 31, 0.65);
+  color: var(--white);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+/* Phones: 2 columns, first photo full width, the others square-ish */
+@media (max-width: 699px) {
+  .mosaic {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 130px;
+  }
+
+  .mosaic-tile {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .mosaic-tile:first-child,
+  .mosaic-tile.tile-m-wide {
+    grid-column: 1 / -1;
+  }
+
+  .mosaic-tile:first-child {
+    grid-row: span 2;
+  }
+}
+
+/* ---------- Photo viewer (lightbox) ---------- */
+/* Hidden until its id is the URL's #fragment; :target then shows it. No JavaScript. */
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* above the sticky header */
+  padding: 3.5rem 1rem 1rem;
+  background: rgba(2, 5, 31, 0.94);
+}
+
+.lightbox:target {
+  display: grid;
+  place-items: center;
+  animation: lightbox-in var(--speed) ease;
+}
+
+@keyframes lightbox-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Clicking the dark area around the photo also closes the viewer */
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.lightbox-figure {
+  position: relative; /* sits above the backdrop link */
+  margin: 0;
+  text-align: center;
+}
+
+.lightbox-figure img {
+  display: block;
+  max-width: min(90vw, 1000px);
+  max-height: 75vh;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.lightbox-figure figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+  color: var(--white);
+}
+
+.lightbox-count {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.lightbox-nav,
+.lightbox-close {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--tap);
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--white);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--speed) ease;
+}
+
+.lightbox-nav:hover,
+.lightbox-close:hover {
+  background: var(--blue);
+}
+
+.lightbox-close { top: 0.75rem; right: 1rem; }
+.lightbox-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+.lightbox-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+/* Phones: Prev / Next move to the bottom so they do not cover the photo */
+@media (max-width: 699px) {
+  .lightbox {
+    padding-bottom: 4.5rem;
+  }
+
+  .lightbox-prev,
+  .lightbox-next {
+    top: auto;
+    bottom: 1rem;
+    transform: none;
+  }
+}
+
+/* ---------- Past event cards ---------- */
+/* Photo on top (cropped to fill, unlike posters), title and date below */
+.event-cover {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--royal) 0%, var(--night) 100%);
+}
+
+.event-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--speed) ease;
+}
+
+.past-event-card:hover .event-cover img {
+  transform: scale(1.05);
+}
+
+/* No photos yet: a big date on the navy tile instead */
+.event-cover-date {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+
+.event-cover-date .date-badge-day {
+  font-size: var(--text-display);
+}
+
+/* ---------- News posters ---------- */
+/* Pubmats have text on them, so they are never cropped: a square frame with object-fit: contain */
+.poster-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.poster-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+a.poster-frame {
+  transition: box-shadow var(--speed) ease;
+}
+
+a.poster-frame:hover {
+  box-shadow: 0 0 0 2px var(--gold-soft);
+}
+
+/* "9 slides" label on a carousel post (a word, not just an icon) */
+.slide-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(2, 5, 31, 0.8);
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.news-card {
+  gap: 0.75rem;
+}
+
+.news-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+/* The newest post: poster beside the text on wider screens */
+@media (min-width: 700px) {
+  .news-featured {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .news-featured .poster-frame {
+    flex: 0 0 45%;
+  }
+
+  .news-featured h2 {
+    font-size: var(--text-xl);
+  }
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.news-grid > .card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 600px) {
+  .news-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .news-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* One news post: posters on the left, text on the right */
+.news-post {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (min-width: 800px) {
+  .news-post {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.news-post-text h1 {
+  margin-top: 0.5rem;
+}
+
+.poster-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ---------- Officer photo manager ---------- */
+.photo-admin-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photo-admin-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.photo-admin-item img {
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+@media (min-width: 700px) {
+  .photo-admin-item {
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.photo-admin-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.photo-admin-body .meta {
+  margin: 0;
+}
+
+.caption-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.caption-row input {
+  flex: 1 1 220px;
+}
+
 /* ---------- Reduced motion (accessibility) ---------- */
 /* People who ask their device for less motion get no animations or transitions at all. */
 @media (prefers-reduced-motion: reduce) {
@@ -1982,7 +2354,10 @@ textarea:focus {
   .feature-card:hover .arrow,
   .btn:hover .arrow,
   .text-link:hover .arrow,
-  .back-link:hover span {
+  .back-link:hover span,
+  .mosaic-tile:hover img,
+  .mosaic-tile:focus-visible img,
+  .past-event-card:hover .event-cover img {
     transform: none;
   }
 }

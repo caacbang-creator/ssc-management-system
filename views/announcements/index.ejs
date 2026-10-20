@@ -18,16 +18,16 @@
       <p>Nothing new right now. Check back soon.</p>
     </div>
   <% } else { %>
-    <div class="card-grid-2">
-      <% announcements.forEach((a) => { %>
-        <a class="card link-card" href="/announcements/<%= a.id %>">
-          <span class="meta"><span class="tag"><%= a.category.charAt(0).toUpperCase() + a.category.slice(1) %></span> <%= formatDate(a.published_at) %></span>
-          <h2><%= a.title %></h2>
-          <p><%= a.body.length > 140 ? a.body.slice(0, 140).trim() + '…' : a.body %></p>
-          <span class="card-link">Read more <span class="arrow" aria-hidden="true">&rarr;</span></span>
-        </a>
-      <% }) %>
-    </div>
+    <%# The newest post is featured (big poster beside the text); the rest go in a poster grid %>
+    <%- include('../partials/news-card', { a: announcements[0], featured: true }) %>
+
+    <% if (announcements.length > 1) { %>
+      <div class="news-grid">
+        <% announcements.slice(1).forEach((a) => { %>
+          <%- include('../partials/news-card', { a, featured: false }) %>
+        <% }) %>
+      </div>
+    <% } %>
   <% } %>
 
   <div class="page-end">

@@ -1,6 +1,7 @@
 // Public: published announcements (no login needed)
 const express = require('express');
 const announcementModel = require('../models/announcementModel');
+const announcementPhotoModel = require('../models/announcementPhotoModel');
 
 const router = express.Router();
 
@@ -21,7 +22,8 @@ router.get('/:id', async (req, res, next) => {
     if (!announcement) {
       return res.status(404).render('errors/404', { title: 'Page not found' });
     }
-    res.render('announcements/show', { title: announcement.title, announcement });
+    const photos = await announcementPhotoModel.listForAnnouncement(id);
+    res.render('announcements/show', { title: announcement.title, announcement, photos });
   } catch (err) {
     next(err);
   }

@@ -4,12 +4,17 @@
 const pool = require('../db');
 
 // ---------- Public (published only) ----------
+// cover_path = the first poster (NULL when there is none); photo_count > 1 means a carousel
 async function listPublished() {
   const [rows] = await pool.query(
-    `SELECT id, title, category, body, published_at
-     FROM announcements
-     WHERE status = 'published'
-     ORDER BY published_at DESC`
+    `SELECT a.id, a.title, a.category, a.body, a.published_at,
+            (SELECT p.file_path FROM announcement_photos p
+             WHERE p.announcement_id = a.id ORDER BY p.sort_order LIMIT 1) AS cover_path,
+            (SELECT COUNT(*) FROM announcement_photos p
+             WHERE p.announcement_id = a.id) AS photo_count
+     FROM announcements a
+     WHERE a.status = 'published'
+     ORDER BY a.published_at DESC`
   );
   return rows;
 }
@@ -79,6 +84,17 @@ async function updateDraft(id, announcement) {
   return result.affectedRows;
 }
 
+// Editing a published announcement sends it back for approval (C14): the new text and the
+// status change happen in ONE query, so the public never sees unapproved text.
+async function updatePublished(id, announcement) {
+  const [result] = await pool.query(
+    `UPDATE announcements SET title = ?, category = ?, body = ?, status = 'pending', review_remarks = NULL
+     WHERE id = ? AND status = 'published'`,
+    [announcement.title, announcement.category, announcement.body, id]
+  );
+  return result.affectedRows;
+}
+
 // Only drafts can be deleted
 async function deleteDraft(id) {
   const [result] = await pool.query(
@@ -131,13 +147,26 @@ async function unpublish(id, reviewerId) {
   return result.affectedRows;
 }
 
+// published -> pending: a published post was changed, so it must be approved again (C14).
+// It is hidden from the public until a VP Internal or the President approves it.
+async function sendBackForApproval(id) {
+  const [result] = await pool.query(
+    `UPDATE announcements SET status = 'pending', review_remarks = NULL
+     WHERE id = ? AND status = 'published'`,
+    [id]
+  );
+  return result.affectedRows;
+}
+
 module.exports = {
+  sendBackForApproval,
   listPublished,
   findPublishedById,
   listForManage,
   findById,
   create,
   updateDraft,
+  updatePublished,
   deleteDraft,
   submit,
   approve,

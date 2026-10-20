@@ -5,7 +5,9 @@
 //   reviewers (VP Internal, President): approve, return with remarks, cancel
 const express = require('express');
 const eventModel = require('../models/eventModel');
+const eventPhotoModel = require('../models/eventPhotoModel');
 const { requireRole } = require('../middleware/auth');
+const { photoUpload, isRealImage, removeFiles, removeUploadedPhoto, MAX_FILES } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -113,8 +115,9 @@ async function refuseOrNotFound(req, res, id, message) {
   res.redirect(303, `/manage/events/${id}`);
 }
 
-function renderForm(res, status, title, action, errors, old, remarks) {
-  res.status(status).render('manage/events/form', { title, action, errors, old, remarks, minDate: today() });
+// live = editing a published event (the form warns that saving sends it back for approval)
+function renderForm(res, status, title, action, errors, old, remarks, live = false) {
+  res.status(status).render('manage/events/form', { title, action, errors, old, remarks, live, minDate: today() });
 }
 
 // ---------- List ----------
@@ -159,17 +162,21 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// ---------- Edit (drafts only) ----------
+// ---------- Edit (drafts, and published events -> back to pending, C14) ----------
+const EDITABLE = ['draft', 'published'];
+const NOT_EDITABLE = 'Only drafts and published events can be edited. Pending events wait for the reviewer.';
+
 router.get('/:id/edit', writersOnly, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
     const event = id ? await eventModel.findById(id) : null;
     if (!event) return notFound(res);
-    if (event.status !== 'draft') {
-      req.session.flash = { type: 'error', message: 'Only drafts can be edited.' };
+    if (!EDITABLE.includes(event.status)) {
+      req.session.flash = { type: 'error', message: NOT_EDITABLE };
       return res.redirect(303, `/manage/events/${id}`);
     }
-    renderForm(res, 200, 'Edit event', `/manage/events/${id}`, [], toFormValues(event), event.review_remarks);
+    renderForm(res, 200, 'Edit event', `/manage/events/${id}`, [], toFormValues(event), event.review_remarks,
+      event.status === 'published');
   } catch (err) {
     next(err);
   }
@@ -178,16 +185,31 @@ router.get('/:id/edit', writersOnly, async (req, res, next) => {
 router.post('/:id', writersOnly, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
-    if (!id) return notFound(res);
+    const existing = id ? await eventModel.findById(id) : null;
+    if (!existing) return notFound(res);
+    if (!EDITABLE.includes(existing.status)) return refuseOrNotFound(req, res, id, NOT_EDITABLE);
+    const live = existing.status === 'published';
+
     const { old, errors } = validate(req.body);
-    if (errors.length > 0) {
-      const existing = await eventModel.findById(id);
-      if (!existing) return notFound(res);
-      return renderForm(res, 422, 'Edit event', `/manage/events/${id}`, errors, old, existing.review_remarks);
+    // Students may already be registered: the new capacity must still fit them
+    if (errors.length === 0 && Number(old.capacity) < existing.registered_count) {
+      errors.push(`Capacity cannot be lower than the ${existing.registered_count} students already registered.`);
     }
-    const changed = await eventModel.updateDraft(id, toRecord(old));
-    if (changed === 0) return refuseOrNotFound(req, res, id, 'Only drafts can be edited.');
-    req.session.flash = { type: 'success', message: 'Draft updated.' };
+    if (errors.length > 0) {
+      return renderForm(res, 422, 'Edit event', `/manage/events/${id}`, errors, old, existing.review_remarks, live);
+    }
+
+    // The status is checked again inside the SQL, in case it changed since we read it
+    const changed = live
+      ? await eventModel.updatePublished(id, toRecord(old))
+      : await eventModel.updateDraft(id, toRecord(old));
+    if (changed === 0) return refuseOrNotFound(req, res, id, NOT_EDITABLE);
+    req.session.flash = {
+      type: 'success',
+      message: live
+        ? 'Changes saved and sent for approval. The event is hidden until it is approved again.'
+        : 'Draft updated.'
+    };
     res.redirect(303, `/manage/events/${id}`);
   } catch (err) {
     next(err);
@@ -340,6 +362,122 @@ router.get('/:id/registrants', async (req, res, next) => {
     if (!event) return notFound(res);
     const registrants = await eventModel.listRegistrants(id);
     res.render('manage/events/registrants', { title: 'Registrants', event, registrants });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Photos (completed events only, PRO and President) ----------
+// Photos are part of the documentation, so they follow the same rule as the write-up:
+// only completed events, no new approval needed.
+const uploadEventPhotos = photoUpload('events');
+
+// Finds the event for a photo page. Sends the 404 / refusal itself and returns null.
+async function findPhotoEvent(req, res) {
+  const id = parseId(req.params.id);
+  const event = id ? await eventModel.findById(id) : null;
+  if (!event) {
+    notFound(res);
+    return null;
+  }
+  if (event.status !== 'completed') {
+    req.session.flash = { type: 'error', message: 'Photos can only be added to completed events.' };
+    res.redirect(303, `/manage/events/${id}`);
+    return null;
+  }
+  return event;
+}
+
+async function renderPhotos(res, status, event, errors) {
+  const photos = await eventPhotoModel.listForEvent(event.id);
+  res.status(status).render('manage/events/photos', {
+    title: `Photos: ${event.title}`, event, photos, errors, maxFiles: MAX_FILES
+  });
+}
+
+router.get('/:id/photos', writersOnly, async (req, res, next) => {
+  try {
+    const event = await findPhotoEvent(req, res);
+    if (!event) return;
+    await renderPhotos(res, 200, event, []);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// writersOnly runs BEFORE uploadEventPhotos, so no file is saved for the wrong role
+router.post('/:id/photos', writersOnly, uploadEventPhotos, async (req, res, next) => {
+  const files = req.files || [];
+  try {
+    const event = await findPhotoEvent(req, res);
+    if (!event) return removeFiles(files);
+
+    const real = files.filter((file) => isRealImage(file.path));
+    const skipped = (req.skippedFiles || 0) + (files.length - real.length);
+    const errors = [];
+    if (req.uploadError) errors.push(req.uploadError);
+    if (skipped > 0) errors.push(`Only JPG, PNG or WebP images can be uploaded (${skipped} file(s) refused).`);
+    if (files.length === 0 && errors.length === 0) errors.push('Choose at least one photo to upload.');
+    if (errors.length > 0) {
+      removeFiles(files); // all or nothing: fix the selection and upload again
+      return renderPhotos(res, 422, event, errors);
+    }
+
+    await eventPhotoModel.addMany(event.id, real.map((file) => `/uploads/events/${file.filename}`));
+    req.session.flash = { type: 'success', message: `${real.length} photo(s) added.` };
+    res.redirect(303, `/manage/events/${event.id}/photos`);
+  } catch (err) {
+    removeFiles(files);
+    next(err);
+  }
+});
+
+router.post('/:id/photos/:photoId/caption', writersOnly, async (req, res, next) => {
+  try {
+    const event = await findPhotoEvent(req, res);
+    if (!event) return;
+    const photoId = parseId(req.params.photoId);
+    const caption = String(req.body.caption ?? '').trim();
+    if (caption.length > 150) {
+      return renderPhotos(res, 422, event, ['A caption can be up to 150 characters.']);
+    }
+    const changed = photoId ? await eventPhotoModel.updateCaption(event.id, photoId, caption || null) : 0;
+    if (changed === 0) return notFound(res);
+    req.session.flash = { type: 'success', message: 'Caption saved.' };
+    res.redirect(303, `/manage/events/${event.id}/photos`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/photos/:photoId/move', writersOnly, async (req, res, next) => {
+  try {
+    const event = await findPhotoEvent(req, res);
+    if (!event) return;
+    const photoId = parseId(req.params.photoId);
+    const direction = req.body.direction;
+    if (!photoId || !['up', 'down'].includes(direction)) return notFound(res);
+    const result = await eventPhotoModel.move(event.id, photoId, direction);
+    if (result === 'not_found') return notFound(res);
+    if (result === 'edge') {
+      req.session.flash = { type: 'error', message: 'That photo cannot move any further.' };
+    }
+    res.redirect(303, `/manage/events/${event.id}/photos`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/photos/:photoId/delete', writersOnly, async (req, res, next) => {
+  try {
+    const event = await findPhotoEvent(req, res);
+    if (!event) return;
+    const photoId = parseId(req.params.photoId);
+    const filePath = photoId ? await eventPhotoModel.remove(event.id, photoId) : null;
+    if (!filePath) return notFound(res);
+    removeUploadedPhoto(filePath);
+    req.session.flash = { type: 'success', message: 'Photo removed.' };
+    res.redirect(303, `/manage/events/${event.id}/photos`);
   } catch (err) {
     next(err);
   }

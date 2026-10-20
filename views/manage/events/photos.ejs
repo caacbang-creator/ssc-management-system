@@ -1,0 +1,21 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/events/<%= event.id %>"><span aria-hidden="true">&larr;</span> Back to the event</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Event photos</p>
+      <h1><%= event.title %></h1>
+      <p class="page-lead">The first photo is the big tile and the cover on the Events page.</p>
+    </div>
+    <a class="btn btn-secondary" href="/events/<%= event.id %>#photos">See the public page</a>
+  </div>
+
+  <%- include('../../partials/photo-manager', {
+    photos, basePath: `/manage/events/${event.id}/photos`, label: 'photo', maxFiles, errors
+  }) %>
+</main>
+
+<%- include('../../partials/foot') %>

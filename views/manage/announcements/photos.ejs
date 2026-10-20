@@ -1,0 +1,28 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/announcements/<%= announcement.id %>"><span aria-hidden="true">&larr;</span> Back to the post</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">News posters</p>
+      <h1><%= announcement.title %></h1>
+      <p class="page-lead">The first poster is the cover. Two or more posters make a carousel.</p>
+    </div>
+    <%- include('../../partials/status-pill', { status: announcement.status }) %>
+  </div>
+
+  <% if (announcement.status === 'published') { %>
+    <div class="alert alert-info" role="note">
+      <p><strong>This post is live.</strong> Any change here sends it back for approval, and it is hidden
+        from the News page until a VP for Internal Affairs or the President approves it again.</p>
+    </div>
+  <% } %>
+
+  <%- include('../../partials/photo-manager', {
+    photos, basePath: `/manage/announcements/${announcement.id}/photos`, label: 'poster', maxFiles, errors
+  }) %>
+</main>
+
+<%- include('../../partials/foot') %>

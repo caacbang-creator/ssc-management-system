@@ -53,6 +53,7 @@
           </form>
           <div class="action-row section-gap">
             <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/edit">Edit draft</a>
+            <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Posters</a>
             <form method="post" action="/manage/announcements/<%= a.id %>/delete" class="inline-form">
               <button type="submit" class="btn btn-danger btn-sm">Delete draft</button>
             </form>
@@ -82,6 +83,13 @@
 
         <% if (a.status === 'published') { %>
           <p><a class="text-link" href="/announcements/<%= a.id %>">See the public page <span class="arrow" aria-hidden="true">&rarr;</span></a></p>
+          <% if (canWrite) { %>
+            <p class="hint">Changing a live post sends it back for approval.</p>
+            <div class="action-row">
+              <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/edit">Edit post</a>
+              <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Change posters</a>
+            </div>
+          <% } %>
           <% if (canReview) { %>
             <form method="post" action="/manage/announcements/<%= a.id %>/unpublish">
               <button type="submit" class="btn btn-secondary">Unpublish</button>

@@ -6,7 +6,14 @@
 
   <section class="card">
     <h1><%= title %></h1>
-    <p class="muted">Saved as a draft. You can send it for approval afterwards.</p>
+    <% if (locals.live) { %>
+      <div class="alert alert-info" role="note">
+        <p><strong>This event is live.</strong> Saving sends it back for approval. It is hidden from
+          the Events page (and registration pauses) until a VP for Internal Affairs or the President approves it.</p>
+      </div>
+    <% } else { %>
+      <p class="muted">Saved as a draft. You can send it for approval afterwards.</p>
+    <% } %>
 
     <% if (remarks) { %>
       <div class="alert alert-info">
@@ -53,7 +60,7 @@
         <textarea id="description" name="description" rows="6" maxlength="5000" required><%= old.description || '' %></textarea>
       </div>
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save draft</button>
+        <button type="submit" class="btn btn-primary"><%= locals.live ? 'Save and send for approval' : 'Save draft' %></button>
         <a class="btn btn-secondary" href="/manage/events">Cancel</a>
       </div>
     </form>
