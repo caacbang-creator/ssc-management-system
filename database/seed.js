@@ -2,6 +2,7 @@
 // Usage: npm run db:reset   (WARNING: deletes all existing data)
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');   // built into Node (not a package): random office code
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const mysql = require('mysql2/promise');
@@ -123,21 +124,22 @@ async function main() {
 
     const term = '2026-2027';
     // Official SSC portraits, resized for the web, in public/img/officers/ (decision C16)
+    // The last column links each directory entry to its login (C25), so office pages can show the photo
     const officers = [
-      ['Jester Carl SJ. Sumpay', 'President', null, 'president.jpg', 1],
-      ['Ralph Joe Francis Abonal', 'Vice President for Internal Affairs', committeeIds[0], 'vp-internal.jpg', 2],
-      ['Jessil Martinez', 'Vice President for External Affairs', null, 'vp-external.jpg', 3],
-      ['Ma. Lourdes Tulabot', 'Secretary', null, 'secretary.jpg', 4],
-      ['Rj Patrick Sernal', 'Treasurer', committeeIds[2], 'treasurer.jpg', 5],
-      ['Krystine Gospe', 'Auditor', null, 'auditor.jpg', 6],
-      ['Camille Salvadora', 'Public Information Officer', committeeIds[3], 'pio.jpg', 7],
-      ['Luke Ronquillo', 'Property Custodian', null, 'property-custodian.jpg', 8]
+      ['Jester Carl SJ. Sumpay', 'President', null, 'president.jpg', 1, ids.president],
+      ['Ralph Joe Francis Abonal', 'Vice President for Internal Affairs', committeeIds[0], 'vp-internal.jpg', 2, ids.vpInternal],
+      ['Jessil Martinez', 'Vice President for External Affairs', null, 'vp-external.jpg', 3, ids.vpExternal],
+      ['Ma. Lourdes Tulabot', 'Secretary', null, 'secretary.jpg', 4, ids.secretary],
+      ['Rj Patrick Sernal', 'Treasurer', committeeIds[2], 'treasurer.jpg', 5, ids.treasurer],
+      ['Krystine Gospe', 'Auditor', null, 'auditor.jpg', 6, ids.auditor],
+      ['Camille Salvadora', 'Public Information Officer', committeeIds[3], 'pio.jpg', 7, ids.pro],
+      ['Luke Ronquillo', 'Property Custodian', null, 'property-custodian.jpg', 8, ids.custodian]
     ];
-    for (const [fullName, position, committeeId, photo, sortOrder] of officers) {
+    for (const [fullName, position, committeeId, photo, sortOrder, userId] of officers) {
       await conn.query(
-        `INSERT INTO officers (full_name, position, committee_id, term, photo_path, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [fullName, position, committeeId, term, `/img/officers/${photo}`, sortOrder]
+        `INSERT INTO officers (full_name, position, committee_id, term, photo_path, sort_order, user_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [fullName, position, committeeId, term, `/img/officers/${photo}`, sortOrder, userId]
       );
     }
 
@@ -446,7 +448,74 @@ async function main() {
         'Draft minutes: attendance, agenda items and decisions.', secretary]
     );
 
+    // ---------- office duty (C25): SAMPLE schedule, office code and attendance ----------
+    // Demo data so the Office Now and Performance pages have something to show.
+    // These logs are made up; they are not the officers' real attendance.
+    // day_of_week uses MySQL DAYOFWEEK(): 1 = Sunday, 2 = Monday ... 7 = Saturday.
+    const schedule = [
+      // key, day_of_week, start time
+      ['president', 2, '08:00'],
+      ['vpInternal', 3, '08:00'],
+      ['secretary', 4, '08:00'],
+      ['treasurer', 4, '13:00'],     // two officers on Wednesday
+      ['pro', 5, '08:00'],
+      ['custodian', 6, '08:00']
+    ];
+    for (const [key, day, start] of schedule) {
+      await conn.query(
+        'INSERT INTO duty_schedule (user_id, day_of_week, start_time) VALUES (?, ?, ?)',
+        [ids[key], day, start]
+      );
+    }
+
+    // Office code: 6 characters without look-alikes (no 0/O, no 1/I), using Node's built-in crypto
+    const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let officeCode = '';
+    for (let i = 0; i < 6; i++) officeCode += CODE_LETTERS[crypto.randomInt(CODE_LETTERS.length)];
+    await conn.query('INSERT INTO office_code (id, code, updated_by) VALUES (1, ?, ?)', [officeCode, president]);
+
+    // 'YYYY-MM-DD' + 'HH:MM' + minutes -> 'YYYY-MM-DD HH:MM:00'
+    const at = (date, time, addMinutes) => {
+      const [h, m] = time.split(':').map(Number);
+      const total = h * 60 + m + addMinutes;
+      return `${date} ${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}:00`;
+    };
+    // How many minutes after (or before) the start time each sample duty arrives.
+    // More than 15 = late, so every 4th duty or so is late.
+    const ARRIVALS = [-5, 2, 0, 22, 8, -10, 35, 4, 12, 18];
+    let dutyCount = 0;
+    for (let daysAgo = 42; daysAgo >= 1; daysAgo--) {   // the past six weeks, never today
+      const date = dayFromToday(-daysAgo);
+      const [y, mo, d] = date.split('-').map(Number);
+      const dayOfWeek = new Date(y, mo - 1, d).getDay() + 1;   // JS 0 = Sunday -> MySQL 1 = Sunday
+      for (const [key, day, start] of schedule) {
+        if (day !== dayOfWeek) continue;
+        dutyCount++;
+        // Each sample case lands in its own week, so it always happens exactly once:
+        if (key === 'treasurer' && daysAgo > 21 && daysAgo <= 28) continue;   // one missed duty (4 weeks ago)
+        const late = ARRIVALS[dutyCount % ARRIVALS.length];
+        const forgotTimeOut = key === 'pro' && daysAgo > 14 && daysAgo <= 21;  // one missing time-out (3 weeks ago)
+        const timeOut = forgotTimeOut ? null : at(date, start, 240);
+        await conn.query(
+          `INSERT INTO office_logs (user_id, log_type, log_date, time_in, time_out, is_late)
+           VALUES (?, 'duty', ?, ?, ?, ?)`,
+          [ids[key], date, at(date, start, late), timeOut, late > 15 ? 1 : 0]
+        );
+      }
+      // Visits: the Secretary drops by on Mondays, the PIO on Fridays (one hour each)
+      const visits = { 2: ['secretary', '15:00'], 6: ['pro', '10:30'] };
+      if (visits[dayOfWeek]) {
+        const [key, time] = visits[dayOfWeek];
+        await conn.query(
+          `INSERT INTO office_logs (user_id, log_type, log_date, time_in, time_out)
+           VALUES (?, 'visit', ?, ?, ?)`,
+          [ids[key], date, at(date, time, 0), at(date, time, 60)]
+        );
+      }
+    }
+
     console.log(`Seed complete: ${users.length} users. Pending officer request: Liza Ramos (id ${liza}).`);
+    console.log(`Office code for check-in: ${officeCode} (the President can regenerate it).`);
     console.log('All demo accounts use the SEED_PASSWORD from .env.');
   } finally {
     await conn.end();

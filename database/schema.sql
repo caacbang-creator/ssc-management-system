@@ -9,6 +9,9 @@ CREATE DATABASE IF NOT EXISTS ssc_db
 USE ssc_db;
 
 -- Drop children before parents so foreign keys do not block the drop
+DROP TABLE IF EXISTS office_logs;
+DROP TABLE IF EXISTS duty_schedule;
+DROP TABLE IF EXISTS office_code;
 DROP TABLE IF EXISTS documents;
 DROP TABLE IF EXISTS resolutions;
 DROP TABLE IF EXISTS financial_report_sales;
@@ -88,12 +91,18 @@ CREATE TABLE officers (
   committee_id INT UNSIGNED NULL,
   term VARCHAR(20) NOT NULL,
   photo_path VARCHAR(255) NULL,   -- e.g. /img/officers/president.jpg (C16); NULL = show initials
+  -- Optional link to the officer's login (C25), so office pages can show the directory photo.
+  -- Directory entries stay separate from logins; NULL = not linked (initials are shown).
+  user_id INT UNSIGNED NULL,
   sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_officers_user (user_id),        -- one directory entry per login (NULLs allowed)
   INDEX idx_officers_order (sort_order),
   CONSTRAINT fk_officers_committee FOREIGN KEY (committee_id)
-    REFERENCES committees (id) ON DELETE SET NULL
+    REFERENCES committees (id) ON DELETE SET NULL,
+  CONSTRAINT fk_officers_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------
@@ -439,4 +448,57 @@ CREATE TABLE documents (
     REFERENCES users (id) ON DELETE RESTRICT,
   CONSTRAINT fk_documents_reviewer FOREIGN KEY (reviewed_by)
     REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------
+-- Office duty (C25): the weekly Officer of the Day (OOTD) schedule, the office code
+-- and the office check-in log. Replaces biometrics / QR scanning (outside Weeks 2-9).
+-- ---------------------------------------------------------------
+
+-- Who is on duty on which weekday. day_of_week uses MySQL's DAYOFWEEK() numbering:
+-- 1 = Sunday, 2 = Monday ... 7 = Saturday. A day may have more than one officer.
+CREATE TABLE duty_schedule (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  day_of_week TINYINT UNSIGNED NOT NULL,
+  start_time TIME NOT NULL,                  -- Time In more than 15 minutes after this is late
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_duty_user_day (user_id, day_of_week),   -- an officer is on a weekday at most once
+  INDEX idx_duty_day (day_of_week),
+  CONSTRAINT chk_duty_day CHECK (day_of_week BETWEEN 1 AND 7),
+  CONSTRAINT fk_duty_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- The one current office code (always one row, id = 1, like about_ssc). Only visible at the
+-- SSC office (printed, or inside a QR code). Regenerating it makes the old code stop working.
+CREATE TABLE office_code (
+  id TINYINT UNSIGNED PRIMARY KEY,
+  code VARCHAR(10) NOT NULL,
+  updated_by INT UNSIGNED NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT chk_office_code_single_row CHECK (id = 1),
+  CONSTRAINT fk_office_code_editor FOREIGN KEY (updated_by)
+    REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One row per Time In. time_out NULL = still in the office (today) or a missing time-out
+-- (past date). Times are always set by the database clock (NOW(), CURDATE()), never by the form.
+-- No UNIQUE on the date: an officer may visit more than once a day; the route checks for an
+-- open log and for an existing duty log today instead.
+CREATE TABLE office_logs (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  log_type ENUM('duty', 'visit') NOT NULL,
+  log_date DATE NOT NULL,
+  time_in DATETIME NOT NULL,
+  time_out DATETIME NULL,
+  is_late TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_office_logs_user_date (user_id, log_date),
+  INDEX idx_office_logs_date (log_date),
+  -- Attendance history is kept: a user with office logs cannot be deleted
+  CONSTRAINT fk_office_logs_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
