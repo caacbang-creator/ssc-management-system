@@ -5,6 +5,7 @@ const express = require('express');
 const dutyScheduleModel = require('../models/dutyScheduleModel');
 const officeCodeModel = require('../models/officeCodeModel');
 const userModel = require('../models/userModel');
+const officeLogModel = require('../models/officeLogModel');
 
 const router = express.Router();
 
@@ -101,6 +102,38 @@ router.post('/code', async (req, res, next) => {
       message: `New office code: ${code}. The old code no longer works, so print the new link or QR code.`
     };
     res.redirect(303, '/manage/duty');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Office Now ----------
+// 75 -> '1 h 15 min', 40 -> '40 min'. The minutes come from TIMESTAMPDIFF in SQL.
+function duration(minutes) {
+  const m = Math.max(0, Number(minutes) || 0);
+  return m >= 60 ? `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min` : `${m} min`;
+}
+
+router.get('/now', async (req, res, next) => {
+  try {
+    const present = await officeLogModel.listPresentNow();
+    const left = await officeLogModel.listLeftToday();
+    const notIn = await dutyScheduleModel.listScheduledNotInToday();
+    res.render('manage/duty/now', {
+      title: 'Office now',
+      present,
+      left,
+      notIn,
+      counts: {
+        present: present.length,
+        duty: present.filter((p) => p.log_type === 'duty').length,
+        visit: present.filter((p) => p.log_type === 'visit').length,
+        notIn: notIn.length
+      },
+      duration,
+      // '2026-10-20 08:02:00' -> '8:02 AM'
+      clock: (dateTime) => req.app.locals.formatTime(String(dateTime).slice(11, 19))
+    });
   } catch (err) {
     next(err);
   }

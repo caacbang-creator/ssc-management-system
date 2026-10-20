@@ -1,0 +1,149 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/duty"><span aria-hidden="true">&larr;</span> Officer of the Day</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">President</p>
+      <h1>Office now</h1>
+      <p class="page-lead">Who is in the SSC office right now. Times are from the server clock.</p>
+    </div>
+    <%# No auto-refresh JavaScript: a normal link reloads the page %>
+    <a class="btn btn-secondary" href="/manage/duty/now">Refresh</a>
+  </div>
+
+  <div class="card-grid">
+    <div class="card stat-card">
+      <span class="stat-number"><%= counts.present %></span>
+      <span class="stat-label">In the office now</span>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-number"><%= counts.duty %></span>
+      <span class="stat-label">On duty</span>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-number"><%= counts.visit %></span>
+      <span class="stat-label">Visiting</span>
+    </div>
+    <div class="card stat-card<%= counts.notIn > 0 ? ' stat-card-active' : '' %>">
+      <span class="stat-number"><%= counts.notIn %></span>
+      <span class="stat-label">Scheduled but not in yet</span>
+    </div>
+  </div>
+
+  <%# ---------- Photo row ---------- %>
+  <section class="card section-gap" aria-labelledby="row-title">
+    <h2 id="row-title">In the office</h2>
+    <% if (present.length === 0) { %>
+      <p class="muted">No one is checked in right now.</p>
+    <% } else { %>
+      <ul class="presence-row">
+        <% present.forEach((p) => { %>
+          <li class="presence-item">
+            <%- include('../../partials/avatar', { person: p, size: '', duty: p.log_type === 'duty' }) %>
+            <span class="presence-name"><%= p.first_name %></span>
+            <span class="tag<%= p.log_type === 'duty' ? ' tag-duty' : '' %>"><%= p.log_type === 'duty' ? 'OOTD' : 'Visit' %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <% if (notIn.length > 0) { %>
+      <h3 class="section-gap-sm">Scheduled today, not in yet</h3>
+      <ul class="plain-list">
+        <% notIn.forEach((n) => { %>
+          <li>
+            <span class="person">
+              <%- include('../../partials/avatar', { person: n, size: 'sm', duty: false }) %>
+              <span><strong><%= n.first_name %> <%= n.last_name %></strong> &middot; starts <%= formatTime(n.start_time) %>
+                <% if (n.past_late_mark) { %><span class="pill pill-rejected">Late</span><% } %></span>
+            </span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <%# ---------- Present right now ---------- %>
+  <section class="card section-gap" aria-labelledby="present-title">
+    <h2 id="present-title">Present right now</h2>
+    <% if (present.length === 0) { %>
+      <p class="muted">No one is checked in right now.</p>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Officer</th>
+              <th scope="col">Position</th>
+              <th scope="col">Type</th>
+              <th scope="col">Time in</th>
+              <th scope="col">In for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% present.forEach((p) => { %>
+              <tr>
+                <th scope="row">
+                  <span class="person">
+                    <%- include('../../partials/avatar', { person: p, size: 'sm', duty: p.log_type === 'duty' }) %>
+                    <span><%= p.first_name %> <%= p.last_name %></span>
+                  </span>
+                </th>
+                <td><%= p.position || roleLabels[p.role] %></td>
+                <td>
+                  <span class="tag<%= p.log_type === 'duty' ? ' tag-duty' : '' %>"><%= p.log_type === 'duty' ? 'Duty' : 'Visit' %></span>
+                  <% if (p.is_late) { %><span class="pill pill-rejected">Late</span><% } %>
+                </td>
+                <td class="nowrap"><%= clock(p.time_in) %></td>
+                <td class="nowrap"><%= duration(p.minutes_in) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+  <%# ---------- Already left today ---------- %>
+  <section class="card section-gap" aria-labelledby="left-title">
+    <h2 id="left-title">Already left today</h2>
+    <% if (left.length === 0) { %>
+      <p class="muted">No one has timed out yet today.</p>
+    <% } else { %>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Officer</th>
+              <th scope="col">Type</th>
+              <th scope="col">Time in</th>
+              <th scope="col">Time out</th>
+              <th scope="col">Stayed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% left.forEach((p) => { %>
+              <tr>
+                <th scope="row">
+                  <span class="person">
+                    <%- include('../../partials/avatar', { person: p, size: 'sm', duty: false }) %>
+                    <span><%= p.first_name %> <%= p.last_name %></span>
+                  </span>
+                </th>
+                <td><span class="tag<%= p.log_type === 'duty' ? ' tag-duty' : '' %>"><%= p.log_type === 'duty' ? 'Duty' : 'Visit' %></span></td>
+                <td class="nowrap"><%= clock(p.time_in) %></td>
+                <td class="nowrap"><%= clock(p.time_out) %></td>
+                <td class="nowrap"><%= duration(p.minutes_in) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>
