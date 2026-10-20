@@ -3,19 +3,20 @@
 const pool = require('../db');
 
 // ---------- Public ----------
+// Newest first; resolutions adopted on the same day: higher number first (005 before 004)
 async function listPublished() {
   const [rows] = await pool.query(
-    `SELECT id, resolution_no, title, date_adopted, published_at
+    `SELECT id, resolution_no, title, date_adopted, photo_path, pdf_path, published_at
      FROM resolutions
      WHERE status = 'published'
-     ORDER BY date_adopted DESC`
+     ORDER BY date_adopted DESC, resolution_no DESC`
   );
   return rows;
 }
 
 async function findPublishedById(id) {
   const [rows] = await pool.query(
-    `SELECT id, resolution_no, title, body, date_adopted, published_at
+    `SELECT id, resolution_no, title, body, date_adopted, photo_path, pdf_path, published_at
      FROM resolutions
      WHERE id = ? AND status = 'published'`,
     [id]
@@ -43,7 +44,7 @@ async function listForManage(status) {
 
 async function findById(id) {
   const [rows] = await pool.query(
-    `SELECT s.id, s.resolution_no, s.title, s.body, s.date_adopted, s.status, s.review_remarks,
+    `SELECT s.id, s.resolution_no, s.title, s.body, s.date_adopted, s.photo_path, s.pdf_path, s.status, s.review_remarks,
             s.published_at, s.updated_at,
             CONCAT(u.first_name, ' ', u.last_name) AS author_name,
             CONCAT(r.first_name, ' ', r.last_name) AS reviewer_name
@@ -131,7 +132,33 @@ async function unpublish(id, reviewerId) {
   return result.affectedRows;
 }
 
+// ---------- Photo and PDF (C17) ----------
+// Saves new file paths (null = keep the current one). Drafts only, or published, which then
+// goes back to pending in the SAME query, so the President approves the new files (like C14).
+async function setFiles(id, photoPath, pdfPath) {
+  const [result] = await pool.query(
+    `UPDATE resolutions
+     SET photo_path = COALESCE(?, photo_path), pdf_path = COALESCE(?, pdf_path),
+         status = IF(status = 'published', 'pending', status)
+     WHERE id = ? AND status IN ('draft', 'published')`,
+    [photoPath, pdfPath, id]
+  );
+  return result.affectedRows;
+}
+
+// Removes the photo or the PDF. which: 'photo' or 'pdf' (checked by the route).
+// Column names cannot be ? placeholders, so each case has its own fixed SQL.
+async function clearFile(id, which) {
+  const sql = which === 'photo'
+    ? `UPDATE resolutions SET photo_path = NULL, status = IF(status = 'published', 'pending', status)
+       WHERE id = ? AND status IN ('draft', 'published')`
+    : `UPDATE resolutions SET pdf_path = NULL, status = IF(status = 'published', 'pending', status)
+       WHERE id = ? AND status IN ('draft', 'published')`;
+  const [result] = await pool.query(sql, [id]);
+  return result.affectedRows;
+}
+
 module.exports = {
   listPublished, findPublishedById, listForManage, findById, numberExists, create,
-  updateDraft, deleteDraft, submit, publish, returnToDraft, unpublish
+  updateDraft, deleteDraft, submit, publish, returnToDraft, unpublish, setFiles, clearFile
 };

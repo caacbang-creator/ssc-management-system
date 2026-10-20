@@ -32,7 +32,9 @@
       <div class="form-row">
         <div class="form-field">
           <label for="event_date">Date</label>
-          <input type="date" id="event_date" name="event_date" value="<%= old.event_date || '' %>" min="<%= minDate %>" required>
+          <input type="date" id="event_date" name="event_date" value="<%= old.event_date || '' %>"
+            aria-describedby="date-hint" required>
+          <p class="hint" id="date-hint">A past date is fine for an event that already happened. Once it is approved, mark it completed to add photos and a write-up.</p>
         </div>
         <div class="form-field">
           <label for="start_time">Start time</label>
@@ -45,14 +47,15 @@
       </div>
       <div class="form-row">
         <div class="form-field">
-          <label for="venue">Venue</label>
-          <input type="text" id="venue" name="venue" value="<%= old.venue || '' %>" maxlength="150" required>
+          <label for="venue">Venue <span class="optional">(optional)</span></label>
+          <input type="text" id="venue" name="venue" value="<%= old.venue || '' %>" maxlength="150" aria-describedby="venue-hint">
+          <p class="hint" id="venue-hint">Leave empty if not decided yet. It shows as "To be announced".</p>
         </div>
         <div class="form-field">
-          <label for="capacity">Capacity</label>
+          <label for="capacity">Capacity <span class="optional">(optional)</span></label>
           <input type="text" id="capacity" name="capacity" value="<%= old.capacity || '' %>" inputmode="numeric"
-            maxlength="4" aria-describedby="capacity-hint" required>
-          <p class="hint" id="capacity-hint">How many can join (1 to 9999)</p>
+            maxlength="4" aria-describedby="capacity-hint">
+          <p class="hint" id="capacity-hint">How many can join (1 to 9999). Leave empty for no limit.</p>
         </div>
       </div>
       <div class="form-field">

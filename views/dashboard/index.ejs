@@ -12,6 +12,7 @@
     if (href.includes('events')) return 'calendar';
     if (href.includes('concerns')) return 'chat';
     if (href.includes('transactions')) return 'clipboard';
+    if (href.includes('items')) return 'box';
     if (href.includes('financial')) return 'money';
     if (href.includes('officer-requests')) return 'users';
     return 'file';
@@ -136,7 +137,7 @@
             <div>
               <p class="dash-countdown"><%= countdown %></p>
               <h2><a href="/events/<%= nextEvent.id %>"><%= nextEvent.title %></a></h2>
-              <p class="meta"><%= formatDate(nextEvent.event_date) %> &middot; <%= formatTime(nextEvent.start_time) %> &middot; <%= nextEvent.venue %></p>
+              <p class="meta"><%= formatDate(nextEvent.event_date) %> &middot; <%= formatTime(nextEvent.start_time) %> &middot; <%= nextEvent.venue || 'Venue to be announced' %></p>
             </div>
           </div>
           <% if (nextEvent.registered) { %>

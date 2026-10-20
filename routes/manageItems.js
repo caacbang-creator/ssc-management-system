@@ -1,9 +1,15 @@
-// PRO and President: manage the items students can borrow.
-// Mounted in app.js with requireRole('pro', 'president').
+// Property Custodian and President: the items students can borrow, their availability,
+// and the borrowing log (decision C19).
+// Mounted in app.js with requireRole('property_custodian', 'president'), so every route
+// below is already limited to those two roles.
 const express = require('express');
 const itemModel = require('../models/itemModel');
+const itemLoanModel = require('../models/itemLoanModel');
+const userModel = require('../models/userModel');
 
 const router = express.Router();
+
+const CONDITIONS = ['good', 'damaged', 'lost'];
 
 // Turns '12' into 12; anything else (e.g. 'abc', '-1', '1.5') into null
 function parseId(value) {
@@ -14,6 +20,29 @@ function notFound(res) {
   res.status(404).render('errors/404', { title: 'Page not found' });
 }
 
+// True only for a real calendar date in 'YYYY-MM-DD' form (rejects 2026-02-30)
+function isValidDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+}
+
+// Today's date as 'YYYY-MM-DD' in local time
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// What the custodian sees when a handover is refused
+const RELEASE_MESSAGES = {
+  not_found: 'That item no longer exists.',
+  unavailable: 'That item is marked "Not available". Change its status first.',
+  not_enough: 'Not enough units are in the office right now. Some are still out on loan.',
+  not_ready: 'That request is no longer waiting for a handover.'
+};
+
+// ---------- Items ----------
 async function validate(body, excludeId) {
   const old = {
     name: String(body.name ?? '').trim(),
@@ -45,7 +74,7 @@ function renderForm(res, status, title, action, errors, old) {
 
 router.get('/', async (req, res, next) => {
   try {
-    const items = await itemModel.listAll();
+    const items = await itemModel.listForCustodian();
     res.render('manage/items/index', { title: 'Manage items', items });
   } catch (err) {
     next(err);
@@ -72,6 +101,178 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+// ---------- Borrowing desk (before '/:id' so 'loans' is not read as an id) ----------
+async function renderDesk(res, status, extra = {}) {
+  const ready = await itemLoanModel.listReadyToRelease();
+  const open = await itemLoanModel.listOpen();
+  res.status(status).render('manage/items/desk', {
+    title: 'Borrowing desk', ready, open, minDate: today(),
+    errors: extra.errors || [], errorFor: extra.errorFor || null
+  });
+}
+
+router.get('/loans', async (req, res, next) => {
+  try {
+    await renderDesk(res, 200);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Hand over the item of an approved request
+router.post('/loans/release/:transactionId', async (req, res, next) => {
+  try {
+    const transactionId = parseId(req.params.transactionId);
+    const ready = transactionId ? (await itemLoanModel.listReadyToRelease()).find((r) => r.id === transactionId) : null;
+    if (!ready) {
+      req.session.flash = { type: 'error', message: RELEASE_MESSAGES.not_ready };
+      return res.redirect(303, '/manage/items/loans');
+    }
+    const dueDate = String(req.body.due_date ?? '').trim();
+    const notes = String(req.body.notes ?? '').trim();
+    const errors = [];
+    if (!isValidDate(dueDate) || dueDate < today()) errors.push('Enter a due date that is today or later.');
+    if (notes.length > 255) errors.push('Notes must be 255 characters or fewer.');
+    if (errors.length > 0) return renderDesk(res, 422, { errors, errorFor: `release-${transactionId}` });
+
+    const result = await itemLoanModel.release({
+      itemId: ready.item_id, borrowerId: ready.borrower_id, transactionId, quantity: ready.quantity,
+      dueDate, notes: notes || null, releasedBy: req.user.id
+    });
+    if (result !== 'ok') {
+      req.session.flash = { type: 'error', message: RELEASE_MESSAGES[result] };
+      return res.redirect(303, '/manage/items/loans');
+    }
+    req.session.flash = { type: 'success', message: `${ready.item_name} handed over to ${ready.borrower_name}.` };
+    res.redirect(303, '/manage/items/loans');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Walk-in loan (no online request) ----------
+async function renderWalkIn(res, status, errors, old) {
+  const items = (await itemModel.listAll()).filter((i) => i.status === 'available');
+  res.status(status).render('manage/items/walk-in', {
+    title: 'Record a walk-in loan', items, errors, old, minDate: today()
+  });
+}
+
+router.get('/loans/new', async (req, res, next) => {
+  try {
+    const itemId = parseId(req.query.item); // "Lend" button on an item pre-selects it
+    await renderWalkIn(res, 200, [], { item_id: itemId ? String(itemId) : '', quantity: '1' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/loans', async (req, res, next) => {
+  try {
+    const old = {
+      student_no: String(req.body.student_no ?? '').trim(),
+      item_id: String(req.body.item_id ?? '').trim(),
+      quantity: String(req.body.quantity ?? '').trim(),
+      due_date: String(req.body.due_date ?? '').trim(),
+      notes: String(req.body.notes ?? '').trim()
+    };
+    const errors = [];
+    const borrower = /^\d{4}-\d{5}$/.test(old.student_no) ? await userModel.findByStudentNo(old.student_no) : null;
+    if (!borrower) errors.push('Enter the student number of a registered user, like 2025-10009.');
+    const itemId = parseId(old.item_id);
+    const item = itemId ? await itemModel.findById(itemId) : null;
+    if (!item) errors.push('Choose an item.');
+    if (!/^[1-9]\d{0,3}$/.test(old.quantity)) errors.push('Quantity must be a whole number from 1 to 9999.');
+    if (!isValidDate(old.due_date) || old.due_date < today()) errors.push('Enter a due date that is today or later.');
+    if (old.notes.length > 255) errors.push('Notes must be 255 characters or fewer.');
+    if (errors.length > 0) return renderWalkIn(res, 422, errors, old);
+
+    const result = await itemLoanModel.release({
+      itemId, borrowerId: borrower.id, transactionId: null, quantity: Number(old.quantity),
+      dueDate: old.due_date, notes: old.notes || null, releasedBy: req.user.id
+    });
+    if (result !== 'ok') return renderWalkIn(res, 422, [RELEASE_MESSAGES[result]], old);
+    req.session.flash = {
+      type: 'success',
+      message: `${item.name} lent to ${borrower.first_name} ${borrower.last_name}. It is in the borrowing log.`
+    };
+    res.redirect(303, '/manage/items/loans');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Return ----------
+router.post('/loans/:loanId/return', async (req, res, next) => {
+  try {
+    const loanId = parseId(req.params.loanId);
+    if (!loanId) return notFound(res);
+    const condition = req.body.condition;
+    const note = String(req.body.notes ?? '').trim();
+    const errors = [];
+    if (!CONDITIONS.includes(condition)) errors.push('Choose the condition the item came back in.');
+    if (note.length > 255) errors.push('Notes must be 255 characters or fewer.');
+    if (errors.length > 0) return renderDesk(res, 422, { errors, errorFor: `return-${loanId}` });
+
+    const done = await itemLoanModel.markReturned(loanId, condition, note || null, req.user.id);
+    if (!done) {
+      req.session.flash = { type: 'error', message: 'That loan was not found or is already returned.' };
+      return res.redirect(303, '/manage/items/loans');
+    }
+    req.session.flash = {
+      type: 'success',
+      message: condition === 'good'
+        ? 'Marked as returned.'
+        : `Marked as returned (${condition}). If it cannot be lent out, set the item to "Not available".`
+    };
+    res.redirect(303, '/manage/items/loans');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- One item: history, availability, edit, delete ----------
+router.get('/:id/history', async (req, res, next) => {
+  try {
+    const id = parseId(req.params.id);
+    const item = id ? await itemModel.findById(id) : null;
+    if (!item) return notFound(res);
+    const loans = await itemLoanModel.listForItem(id);
+    res.render('manage/items/history', { title: `History: ${item.name}`, item, loans, errors: [], old: {} });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Available / not available, with a reason that students see
+router.post('/:id/status', async (req, res, next) => {
+  try {
+    const id = parseId(req.params.id);
+    const item = id ? await itemModel.findById(id) : null;
+    if (!item) return notFound(res);
+    const status = req.body.status;
+    const note = String(req.body.status_note ?? '').trim();
+    const errors = [];
+    if (!['available', 'unavailable'].includes(status)) errors.push('Choose Available or Not available.');
+    if (status === 'unavailable' && note === '') errors.push('Say why it is not available, e.g. "Under repair".');
+    if (note.length > 150) errors.push('The reason must be 150 characters or fewer.');
+    if (errors.length > 0) {
+      const loans = await itemLoanModel.listForItem(id);
+      return res.status(422).render('manage/items/history', {
+        title: `History: ${item.name}`, item, loans, errors, old: { status, status_note: note }
+      });
+    }
+    await itemModel.setStatus(id, status, status === 'available' ? null : note);
+    req.session.flash = {
+      type: 'success',
+      message: `${item.name} is now ${status === 'available' ? 'available' : 'not available'}.`
+    };
+    res.redirect(303, `/manage/items/${id}/history`);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id/edit', async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
@@ -88,6 +289,11 @@ router.post('/:id', async (req, res, next) => {
     const id = parseId(req.params.id);
     if (!id) return notFound(res);
     const { old, errors } = await validate(req.body, id);
+    // The stock cannot drop below the units that are out on loan right now
+    const item = errors.length === 0 ? await itemModel.findById(id) : null;
+    if (item && Number(old.quantity) < Number(item.units_out)) {
+      errors.push(`${item.units_out} unit(s) are out on loan, so the quantity cannot be lower than that.`);
+    }
     if (errors.length > 0) return renderForm(res, 422, 'Edit item', `/manage/items/${id}`, errors, old);
     const changed = await itemModel.update(id, toRecord(old));
     if (changed === 0) return notFound(res);
@@ -112,7 +318,7 @@ router.post('/:id/delete', async (req, res, next) => {
       if (!item) return notFound(res);
       req.session.flash = {
         type: 'error',
-        message: `"${item.name}" has requests in progress and cannot be deleted yet.`
+        message: `"${item.name}" has requests in progress or a borrowing history, so it is kept. Mark it "Not available" instead.`
       };
       return res.redirect(303, '/manage/items');
     }

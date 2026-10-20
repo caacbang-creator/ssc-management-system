@@ -7,3 +7,7 @@ public/uploads/
 
 # Original full-size officer photos (web copies are in public/img/officers/)
 public/directory/
+
+# Original resolution files (clean copies are in public/img/resolutions/ and public/files/resolutions/)
+public/resoimg/
+public/resopdf/

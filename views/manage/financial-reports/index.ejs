@@ -18,9 +18,12 @@
       <h1>Financial reports</h1>
       <p class="page-lead"><%= canWrite ? 'Show students how their funds are used.' : 'You can view these, but not edit them.' %></p>
     </div>
-    <% if (canWrite) { %>
-      <a class="btn btn-primary" href="/manage/financial-reports/new">Write a report <span class="arrow" aria-hidden="true">&rarr;</span></a>
-    <% } %>
+    <div class="action-row">
+      <a class="btn btn-secondary" href="/manage/financial-reports/budget">Annual budget</a>
+      <% if (canWrite) { %>
+        <a class="btn btn-primary" href="/manage/financial-reports/new">Write a report <span class="arrow" aria-hidden="true">&rarr;</span></a>
+      <% } %>
+    </div>
   </div>
 
   <nav aria-label="Filter by status">
@@ -41,7 +44,7 @@
             <th scope="col">Report</th>
             <th scope="col">Status</th>
             <th scope="col">Period</th>
-            <th scope="col" class="num">Left</th>
+            <th scope="col" class="num">Expenses</th>
             <th scope="col">Updated</th>
           </tr>
         </thead>
@@ -51,7 +54,7 @@
               <td><a href="/manage/financial-reports/<%= r.id %>"><%= r.title %></a></td>
               <td><%- include('../../partials/status-pill', { status: r.status }) %></td>
               <td><%= formatDate(r.period_start) %> &ndash; <%= formatDate(r.period_end) %></td>
-              <td class="num"><%= formatMoney(r.remaining_balance) %></td>
+              <td class="num"><%= formatMoney(r.total_expenses) %></td>
               <td><%= formatDate(r.updated_at) %></td>
             </tr>
           <% }) %>

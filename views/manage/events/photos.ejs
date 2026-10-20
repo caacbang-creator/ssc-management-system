@@ -6,15 +6,28 @@
 
   <div class="page-heading">
     <div>
-      <p class="eyebrow">Event photos</p>
+      <p class="eyebrow">Event photos and videos</p>
       <h1><%= event.title %></h1>
       <p class="page-lead">The first photo is the big tile and the cover on the Events page.</p>
     </div>
-    <a class="btn btn-secondary" href="/events/<%= event.id %>#photos">See the public page</a>
+    <% if (event.status === 'completed') { %>
+      <a class="btn btn-secondary" href="/events/<%= event.id %>#photos">See the public page</a>
+    <% } %>
   </div>
+
+  <% if (event.status === 'draft') { %>
+    <div class="alert alert-info" role="note">
+      <p><strong>This event is a draft.</strong> You can prepare its photos and videos now. Students will see
+        them on the event page once it is approved and marked completed.</p>
+    </div>
+  <% } %>
 
   <%- include('../../partials/photo-manager', {
     photos, basePath: `/manage/events/${event.id}/photos`, label: 'photo', maxFiles, errors
+  }) %>
+
+  <%- include('../../partials/video-manager', {
+    videos, basePath: `/manage/events/${event.id}/videos`, videoErrors, videoTitle
   }) %>
 </main>
 

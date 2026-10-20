@@ -8,7 +8,7 @@ const router = express.Router();
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@my\.cspc\.edu\.ph$/;
 const STUDENT_NO_PATTERN = /^[A-Za-z0-9-]{4,20}$/;
 // Roles a student may request at registration (never president)
-const REQUESTABLE_ROLES = ['pro', 'vp_internal', 'treasurer', 'secretary'];
+const REQUESTABLE_ROLES = ['pro', 'vp_internal', 'treasurer', 'secretary', 'property_custodian'];
 
 // Already logged in? Login and register pages are not needed.
 function redirectIfLoggedIn(req, res, next) {

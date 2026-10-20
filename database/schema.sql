@@ -11,13 +11,19 @@ USE ssc_db;
 -- Drop children before parents so foreign keys do not block the drop
 DROP TABLE IF EXISTS documents;
 DROP TABLE IF EXISTS resolutions;
+DROP TABLE IF EXISTS financial_report_sales;
+DROP TABLE IF EXISTS financial_report_expenses;
 DROP TABLE IF EXISTS financial_reports;
+DROP TABLE IF EXISTS annual_budgets;
+DROP TABLE IF EXISTS item_loans;
 DROP TABLE IF EXISTS transactions;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS concerns;
+DROP TABLE IF EXISTS event_videos;
 DROP TABLE IF EXISTS event_photos;
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS announcement_videos;
 DROP TABLE IF EXISTS announcement_photos;
 DROP TABLE IF EXISTS announcements;
 DROP TABLE IF EXISTS officers;
@@ -35,9 +41,9 @@ CREATE TABLE users (
   last_name VARCHAR(60) NOT NULL,
   email VARCHAR(120) NOT NULL,
   password_hash CHAR(60) NOT NULL,
-  role ENUM('student', 'pro', 'vp_internal', 'treasurer', 'secretary', 'president')
+  role ENUM('student', 'pro', 'vp_internal', 'treasurer', 'secretary', 'property_custodian', 'president')
     NOT NULL DEFAULT 'student',
-  requested_role ENUM('pro', 'vp_internal', 'treasurer', 'secretary') NULL,
+  requested_role ENUM('pro', 'vp_internal', 'treasurer', 'secretary', 'property_custodian') NULL,
   officer_request_status ENUM('none', 'pending', 'rejected') NOT NULL DEFAULT 'none',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -125,6 +131,19 @@ CREATE TABLE announcement_photos (
     REFERENCES announcements (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Videos the PRO uploads to an announcement (C21). The title is required: it names the
+-- video for screen readers and is shown under the player.
+CREATE TABLE announcement_videos (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  announcement_id INT UNSIGNED NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_announcement_videos (announcement_id),
+  CONSTRAINT fk_announcement_videos_announcement FOREIGN KEY (announcement_id)
+    REFERENCES announcements (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ---------------------------------------------------------------
 -- events: draft -> pending -> published -> completed / cancelled
 -- ---------------------------------------------------------------
@@ -132,11 +151,11 @@ CREATE TABLE events (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(150) NOT NULL,
   description TEXT NOT NULL,
-  venue VARCHAR(150) NOT NULL,
+  venue VARCHAR(150) NULL,               -- optional; NULL = "to be announced" (C22)
   event_date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NULL,
-  capacity INT UNSIGNED NOT NULL,
+  capacity INT UNSIGNED NULL,            -- optional; NULL = no limit on registrations (C22)
   documentation TEXT NULL,
   status ENUM('draft', 'pending', 'published', 'completed', 'cancelled') NOT NULL DEFAULT 'draft',
   review_remarks VARCHAR(500) NULL,
@@ -146,7 +165,7 @@ CREATE TABLE events (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_events_status_date (status, event_date),
-  CONSTRAINT chk_events_capacity CHECK (capacity > 0),
+  CONSTRAINT chk_events_capacity CHECK (capacity IS NULL OR capacity > 0),
   CONSTRAINT fk_events_author FOREIGN KEY (created_by)
     REFERENCES users (id) ON DELETE RESTRICT,
   CONSTRAINT fk_events_reviewer FOREIGN KEY (reviewed_by)
@@ -178,6 +197,18 @@ CREATE TABLE event_photos (
   sort_order INT UNSIGNED NOT NULL,
   UNIQUE KEY uq_event_photo_order (event_id, sort_order),
   CONSTRAINT fk_event_photos_event FOREIGN KEY (event_id)
+    REFERENCES events (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Videos of a completed event (C21), uploaded by the PRO. Title required (see announcement_videos).
+CREATE TABLE event_videos (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  event_id INT UNSIGNED NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_event_videos (event_id),
+  CONSTRAINT fk_event_videos_event FOREIGN KEY (event_id)
     REFERENCES events (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -215,6 +246,9 @@ CREATE TABLE items (
   name VARCHAR(100) NOT NULL,
   description VARCHAR(255) NULL,
   quantity INT UNSIGNED NOT NULL DEFAULT 1,
+  -- Set by the Property Custodian (C19). "Units out" is computed from item_loans, never stored.
+  status ENUM('available', 'unavailable') NOT NULL DEFAULT 'available',
+  status_note VARCHAR(150) NULL,            -- why it is not available, e.g. "Under repair"
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_items_name (name)
@@ -257,13 +291,61 @@ CREATE TABLE transactions (
 -- financial_reports: Treasurer submits, President publishes.
 -- Remaining balance is computed in SELECT (budget - expenses), never stored.
 -- ---------------------------------------------------------------
+-- ---------------------------------------------------------------
+-- item_loans: the borrowing log kept by the Property Custodian (C19).
+-- One row per handover. Out = returned_at IS NULL. The last borrower of an item is
+-- simply its newest row. transaction_id links to the approved online request;
+-- NULL means a walk-in loan recorded at the office.
+-- ---------------------------------------------------------------
+CREATE TABLE item_loans (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  item_id INT UNSIGNED NOT NULL,
+  borrower_id INT UNSIGNED NOT NULL,
+  transaction_id INT UNSIGNED NULL,
+  quantity INT UNSIGNED NOT NULL,
+  released_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  released_by INT UNSIGNED NULL,
+  due_date DATE NOT NULL,
+  returned_at DATETIME NULL,
+  returned_by INT UNSIGNED NULL,
+  return_condition ENUM('good', 'damaged', 'lost') NULL,
+  notes VARCHAR(255) NULL,
+  UNIQUE KEY uq_loans_transaction (transaction_id),   -- one handover per request (NULLs allowed)
+  INDEX idx_loans_item (item_id, released_at),
+  INDEX idx_loans_open (returned_at),
+  CONSTRAINT chk_loan_quantity CHECK (quantity > 0),
+  -- History is kept: an item or borrower with loans cannot be deleted (mark the item unavailable instead)
+  CONSTRAINT fk_loans_item FOREIGN KEY (item_id)
+    REFERENCES items (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_loans_borrower FOREIGN KEY (borrower_id)
+    REFERENCES users (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_loans_transaction FOREIGN KEY (transaction_id)
+    REFERENCES transactions (id) ON DELETE SET NULL,
+  CONSTRAINT fk_loans_released_by FOREIGN KEY (released_by)
+    REFERENCES users (id) ON DELETE SET NULL,
+  CONSTRAINT fk_loans_returned_by FOREIGN KEY (returned_by)
+    REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One budget for the whole school year (C18). Spent and remaining are COMPUTED from the
+-- published reports of that year, never stored.
+CREATE TABLE annual_budgets (
+  school_year CHAR(9) PRIMARY KEY,          -- e.g. '2026-2027'
+  amount DECIMAL(12, 2) NOT NULL,
+  updated_by INT UNSIGNED NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT chk_annual_budget_amount CHECK (amount >= 0),
+  CONSTRAINT fk_annual_budget_editor FOREIGN KEY (updated_by)
+    REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A liquidation report. Its totals come from its expense and sales lines (computed in the SELECT).
 CREATE TABLE financial_reports (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(150) NOT NULL,
+  school_year CHAR(9) NOT NULL,             -- counts toward this year's annual budget
   period_start DATE NOT NULL,
   period_end DATE NOT NULL,
-  budget DECIMAL(12, 2) NOT NULL,
-  expenses DECIMAL(12, 2) NOT NULL,
   notes TEXT NULL,
   status ENUM('draft', 'pending', 'published') NOT NULL DEFAULT 'draft',
   review_remarks VARCHAR(500) NULL,
@@ -273,12 +355,41 @@ CREATE TABLE financial_reports (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_financial_status (status, published_at),
-  CONSTRAINT chk_financial_amounts CHECK (budget >= 0 AND expenses >= 0),
+  INDEX idx_financial_year (school_year, status),
   CONSTRAINT chk_financial_period CHECK (period_end >= period_start),
   CONSTRAINT fk_financial_author FOREIGN KEY (created_by)
     REFERENCES users (id) ON DELETE RESTRICT,
   CONSTRAINT fk_financial_reviewer FOREIGN KEY (reviewed_by)
     REFERENCES users (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One receipt on a liquidation report (e.g. "Tissues, 0001283, 2026-08-04, LCC Supermarket, 58.00").
+-- receipt_no is NULL for acknowledgement receipts, which have no number.
+CREATE TABLE financial_report_expenses (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  report_id INT UNSIGNED NOT NULL,
+  item VARCHAR(60) NOT NULL,
+  receipt_no VARCHAR(30) NULL,
+  receipt_date DATE NOT NULL,
+  particulars VARCHAR(150) NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  INDEX idx_expenses_report (report_id, receipt_date),
+  CONSTRAINT chk_expense_amount CHECK (amount > 0),
+  CONSTRAINT fk_expenses_report FOREIGN KEY (report_id)
+    REFERENCES financial_reports (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One product sold during the activity. Its total (quantity x unit price) is computed, not stored.
+CREATE TABLE financial_report_sales (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  report_id INT UNSIGNED NOT NULL,
+  product VARCHAR(100) NOT NULL,
+  quantity INT UNSIGNED NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  INDEX idx_sales_report (report_id),
+  CONSTRAINT chk_sale_numbers CHECK (quantity > 0 AND unit_price >= 0),
+  CONSTRAINT fk_sales_report FOREIGN KEY (report_id)
+    REFERENCES financial_reports (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------
@@ -287,9 +398,11 @@ CREATE TABLE financial_reports (
 CREATE TABLE resolutions (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   resolution_no VARCHAR(30) NOT NULL,
-  title VARCHAR(150) NOT NULL,
+  title VARCHAR(255) NOT NULL,      -- official titles are long (up to about 220 characters)
   body TEXT NOT NULL,
   date_adopted DATE NOT NULL,
+  photo_path VARCHAR(255) NULL,   -- pubmat shown on the Documents page (C17)
+  pdf_path VARCHAR(255) NULL,     -- signed copy to preview or download (C17)
   status ENUM('draft', 'pending', 'published') NOT NULL DEFAULT 'draft',
   review_remarks VARCHAR(500) NULL,
   created_by INT UNSIGNED NOT NULL,

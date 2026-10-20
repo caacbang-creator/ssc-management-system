@@ -78,8 +78,18 @@ async function rejectRequest(id) {
   return result.affectedRows;
 }
 
+// Walk-in loans: the custodian finds the borrower by student number (C19)
+async function findByStudentNo(studentNo) {
+  const [rows] = await pool.query(
+    'SELECT id, student_no, first_name, last_name FROM users WHERE student_no = ?',
+    [studentNo]
+  );
+  return rows[0] || null;
+}
+
 module.exports = {
   findById,
+  findByStudentNo,
   findByEmailForLogin,
   findDuplicate,
   create,

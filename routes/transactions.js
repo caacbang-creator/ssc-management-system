@@ -84,6 +84,9 @@ async function validate(body, types) {
     const item = itemId ? await itemModel.findById(itemId) : null;
     if (!item) {
       errors.push('Choose an item to borrow.');
+    } else if (item.status !== 'available') {
+      // The dropdown hides these, but a typed or old form could still send the id
+      errors.push(`"${item.name}" is not available right now${item.status_note ? ` (${item.status_note})` : ''}.`);
     }
     const quantity = /^\d{1,4}$/.test(old.quantity) ? Number(old.quantity) : 0;
     if (quantity < 1) {
@@ -105,7 +108,8 @@ async function validate(body, types) {
 }
 
 async function renderForm(req, res, status, errors, old) {
-  const items = await itemModel.listAll();
+  // Items the Property Custodian marked "not available" cannot be requested (C19)
+  const items = (await itemModel.listAll()).filter((i) => i.status === 'available');
   res.status(status).render('transactions/new', {
     title: 'New request', errors, old, items, minDate: today()
   });
@@ -127,7 +131,9 @@ router.get('/new', async (req, res, next) => {
     // ?type=item_borrowing pre-selects the type (only if it is a known type)
     const types = req.app.locals.transactionTypes;
     const type = Object.keys(types).includes(req.query.type) ? req.query.type : '';
-    await renderForm(req, res, 200, [], { type });
+    // ?item=3 (the "Request" button on the Items page) pre-selects that item
+    const itemId = parseId(req.query.item);
+    await renderForm(req, res, 200, [], { type, item_id: itemId ? String(itemId) : '' });
   } catch (err) {
     next(err);
   }

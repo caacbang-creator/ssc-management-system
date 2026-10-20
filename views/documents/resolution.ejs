@@ -1,15 +1,59 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
+<% const r = resolution; %>
+
 <main id="main" class="container">
   <a class="back-link" href="/documents"><span aria-hidden="true">&larr;</span> Reports and documents</a>
 
-  <article class="card">
-    <p class="eyebrow"><%= resolution.resolution_no %></p>
-    <h1><%= resolution.title %></h1>
-    <p class="meta">Adopted <%= formatDate(resolution.date_adopted) %> &middot; published <%= formatDate(resolution.published_at) %></p>
-    <p class="keep-lines prose"><%= resolution.body %></p>
+  <%# Pubmat on the left, the details and the PDF buttons on the right %>
+  <article class="reso-detail">
+    <div class="reso-detail-photo">
+      <% if (r.photo_path) { %>
+        <a href="<%= r.photo_path %>" target="_blank" rel="noopener">
+          <img src="<%= r.photo_path %>" alt="Pubmat of <%= resolutionLabel(r.resolution_no) %>: <%= r.title %>">
+          <span class="visually-hidden">(open the full image in a new tab)</span>
+        </a>
+      <% } else { %>
+        <span class="reso-photo-empty"><%- include('../partials/icon', { name: 'file' }) %></span>
+      <% } %>
+    </div>
+
+    <div class="card reso-detail-info">
+      <p class="eyebrow"><%= resolutionLabel(r.resolution_no) %></p>
+      <h1 class="reso-detail-title"><%= r.title %></h1>
+
+      <dl class="details">
+        <dt>Adopted</dt>
+        <dd><%= formatDate(r.date_adopted) %></dd>
+        <dt>Published</dt>
+        <dd><%= formatDate(r.published_at) %></dd>
+        <dt>Reference</dt>
+        <dd><%= r.resolution_no %></dd>
+      </dl>
+
+      <% if (r.pdf_path) { %>
+        <div class="action-row">
+          <a class="btn btn-primary" href="<%= r.pdf_path %>" target="_blank" rel="noopener">Preview PDF <span class="visually-hidden">(opens in a new tab)</span></a>
+          <a class="btn btn-secondary" href="<%= r.pdf_path %>" download="<%= r.resolution_no %>.pdf">Download PDF</a>
+        </div>
+      <% } else { %>
+        <p class="muted">The signed copy is not available yet.</p>
+      <% } %>
+
+      <h2 class="section-gap-sm reso-detail-sub">What was resolved</h2>
+      <p class="keep-lines prose"><%= r.body %></p>
+    </div>
   </article>
+
+  <%# Inline PDF viewer on wide screens; phones use the Preview button instead %>
+  <% if (r.pdf_path) { %>
+    <section class="card section-gap pdf-viewer" aria-labelledby="pdf-title">
+      <h2 id="pdf-title" class="aside-title">Signed copy</h2>
+      <iframe src="<%= r.pdf_path %>#view=FitH" title="PDF of <%= resolutionLabel(r.resolution_no) %>" loading="lazy"></iframe>
+      <p class="hint">Can't see it? <a href="<%= r.pdf_path %>" target="_blank" rel="noopener">Open the PDF</a> instead.</p>
+    </section>
+  <% } %>
 </main>
 
 <%- include('../partials/foot') %>

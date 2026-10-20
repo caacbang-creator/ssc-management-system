@@ -1,0 +1,117 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const CONDITION_LABELS = { good: 'Good', damaged: 'Damaged', lost: 'Lost' };
+  const inOffice = item.quantity - Number(item.units_out);
+  const statusValue = old.status || item.status;
+  const last = loans[0] || null;
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/items"><span aria-hidden="true">&larr;</span> Items</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Item</p>
+      <h1><%= item.name %></h1>
+      <p class="page-lead"><%= inOffice %> of <%= item.quantity %> in the office &middot; <%= item.units_out %> out on loan</p>
+    </div>
+    <% if (item.status === 'available') { %>
+      <span class="pill pill-approved">Available</span>
+    <% } else { %>
+      <span class="pill pill-rejected">Not available</span>
+    <% } %>
+  </div>
+
+  <div class="wide-split">
+    <%# ---------- Borrowing log ---------- %>
+    <section class="card" aria-labelledby="log-title">
+      <h2 id="log-title">Borrowing log (<%= loans.length %>)</h2>
+      <% if (last) { %>
+        <p class="last-borrower">
+          <span class="icon-tile icon-tile-sm"><%- include('../../partials/icon', { name: 'users' }) %></span>
+          <span>Last borrower: <strong><%= last.borrower_name %></strong> (<%= last.student_no %>),
+            <%= last.returned_at ? 'returned ' + formatDate(last.returned_at) : 'still has it' %></span>
+        </p>
+      <% } %>
+      <% if (loans.length === 0) { %>
+        <p class="muted">Never lent out yet.</p>
+      <% } else { %>
+        <div class="table-wrap">
+          <table class="ledger">
+            <thead>
+              <tr>
+                <th scope="col">Borrower</th>
+                <th scope="col" class="num">Qty</th>
+                <th scope="col">Out</th>
+                <th scope="col">Due</th>
+                <th scope="col">Returned</th>
+                <th scope="col">Condition</th>
+                <th scope="col">Source and notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% loans.forEach((l) => { %>
+                <tr>
+                  <th scope="row"><%= l.borrower_name %><br><span class="meta"><%= l.student_no %></span></th>
+                  <td class="num"><%= l.quantity %></td>
+                  <td class="nowrap"><%= formatDate(l.released_at) %><br><span class="meta">by <%= l.released_by_name || 'a former officer' %></span></td>
+                  <td class="nowrap"><%= formatDate(l.due_date) %></td>
+                  <td class="nowrap">
+                    <% if (l.returned_at) { %>
+                      <%= formatDate(l.returned_at) %><br><span class="meta">to <%= l.returned_by_name || 'a former officer' %></span>
+                    <% } else if (l.overdue) { %>
+                      <span class="pill pill-rejected">Overdue</span>
+                    <% } else { %>
+                      <span class="pill pill-under-review">Out</span>
+                    <% } %>
+                  </td>
+                  <td><%= l.return_condition ? CONDITION_LABELS[l.return_condition] : '–' %></td>
+                  <td><%= l.reference_no ? 'Request ' + l.reference_no : 'Walk-in' %><% if (l.notes) { %><br><span class="meta"><%= l.notes %></span><% } %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+
+    <%# ---------- Availability ---------- %>
+    <aside class="wide-aside" aria-labelledby="status-title">
+      <div class="card">
+        <h2 id="status-title" class="aside-title">Can students borrow it?</h2>
+        <%- include('../../partials/form-errors') %>
+        <form method="post" action="/manage/items/<%= item.id %>/status" novalidate>
+          <fieldset class="tile-picker">
+            <legend class="visually-hidden">Availability</legend>
+            <div class="status-choices">
+              <label class="choice-tile" for="status-available">
+                <input type="radio" id="status-available" name="status" value="available"<% if (statusValue === 'available') { %> checked<% } %>>
+                <span class="choice-title">Available</span>
+                <span class="choice-hint">Students can request it.</span>
+              </label>
+              <label class="choice-tile" for="status-unavailable">
+                <input type="radio" id="status-unavailable" name="status" value="unavailable"<% if (statusValue === 'unavailable') { %> checked<% } %>>
+                <span class="choice-title">Not available</span>
+                <span class="choice-hint">Hidden from new requests.</span>
+              </label>
+            </div>
+          </fieldset>
+          <div class="form-field">
+            <label for="status_note">Reason (if not available)</label>
+            <input type="text" id="status_note" name="status_note" value="<%= old.status_note !== undefined ? old.status_note : (item.status_note || '') %>"
+              maxlength="150" placeholder="Under repair" aria-describedby="note-hint">
+            <p class="hint" id="note-hint">Students see this reason on the Items page.</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Save status</button>
+        </form>
+      </div>
+      <% if (item.status === 'available' && inOffice > 0) { %>
+        <a class="btn btn-secondary" href="/manage/items/loans/new?item=<%= item.id %>">Lend it out (walk-in)</a>
+      <% } %>
+    </aside>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

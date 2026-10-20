@@ -6,8 +6,11 @@
 const express = require('express');
 const announcementModel = require('../models/announcementModel');
 const announcementPhotoModel = require('../models/announcementPhotoModel');
+const announcementVideoModel = require('../models/announcementVideoModel');
 const { requireRole } = require('../middleware/auth');
-const { photoUpload, isRealImage, removeFiles, removeUploadedPhoto, MAX_FILES } = require('../middleware/upload');
+const {
+  photoUpload, videoUpload, isRealImage, isRealVideo, removeFiles, removeUploadedPhoto, MAX_FILES
+} = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -15,6 +18,7 @@ const CATEGORIES = ['general', 'academic', 'advisory', 'opportunity'];
 const STATUSES = ['draft', 'pending', 'published'];
 const writersOnly = requireRole('pro', 'president');
 const reviewersOnly = requireRole('vp_internal', 'president');
+const presidentOnly = requireRole('president');
 
 // Turns '12' into 12; anything else (e.g. 'abc', '-1', '1.5') into null
 function parseId(value) {
@@ -266,10 +270,13 @@ async function findPosterPost(req, res) {
   return announcement;
 }
 
-async function renderPosters(res, status, announcement, errors) {
+// The posters page also manages videos. extra: { videoErrors, videoTitle } after a failed video upload.
+async function renderPosters(res, status, announcement, errors, extra = {}) {
   const photos = await announcementPhotoModel.listForAnnouncement(announcement.id);
+  const videos = await announcementVideoModel.listForAnnouncement(announcement.id);
   res.status(status).render('manage/announcements/photos', {
-    title: `Posters: ${announcement.title}`, announcement, photos, errors, maxFiles: MAX_FILES
+    title: `Posters and videos: ${announcement.title}`, announcement, photos, videos, errors, maxFiles: MAX_FILES,
+    videoErrors: extra.videoErrors || [], videoTitle: extra.videoTitle || ''
   });
 }
 
@@ -376,6 +383,103 @@ router.post('/:id/photos/:photoId/delete', writersOnly, async (req, res, next) =
     if (!filePath) return notFound(res);
     removeUploadedPhoto(filePath);
     req.session.flash = { type: 'success', message: await afterPosterChange(announcement, 'Poster removed.') };
+    res.redirect(303, posterRedirect(announcement));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Delete a PUBLISHED post permanently (President only, C23) ----------
+// Step 1 shows what will be lost; step 2 (a POST from that page) deletes it.
+async function findPublishedPost(req, res) {
+  const id = parseId(req.params.id);
+  const announcement = id ? await announcementModel.findById(id) : null;
+  if (!announcement) {
+    notFound(res);
+    return null;
+  }
+  if (announcement.status !== 'published') {
+    req.session.flash = { type: 'error', message: 'Only published posts can be deleted this way. Drafts use "Delete draft".' };
+    res.redirect(303, `/manage/announcements/${id}`);
+    return null;
+  }
+  return announcement;
+}
+
+router.get('/:id/remove', presidentOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPublishedPost(req, res);
+    if (!announcement) return;
+    const photos = await announcementPhotoModel.listForAnnouncement(announcement.id);
+    const videos = await announcementVideoModel.listForAnnouncement(announcement.id);
+    res.render('manage/announcements/remove', {
+      title: `Delete: ${announcement.title}`, announcement, photoCount: photos.length, videoCount: videos.length
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/remove', presidentOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPublishedPost(req, res);
+    if (!announcement) return;
+    // Note the uploaded files first: their rows are deleted with the post
+    const media = [
+      ...await announcementPhotoModel.listForAnnouncement(announcement.id),
+      ...await announcementVideoModel.listForAnnouncement(announcement.id)
+    ];
+    const deleted = await announcementModel.deletePublished(announcement.id);
+    if (deleted === 0) return refuseOrNotFound(req, res, announcement.id, 'Only published posts can be deleted this way.');
+    media.forEach((m) => removeUploadedPhoto(m.file_path));
+    req.session.flash = { type: 'success', message: `"${announcement.title}" was deleted permanently.` };
+    res.redirect(303, '/manage/announcements');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Videos (PRO and President, C21) ----------
+// Same rules as posters: drafts change freely; a published post goes back to Pending.
+const uploadNewsVideo = videoUpload('news');
+
+// writersOnly runs BEFORE the upload, so no file is saved for the wrong role
+router.post('/:id/videos', writersOnly, uploadNewsVideo, async (req, res, next) => {
+  const file = req.file || null;
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return removeFiles(file ? [file] : []);
+
+    const title = String(req.body.title ?? '').trim();
+    const errors = [];
+    if (req.uploadError) errors.push(req.uploadError);
+    if (req.skippedFiles) errors.push('Only MP4, WebM or MOV videos can be uploaded.');
+    if (file && !isRealVideo(file.path)) errors.push('That file is not a real MP4, WebM or MOV video.');
+    if (!file && errors.length === 0) errors.push('Choose a video to upload.');
+    if (title === '' || title.length > 150) errors.push('Give the video a title (up to 150 characters).');
+    if (errors.length > 0) {
+      removeFiles(file ? [file] : []); // all or nothing
+      return renderPosters(res, 422, announcement, [], { videoErrors: errors, videoTitle: title });
+    }
+
+    await announcementVideoModel.add(announcement.id, `/uploads/news/${file.filename}`, title);
+    req.session.flash = { type: 'success', message: await afterPosterChange(announcement, 'Video added.') };
+    res.redirect(303, posterRedirect(announcement));
+  } catch (err) {
+    removeFiles(file ? [file] : []);
+    next(err);
+  }
+});
+
+router.post('/:id/videos/:videoId/delete', writersOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return;
+    const videoId = parseId(req.params.videoId);
+    const filePath = videoId ? await announcementVideoModel.remove(announcement.id, videoId) : null;
+    if (!filePath) return notFound(res);
+    removeUploadedPhoto(filePath);
+    req.session.flash = { type: 'success', message: await afterPosterChange(announcement, 'Video removed.') };
     res.redirect(303, posterRedirect(announcement));
   } catch (err) {
     next(err);

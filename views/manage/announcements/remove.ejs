@@ -1,0 +1,31 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/manage/announcements/<%= announcement.id %>"><span aria-hidden="true">&larr;</span> Back to the post</a>
+
+  <section class="card danger-card" aria-labelledby="remove-title">
+    <p class="eyebrow">President only</p>
+    <h1 id="remove-title">Delete this post permanently?</h1>
+    <p class="lead-text"><strong><%= announcement.title %></strong> &middot; published <%= formatDate(announcement.published_at) %></p>
+
+    <div class="alert alert-error" role="alert">
+      <p><strong>This cannot be undone.</strong> The following will be deleted for good:</p>
+      <ul>
+        <li>the post and its text</li>
+        <li><%= photoCount %> poster<%= photoCount === 1 ? '' : 's' %> and <%= videoCount %> video<%= videoCount === 1 ? '' : 's' %></li>
+      </ul>
+    </div>
+
+    <p class="hint">Only want it off the News page? <strong>Unpublish</strong> it instead: it becomes a draft again and nothing is lost.</p>
+
+    <div class="form-actions">
+      <form method="post" action="/manage/announcements/<%= announcement.id %>/remove" class="inline-form">
+        <button type="submit" class="btn btn-danger">Delete permanently</button>
+      </form>
+      <a class="btn btn-secondary" href="/manage/announcements/<%= announcement.id %>">Keep it</a>
+    </div>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

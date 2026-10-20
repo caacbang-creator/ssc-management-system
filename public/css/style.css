@@ -2701,6 +2701,671 @@ a.poster-frame:hover {
   margin-top: 0;
 }
 
+/* ---------- Documents: resolutions ---------- */
+.reso-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .reso-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .reso-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.reso-card {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+  padding: 0;
+  overflow: hidden;
+  transition: transform var(--speed) ease, border-color var(--speed) ease, box-shadow var(--speed) ease;
+}
+
+.reso-card:hover {
+  border-color: var(--gold-soft);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md), var(--gold-glow);
+}
+
+/* Square pubmat on top; the text in the pubmat must never be cropped */
+.reso-photo {
+  display: block;
+  aspect-ratio: 1 / 1;
+  background: var(--field);
+  border-bottom: 3px solid var(--gold);
+}
+
+.reso-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.reso-photo-empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  color: var(--gold);
+}
+
+.reso-photo-empty svg {
+  width: 64px;
+  height: 64px;
+}
+
+.reso-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  padding: 1rem 1.1rem 1.1rem;
+}
+
+.reso-no {
+  margin: 0;
+  color: var(--gold);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.reso-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.4;
+}
+
+/* Resolution titles are long: show at most four lines on the card */
+.reso-title a {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.reso-title a:hover {
+  text-decoration: underline;
+}
+
+.reso-body .meta {
+  margin: 0;
+}
+
+.reso-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
+/* One resolution: pubmat beside the details */
+.reso-detail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 900px) {
+  .reso-detail {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 1.5rem;
+  }
+}
+
+.reso-detail-photo img {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-md);
+}
+
+.reso-detail-info {
+  margin-bottom: 0;
+  border-top: 3px solid var(--gold);
+}
+
+.reso-detail-title {
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+
+.reso-detail-sub {
+  font-size: var(--text-base);
+}
+
+/* Inline PDF viewer: wide screens only (phone browsers often cannot show PDFs in a page) */
+.pdf-viewer iframe {
+  display: block;
+  width: 100%;
+  height: 80vh;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+@media (max-width: 899px) {
+  .pdf-viewer {
+    display: none;
+  }
+}
+
+/* Financial report cards with a budget bar (the numbers are also written out) */
+.money-card h3 {
+  margin: 0.15rem 0 0.5rem;
+}
+
+.money-bar {
+  width: 100%;
+  height: 10px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--line);
+  overflow: hidden;
+  appearance: none;
+}
+
+.money-bar::-webkit-progress-bar {
+  background: var(--line);
+  border-radius: 5px;
+}
+
+.money-bar::-webkit-progress-value {
+  background: var(--gold);
+  border-radius: 5px;
+}
+
+.money-bar::-moz-progress-bar {
+  background: var(--gold);
+  border-radius: 5px;
+}
+
+.money-figures {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.money-figures strong {
+  color: var(--white);
+}
+
+.doc-card h3 {
+  margin-top: 0.25rem;
+}
+
+/* Officer files page */
+.file-label {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-base);
+}
+
+.file-thumb {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  margin-bottom: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+/* ---------- Financial reports: ledger tables ---------- */
+.ledger th,
+.ledger td {
+  font-size: var(--text-sm);
+}
+
+/* Row headers (item, product) read as normal text, not as small grey labels */
+.ledger tbody th {
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: normal;
+  border-bottom-color: var(--line);
+}
+
+/* The item name spans its receipts, like the paper report */
+.ledger-item {
+  vertical-align: top;
+  background: rgba(242, 193, 78, 0.06);
+  border-right: 1px solid var(--line);
+}
+
+.ledger tfoot th,
+.ledger tfoot td {
+  border-top: 2px solid var(--gold);
+  border-bottom: 0;
+  color: var(--white);
+  font-size: var(--text-base);
+  font-weight: 700;
+  background: rgba(242, 193, 78, 0.08);
+}
+
+.ledger tfoot th {
+  text-align: right;
+}
+
+.ledger-actions {
+  white-space: nowrap;
+}
+
+.ledger-actions .inline-form {
+  margin-left: 0.3rem;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* "Add a receipt" / "Add a product" forms laid out in one row on wide screens */
+.line-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 0.75rem;
+  align-items: end;
+}
+
+@media (min-width: 700px) {
+  .line-form {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .line-form-wide {
+    grid-column: span 2;
+  }
+}
+
+.line-form-button {
+  margin-bottom: 1.1rem;
+}
+
+/* Annual budget card */
+.budget-card {
+  border-top: 3px solid var(--gold);
+}
+
+.budget-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.budget-head h3 {
+  margin: 0;
+}
+
+.budget-head .meta {
+  margin: 0.15rem 0 0;
+}
+
+.budget-figures {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 800px) {
+  .budget-figures {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.budget-figures > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* Report cards: expenses, sales and net as small labelled chips */
+.money-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.money-chip {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.money-chip-label {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.money-chip-net {
+  border-color: var(--gold-soft);
+}
+
+/* Sales table beside the income summary */
+.report-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.report-split > .card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 900px) {
+  .report-split {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  }
+}
+
+.income-card {
+  border-top: 3px solid var(--gold);
+}
+
+.income-list {
+  margin: 0;
+}
+
+.income-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.income-list dt {
+  color: var(--muted);
+}
+
+.income-list dd {
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ".income-list > .income-total" beats ".income-list > div", so no !important is needed */
+.income-list > .income-total {
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-bottom: 0;
+  border-top: 2px solid var(--gold);
+}
+
+.income-total dt,
+.income-total dd {
+  color: var(--white);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+/* ---------- Permanent delete confirmation (President, C23) ---------- */
+.danger-card {
+  border-top: 3px solid var(--danger);
+}
+
+.lead-text {
+  margin: 0 0 1rem;
+  font-size: var(--text-lg);
+}
+
+.danger-card .alert ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* ---------- Videos (C21) ---------- */
+.video-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 800px) {
+  .video-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.video-figure {
+  margin: 0;
+}
+
+/* 16:9 box with a dark background, so tall phone videos are letterboxed, not stretched */
+.video-figure video,
+.video-admin-item video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: #000;
+}
+
+.video-figure figcaption {
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.video-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 1rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 800px) {
+  .video-form {
+    grid-template-columns: 1fr 1fr auto;
+  }
+
+  .video-form .btn {
+    margin-bottom: 2.6rem;
+  }
+}
+
+.video-admin-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.video-admin-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+@media (min-width: 700px) {
+  .video-admin-item {
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.video-title {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+}
+
+/* ---------- Items and the borrowing log (Property Custodian, C19) ---------- */
+.item-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 700px) {
+  .item-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .item-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.item-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  border-top: 3px solid var(--gold);
+}
+
+/* Not available: a muted red edge (the pill says it in words too) */
+.item-card-off {
+  border-top-color: #FCA5A5;
+}
+
+.item-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.item-name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+}
+
+.item-card-head .meta {
+  margin: 0.15rem 0 0;
+}
+
+.item-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin: 0;
+}
+
+.item-facts {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem 1rem;
+  margin: 0;
+}
+
+.item-facts dt {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.item-facts dd {
+  margin: 0.1rem 0 0;
+}
+
+/* The last borrower gets the whole row */
+.item-facts > div:last-child {
+  grid-column: 1 / -1;
+}
+
+.item-actions {
+  margin-top: auto;
+}
+
+/* Borrowing desk: one card per request or loan, with its form beside it on wide screens */
+.loan-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.loan-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0;
+}
+
+@media (min-width: 900px) {
+  .loan-card {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: center;
+  }
+}
+
+.loan-overdue {
+  border-left: 4px solid #FCA5A5;
+}
+
+.loan-main p {
+  margin: 0 0 0.25rem;
+}
+
+.loan-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.loan-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 0.75rem;
+  align-items: end;
+}
+
+@media (min-width: 600px) {
+  .loan-form {
+    grid-template-columns: 1fr 1.4fr auto;
+  }
+
+  .loan-form .btn {
+    margin-bottom: 1.1rem;
+  }
+}
+
+.last-borrower {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--gold-soft);
+  border-radius: var(--radius);
+  background: rgba(242, 193, 78, 0.06);
+}
+
+.status-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
 /* ---------- About page ---------- */
 /* Header: SSC seal beside the title on wide screens (uses .photo-hero below) */
 .about-hero-inner {
@@ -3288,6 +3953,7 @@ img.team-avatar {
   .quick-tile:hover,
   .goal-card:hover,
   .concern-card:hover,
+  .reso-card:hover,
   .portrait-card:hover,
   .portrait-card:hover .portrait-frame img,
   .photo-strip-item:hover img {

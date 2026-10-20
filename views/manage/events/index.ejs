@@ -54,7 +54,7 @@
               <td><a href="/manage/events/<%= e.id %>"><%= e.title %></a></td>
               <td><%- include('../../partials/status-pill', { status: e.status }) %></td>
               <td><%= formatDate(e.event_date) %></td>
-              <td class="num"><%= e.registered_count %> / <%= e.capacity %></td>
+              <td class="num"><%= e.registered_count %><%= e.capacity === null ? ' (no limit)' : ' / ' + e.capacity %></td>
             </tr>
           <% }) %>
         </tbody>

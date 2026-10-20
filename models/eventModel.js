@@ -78,7 +78,8 @@ async function register(eventId, userId) {
       'SELECT COUNT(*) AS total FROM event_registrations WHERE event_id = ?',
       [eventId]
     );
-    if (counts[0].total >= events[0].capacity) {
+    // capacity NULL = no limit (C22)
+    if (events[0].capacity !== null && counts[0].total >= events[0].capacity) {
       await conn.rollback();
       return 'full';
     }
@@ -189,6 +190,16 @@ async function deleteDraft(id) {
   return result.affectedRows;
 }
 
+// President only (C23): permanently deletes an event that is public (published, completed or
+// cancelled). Registrations, photos and videos rows go with it (ON DELETE CASCADE).
+async function deletePublic(id) {
+  const [result] = await pool.query(
+    `DELETE FROM events WHERE id = ? AND status IN ('published', 'completed', 'cancelled')`,
+    [id]
+  );
+  return result.affectedRows;
+}
+
 // draft -> pending
 async function submit(id) {
   const [result] = await pool.query(
@@ -203,7 +214,7 @@ async function approve(id, reviewerId) {
   const [result] = await pool.query(
     `UPDATE events
      SET status = 'published', reviewed_by = ?, review_remarks = NULL, published_at = NOW()
-     WHERE id = ? AND status = 'pending' AND event_date >= CURDATE()`,
+     WHERE id = ? AND status = 'pending'`,
     [reviewerId, id]
   );
   return result.affectedRows;
@@ -273,6 +284,7 @@ module.exports = {
   updateDraft,
   updatePublished,
   deleteDraft,
+  deletePublic,
   submit,
   approve,
   returnToDraft,

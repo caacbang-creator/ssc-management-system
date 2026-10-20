@@ -39,7 +39,12 @@ async function getOfficerCounts() {
        (SELECT COUNT(*) FROM resolutions WHERE status = 'draft') AS resolutions_draft,
        (SELECT COUNT(*) FROM resolutions WHERE status = 'pending') AS resolutions_pending,
        (SELECT COUNT(*) FROM documents WHERE status = 'draft') AS documents_draft,
-       (SELECT COUNT(*) FROM documents WHERE status = 'pending') AS documents_pending`
+       (SELECT COUNT(*) FROM documents WHERE status = 'pending') AS documents_pending,
+       (SELECT COUNT(*) FROM transactions t
+        WHERE t.type = 'item_borrowing' AND t.status = 'approved'
+          AND NOT EXISTS (SELECT 1 FROM item_loans l WHERE l.transaction_id = t.id)) AS loans_to_release,
+       (SELECT COUNT(*) FROM item_loans WHERE returned_at IS NULL) AS loans_out,
+       (SELECT COUNT(*) FROM item_loans WHERE returned_at IS NULL AND due_date < CURDATE()) AS loans_overdue`
   );
   return rows[0];
 }

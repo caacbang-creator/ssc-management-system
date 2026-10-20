@@ -8,7 +8,7 @@
     <div>
       <p class="eyebrow">Who's coming</p>
       <h1><%= event.title %></h1>
-      <p class="page-lead"><%= formatDate(event.event_date) %> &middot; <strong><%= registrants.length %> of <%= event.capacity %></strong> spots taken</p>
+      <p class="page-lead"><%= formatDate(event.event_date) %> &middot; <% if (event.capacity === null) { %><strong><%= registrants.length %></strong> registered (no limit)<% } else { %><strong><%= registrants.length %> of <%= event.capacity %></strong> spots taken<% } %></p>
     </div>
   </div>
 

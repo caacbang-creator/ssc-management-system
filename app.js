@@ -65,6 +65,7 @@ app.locals.roleLabels = {
   vp_internal: 'Vice President for Internal Affairs',
   treasurer: 'Treasurer',
   secretary: 'Secretary',
+  property_custodian: 'Property Custodian',
   president: 'President'
 };
 
@@ -73,6 +74,13 @@ app.locals.formatMoney = (value) => {
   const amount = Number(value);
   const text = Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (amount < 0 ? '-₱' : '₱') + text;
+};
+
+// The school year a date falls in, e.g. '2026-2027'. A school year runs June to May,
+// so July 2026 -> '2026-2027' and March 2027 -> '2026-2027'.
+app.locals.schoolYearOf = (date = new Date()) => {
+  const start = date.getMonth() >= 5 ? date.getFullYear() : date.getFullYear() - 1;
+  return `${start}-${start + 1}`;
 };
 
 // The three request types (decision C11). The keys match the ENUM in schema.sql and
@@ -167,7 +175,7 @@ app.use('/manage/announcements', requireRole('pro', 'vp_internal', 'president'),
 app.use('/manage/events', requireRole('pro', 'vp_internal', 'president'), manageEventRoutes);
 app.use('/manage/concerns', requireRole('pro', 'vp_internal', 'president'), manageConcernRoutes);
 app.use('/manage/transactions', requireRole('pro', 'vp_internal', 'president'), manageTransactionRoutes);
-app.use('/manage/items', requireRole('pro', 'president'), manageItemRoutes);
+app.use('/manage/items', requireRole('property_custodian', 'president'), manageItemRoutes);
 app.use('/manage/financial-reports', requireRole('treasurer', 'vp_internal', 'president'), manageFinancialReportRoutes);
 app.use('/manage/resolutions', requireRole('secretary', 'vp_internal', 'president'), manageResolutionRoutes);
 app.use('/manage/documents', requireRole('secretary', 'president'), manageDocumentRoutes);
@@ -191,6 +199,10 @@ app.use((err, req, res, next) => {
   res.status(500).render('errors/500', { title: 'Something went wrong' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`SSC system running at http://localhost:${PORT}`);
 });
+
+// Node stops a request after 5 minutes by default. A 250 MB video (C21) on slow Wi-Fi can
+// take longer, so uploads get up to 30 minutes.
+server.requestTimeout = 30 * 60 * 1000;

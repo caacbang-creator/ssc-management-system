@@ -2,6 +2,7 @@
 const express = require('express');
 const announcementModel = require('../models/announcementModel');
 const announcementPhotoModel = require('../models/announcementPhotoModel');
+const announcementVideoModel = require('../models/announcementVideoModel');
 
 const router = express.Router();
 
@@ -23,7 +24,8 @@ router.get('/:id', async (req, res, next) => {
       return res.status(404).render('errors/404', { title: 'Page not found' });
     }
     const photos = await announcementPhotoModel.listForAnnouncement(id);
-    res.render('announcements/show', { title: announcement.title, announcement, photos });
+    const videos = await announcementVideoModel.listForAnnouncement(id);
+    res.render('announcements/show', { title: announcement.title, announcement, photos, videos });
   } catch (err) {
     next(err);
   }

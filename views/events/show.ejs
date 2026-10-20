@@ -2,7 +2,9 @@
 <%- include('../partials/nav') %>
 
 <%
-  const spotsLeft = event.capacity - event.registered_count;
+  // capacity NULL = no limit (C22)
+  const unlimited = event.capacity === null;
+  const spotsLeft = unlimited ? Infinity : event.capacity - event.registered_count;
   // Same rule as the server: published, not past, not full. The server checks again on submit.
   const d = new Date();
   const todayText = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -28,6 +30,9 @@
       <% if (photos.length > 0) { %>
         <%- include('../partials/photo-gallery', { photos, title: event.title }) %>
       <% } %>
+      <% if (videos.length > 0) { %>
+        <%- include('../partials/video-list', { videos }) %>
+      <% } %>
 
       <article class="card">
         <h2>About this event</h2>
@@ -49,10 +54,10 @@
           <dt>Time</dt>
           <dd><%= formatTime(event.start_time) %><% if (event.end_time) { %> &ndash; <%= formatTime(event.end_time) %><% } %></dd>
           <dt>Venue</dt>
-          <dd><%= event.venue %></dd>
+          <dd><%= event.venue || 'Venue to be announced' %></dd>
           <% if (event.status === 'published') { %>
             <dt>Spots</dt>
-            <dd><%= spotsLeft > 0 ? spotsLeft + ' of ' + event.capacity + ' left' : 'Full' %></dd>
+            <dd><%= unlimited ? 'No limit' : (spotsLeft > 0 ? spotsLeft + ' of ' + event.capacity + ' left' : 'Full') %></dd>
           <% } %>
         </dl>
 

@@ -1,0 +1,99 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<%
+  const CONDITION_LABELS = { good: 'Good', damaged: 'Damaged', lost: 'Lost' };
+%>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/items"><span aria-hidden="true">&larr;</span> Items</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Property Custodian</p>
+      <h1>Borrowing desk</h1>
+      <p class="page-lead">Hand over approved requests, record walk-in loans, and mark items returned.</p>
+    </div>
+    <a class="btn btn-primary" href="/manage/items/loans/new">Record a walk-in loan <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  </div>
+
+  <%# ---------- Approved requests waiting at the office ---------- %>
+  <section aria-labelledby="ready-title">
+    <div class="section-heading">
+      <h2 id="ready-title">Ready to hand over (<%= ready.length %>)</h2>
+    </div>
+    <% if (ready.length === 0) { %>
+      <div class="card empty-state"><p>No approved requests are waiting.</p></div>
+    <% } else { %>
+      <div class="loan-list">
+        <% ready.forEach((r) => { %>
+          <article class="card loan-card">
+            <div class="loan-main">
+              <p class="loan-title"><strong><%= r.quantity %> &times; <%= r.item_name %></strong> <span class="meta">&middot; request <%= r.reference_no %></span></p>
+              <p class="meta">For <strong><%= r.borrower_name %></strong> (<%= r.student_no %>) &middot; borrow <%= formatDate(r.preferred_date) %> &middot; return by <%= formatDate(r.return_date) %></p>
+              <p class="meta">Purpose: <%= r.purpose %></p>
+              <% if (r.item_status !== 'available') { %>
+                <p class="alert alert-error">This item is marked "Not available". Change its status before handing it over.</p>
+              <% } %>
+            </div>
+            <% if (errorFor === 'release-' + r.id) { %><%- include('../../partials/form-errors') %><% } %>
+            <form method="post" action="/manage/items/loans/release/<%= r.id %>" class="loan-form" novalidate>
+              <div class="form-field">
+                <label for="due-<%= r.id %>">Due back</label>
+                <input type="date" id="due-<%= r.id %>" name="due_date" value="<%= String(r.return_date).slice(0, 10) %>" min="<%= minDate %>" required>
+              </div>
+              <div class="form-field">
+                <label for="rnote-<%= r.id %>">Note <span class="optional">(optional)</span></label>
+                <input type="text" id="rnote-<%= r.id %>" name="notes" maxlength="255" placeholder="e.g. with HDMI cable">
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Hand over</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <%# ---------- Out right now ---------- %>
+  <section class="section-gap" aria-labelledby="out-title">
+    <div class="section-heading">
+      <h2 id="out-title">Out right now (<%= open.length %>)</h2>
+    </div>
+    <% if (open.length === 0) { %>
+      <div class="card empty-state"><p>Everything is back in the office.</p></div>
+    <% } else { %>
+      <div class="loan-list">
+        <% open.forEach((l) => { %>
+          <article class="card loan-card<%= l.overdue ? ' loan-overdue' : '' %>">
+            <div class="loan-main">
+              <p class="loan-title">
+                <strong><%= l.quantity %> &times; <%= l.item_name %></strong>
+                <% if (l.overdue) { %><span class="pill pill-rejected">Overdue</span><% } else { %><span class="pill pill-under-review">Out</span><% } %>
+              </p>
+              <p class="meta"><strong><%= l.borrower_name %></strong> (<%= l.student_no %>) &middot; since <%= formatDate(l.released_at) %> &middot; due <%= formatDate(l.due_date) %></p>
+              <p class="meta"><%= l.reference_no ? 'Request ' + l.reference_no : 'Walk-in loan' %><% if (l.notes) { %> &middot; <%= l.notes %><% } %></p>
+            </div>
+            <% if (errorFor === 'return-' + l.id) { %><%- include('../../partials/form-errors') %><% } %>
+            <form method="post" action="/manage/items/loans/<%= l.id %>/return" class="loan-form" novalidate>
+              <div class="form-field">
+                <label for="cond-<%= l.id %>">Came back</label>
+                <select id="cond-<%= l.id %>" name="condition">
+                  <% Object.entries(CONDITION_LABELS).forEach(([value, label]) => { %>
+                    <option value="<%= value %>"><%= label %></option>
+                  <% }) %>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="note-<%= l.id %>">Note <span class="optional">(optional)</span></label>
+                <input type="text" id="note-<%= l.id %>" name="notes" maxlength="255" placeholder="e.g. cable missing">
+              </div>
+              <button type="submit" class="btn btn-secondary btn-sm">Mark returned</button>
+            </form>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

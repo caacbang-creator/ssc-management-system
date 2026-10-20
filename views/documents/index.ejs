@@ -4,102 +4,165 @@
 <%
   const role = currentUser ? currentUser.role : '';
   const docTypeLabel = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  // The year's budget against what its published reports spent (all computed, nothing stored)
+  const yearBudget = budget ? Number(budget.amount) : 0;
+  const yearSpent = Number(yearTotals.spent);
+  const yearSales = Number(yearTotals.sales);
+  const yearUsed = yearBudget > 0 ? Math.min(100, Math.round(yearSpent / yearBudget * 100)) : 0;
+  const yearLabel = schoolYear.replace('-', '–');
 %>
 
-<main id="main" class="container">
-  <div class="page-heading">
-    <div>
+<main id="main">
+  <section class="photo-hero" aria-labelledby="docs-title">
+    <div class="container photo-hero-inner fade-up">
       <p class="eyebrow">Transparency</p>
-      <h1>Reports and documents</h1>
-      <p class="page-lead">See how student funds are used and what the council has decided.</p>
+      <h1 id="docs-title">Reports and <span class="hero-accent">documents</span></h1>
+      <p class="photo-hero-lead">See what the council has decided and how student funds are used.</p>
+      <% if (['treasurer', 'secretary', 'vp_internal', 'president'].includes(role)) { %>
+        <div class="action-row">
+          <% if (['secretary', 'vp_internal', 'president'].includes(role)) { %>
+            <a class="btn btn-light" href="/manage/resolutions">Manage resolutions</a>
+          <% } %>
+          <% if (['treasurer', 'vp_internal', 'president'].includes(role)) { %>
+            <a class="btn btn-outline-light" href="/manage/financial-reports">Manage reports</a>
+          <% } %>
+          <% if (['secretary', 'president'].includes(role)) { %>
+            <a class="btn btn-outline-light" href="/manage/documents">Manage documents</a>
+          <% } %>
+        </div>
+      <% } %>
     </div>
-    <% if (['treasurer', 'secretary', 'vp_internal', 'president'].includes(role)) { %>
-      <div class="action-row">
-        <% if (['treasurer', 'vp_internal', 'president'].includes(role)) { %>
-          <a class="btn btn-secondary" href="/manage/financial-reports">Manage reports</a>
-        <% } %>
-        <% if (['secretary', 'vp_internal', 'president'].includes(role)) { %>
-          <a class="btn btn-secondary" href="/manage/resolutions">Manage resolutions</a>
-        <% } %>
-        <% if (['secretary', 'president'].includes(role)) { %>
-          <a class="btn btn-secondary" href="/manage/documents">Manage documents</a>
-        <% } %>
-      </div>
-    <% } %>
-  </div>
-
-  <%# Money first: it's what students ask about most %>
-  <section aria-labelledby="money-title">
-    <div class="section-heading">
-      <h2 id="money-title">Where the money goes</h2>
-    </div>
-    <% if (reports.length === 0) { %>
-      <div class="card empty-state"><p>No financial reports published yet.</p></div>
-    <% } else { %>
-      <div class="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Report</th>
-              <th scope="col">Period</th>
-              <th scope="col" class="num">Budget</th>
-              <th scope="col" class="num">Spent</th>
-              <th scope="col" class="num">Left</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% reports.forEach((r) => { %>
-              <tr>
-                <td><a href="/documents/financial-reports/<%= r.id %>"><%= r.title %></a></td>
-                <td><%= formatDate(r.period_start) %> &ndash; <%= formatDate(r.period_end) %></td>
-                <td class="num"><%= formatMoney(r.budget) %></td>
-                <td class="num"><%= formatMoney(r.expenses) %></td>
-                <td class="num"><strong><%= formatMoney(r.remaining_balance) %></strong><% if (Number(r.remaining_balance) < 0) { %> (over budget)<% } %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
   </section>
 
-  <div class="card-grid-2 section-gap">
-    <section class="card" aria-labelledby="resolutions-title">
-      <h2 id="resolutions-title">Resolutions</h2>
+  <div class="container">
+    <%# ---------- Three numbers over the header ---------- %>
+    <h2 class="visually-hidden">At a glance</h2>
+    <div class="hero-overlap fade-up fade-up-delay-1">
+      <a class="card stat-card dash-stat" href="#resolutions-title">
+        <span class="icon-tile"><%- include('../partials/icon', { name: 'file' }) %></span>
+        <span><span class="stat-number"><%= resolutions.length %></span> <span class="stat-label">Resolutions published</span></span>
+      </a>
+      <a class="card stat-card dash-stat" href="#money-title">
+        <span class="icon-tile"><%- include('../partials/icon', { name: 'money' }) %></span>
+        <span><span class="stat-number"><%= formatMoney(yearSpent) %></span> <span class="stat-label">Spent<% if (budget) { %> of the <%= formatMoney(yearBudget) %> budget<% } %></span></span>
+      </a>
+      <a class="card stat-card dash-stat" href="#other-title">
+        <span class="icon-tile"><%- include('../partials/icon', { name: 'book' }) %></span>
+        <span><span class="stat-number"><%= documents.length %></span> <span class="stat-label">Other documents</span></span>
+      </a>
+    </div>
+
+    <%# ---------- Resolutions: pubmat + Details / Preview / Download ---------- %>
+    <section class="section-gap" aria-labelledby="resolutions-title">
+      <div class="section-heading">
+        <h2 id="resolutions-title">Resolutions</h2>
+      </div>
       <% if (resolutions.length === 0) { %>
-        <p class="muted">None published yet.</p>
+        <div class="card empty-state"><p>No resolutions published yet.</p></div>
       <% } else { %>
-        <ul class="plain-list">
+        <div class="reso-grid">
           <% resolutions.forEach((r) => { %>
-            <li>
-              <a href="/documents/resolutions/<%= r.id %>"><%= r.title %></a>
-              <div class="meta"><%= r.resolution_no %> &middot; adopted <%= formatDate(r.date_adopted) %></div>
-            </li>
+            <article class="card reso-card">
+              <a class="reso-photo" href="/documents/resolutions/<%= r.id %>" tabindex="-1" aria-hidden="true">
+                <% if (r.photo_path) { %>
+                  <img src="<%= r.photo_path %>" alt="" loading="lazy">
+                <% } else { %>
+                  <span class="reso-photo-empty"><%- include('../partials/icon', { name: 'file' }) %></span>
+                <% } %>
+              </a>
+              <div class="reso-body">
+                <p class="reso-no"><%= resolutionLabel(r.resolution_no) %></p>
+                <h3 class="reso-title"><a href="/documents/resolutions/<%= r.id %>"><%= r.title %></a></h3>
+                <p class="meta">Adopted <%= formatDate(r.date_adopted) %></p>
+                <div class="reso-actions">
+                  <a class="btn btn-secondary btn-sm" href="/documents/resolutions/<%= r.id %>">Details</a>
+                  <% if (r.pdf_path) { %>
+                    <a class="btn btn-secondary btn-sm" href="<%= r.pdf_path %>" target="_blank" rel="noopener">Preview <span class="visually-hidden">PDF (opens in a new tab)</span></a>
+                    <a class="btn btn-secondary btn-sm" href="<%= r.pdf_path %>" download="<%= r.resolution_no %>.pdf">Download <span class="visually-hidden">PDF</span></a>
+                  <% } %>
+                </div>
+              </div>
+            </article>
           <% }) %>
-        </ul>
+        </div>
       <% } %>
     </section>
 
-    <section class="card" aria-labelledby="other-title">
-      <h2 id="other-title">Other documents</h2>
-      <% if (documents.length === 0) { %>
-        <p class="muted">None published yet.</p>
+    <%# ---------- Financial reports: a bar shows how much of the budget was used ---------- %>
+    <section class="section-gap" aria-labelledby="money-title">
+      <div class="section-heading">
+        <h2 id="money-title">Where the money goes</h2>
+      </div>
+      <%# The whole year at a glance: budget, spent, left %>
+      <% if (budget) { %>
+        <div class="card budget-card">
+          <div class="budget-head">
+            <span class="icon-tile"><%- include('../partials/icon', { name: 'money' }) %></span>
+            <div>
+              <h3>Annual budget, school year <%= yearLabel %></h3>
+              <p class="meta">Spending is added up from the published reports below.</p>
+            </div>
+          </div>
+          <div class="budget-figures">
+            <div><span class="stat-number"><%= formatMoney(yearBudget) %></span><span class="stat-label">Budget</span></div>
+            <div><span class="stat-number"><%= formatMoney(yearSpent) %></span><span class="stat-label">Spent</span></div>
+            <div><span class="stat-number"><%= formatMoney(yearBudget - yearSpent) %></span><span class="stat-label"><%= yearBudget - yearSpent < 0 ? 'Over budget' : 'Left' %></span></div>
+            <% if (yearSales > 0) { %>
+              <div><span class="stat-number"><%= formatMoney(yearSales) %></span><span class="stat-label">Income from sales</span></div>
+            <% } %>
+          </div>
+          <progress class="money-bar" max="100" value="<%= yearUsed %>" aria-label="Annual budget used"><%= yearUsed %>%</progress>
+          <p class="hint"><%= yearUsed %>% of the annual budget used so far.</p>
+        </div>
+      <% } %>
+
+      <% if (reports.length === 0) { %>
+        <div class="card empty-state"><p>No financial reports published yet.</p></div>
       <% } else { %>
-        <ul class="plain-list">
-          <% documents.forEach((d) => { %>
-            <li>
-              <a href="/documents/other/<%= d.id %>"><%= d.title %></a>
-              <div class="meta"><span class="tag"><%= docTypeLabel(d.doc_type) %></span> <%= formatDate(d.published_at) %></div>
-            </li>
+        <div class="card-grid-2">
+          <% reports.forEach((r) => { %>
+            <% const spent = Number(r.total_expenses); const sold = Number(r.total_sales); %>
+            <a class="card link-card money-card" href="/documents/financial-reports/<%= r.id %>">
+              <span class="meta"><%= formatDate(r.period_start) %><% if (r.period_end !== r.period_start) { %> &ndash; <%= formatDate(r.period_end) %><% } %></span>
+              <h3><%= r.title %></h3>
+              <span class="money-chips">
+                <span class="money-chip"><span class="money-chip-label">Expenses</span> <strong><%= formatMoney(spent) %></strong></span>
+                <% if (sold > 0) { %>
+                  <span class="money-chip"><span class="money-chip-label">Sales</span> <strong><%= formatMoney(sold) %></strong></span>
+                  <span class="money-chip money-chip-net"><span class="money-chip-label"><%= sold - spent >= 0 ? 'Net income' : 'Net loss' %></span> <strong><%= formatMoney(sold - spent) %></strong></span>
+                <% } %>
+              </span>
+              <span class="card-link">See the receipts <span class="arrow" aria-hidden="true">&rarr;</span></span>
+            </a>
           <% }) %>
-        </ul>
+        </div>
       <% } %>
     </section>
-  </div>
 
-  <div class="page-end">
-    <p>Have a question about a report?</p>
-    <a class="btn btn-primary" href="/concerns/new">Ask the SSC <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    <%# ---------- Other documents ---------- %>
+    <section class="section-gap" aria-labelledby="other-title">
+      <div class="section-heading">
+        <h2 id="other-title">Other documents</h2>
+      </div>
+      <% if (documents.length === 0) { %>
+        <div class="card empty-state"><p>No other documents published yet.</p></div>
+      <% } else { %>
+        <div class="card-grid-3">
+          <% documents.forEach((d) => { %>
+            <a class="card link-card doc-card" href="/documents/other/<%= d.id %>">
+              <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: 'file' }) %></span>
+              <span class="meta"><span class="tag"><%= docTypeLabel(d.doc_type) %></span> <%= formatDate(d.published_at) %></span>
+              <h3><%= d.title %></h3>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <div class="page-end">
+      <p>Have a question about a report or a resolution?</p>
+      <a class="btn btn-primary" href="/concerns/new">Ask the SSC <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    </div>
   </div>
 </main>
 

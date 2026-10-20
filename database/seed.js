@@ -45,8 +45,8 @@ async function main() {
 
     // ---------- users ----------
     // Officers: the real SY 2026-2027 SSC officers with their school e-mails (decision C15).
-    // Their student numbers are placeholders. VP External, Auditor and Property Custodian
-    // have no officer role in the system, so they log in as students.
+    // Their student numbers are placeholders. VP External and Auditor have no officer role in
+    // the system, so they log in as students. The Property Custodian manages items (C19).
     // Students: fake demo accounts.
     const users = [
       // key, student_no, first, last, email, role, requested_role, request_status
@@ -58,7 +58,7 @@ async function main() {
       ['auditor', '2024-10006', 'Krystine', 'Gospe', 'krgospe@my.cspc.edu.ph', 'student', null, 'none'],
       // The PIO holds the pro role (announcements and events)
       ['pro', '2024-10007', 'Camille', 'Salvadora', 'casalvadora@my.cspc.edu.ph', 'pro', null, 'none'],
-      ['custodian', '2024-10008', 'Luke', 'Ronquillo', 'luronquillo@my.cspc.edu.ph', 'student', null, 'none'],
+      ['custodian', '2024-10008', 'Luke', 'Ronquillo', 'luronquillo@my.cspc.edu.ph', 'property_custodian', null, 'none'],
       ['paolo', '2025-10009', 'Paolo', 'Reyes', 'paolo.reyes@my.cspc.edu.ph', 'student', null, 'none'],
       ['aisha', '2025-10010', 'Aisha', 'Mamalinta', 'aisha.mamalinta@my.cspc.edu.ph', 'student', null, 'none'],
       ['liza', '2025-10011', 'Liza', 'Ramos', 'liza.ramos@my.cspc.edu.ph', 'student', 'pro', 'pending'],
@@ -74,7 +74,7 @@ async function main() {
       );
       ids[key] = result.insertId;
     }
-    const { president, vpInternal, pro, treasurer, secretary, paolo, aisha, liza } = ids;
+    const { president, vpInternal, pro, treasurer, secretary, custodian, paolo, aisha, liza } = ids;
 
     // ---------- About SSC (the single row) ----------
     await conn.query(
@@ -295,22 +295,149 @@ async function main() {
         dayFromToday(4), 'Please pick up at the SSC office.', vpInternal]
     );
 
-    // ---------- financial report, resolution, document ----------
+    // ---------- borrowing log (C19): one returned loan and one walk-in that is overdue ----------
+    // T-0002 above is approved but not handed over yet, so it waits on the custodian's desk.
     await conn.query(
-      `INSERT INTO financial_reports (title, period_start, period_end, budget, expenses, notes,
-         status, created_by, reviewed_by, published_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'published', ?, ?, NOW())`,
-      ['Freshmen Welcome Assembly expenses', dayFromToday(-60), dayFromToday(-30), 15000.00, 12350.50,
-        'Sound system rental, snacks and printed programs.', treasurer, president]
+      `INSERT INTO item_loans (item_id, borrower_id, quantity, released_at, released_by, due_date,
+         returned_at, returned_by, return_condition, notes)
+       VALUES (?, ?, 1, ?, ?, ?, ?, ?, 'good', ?)`,
+      [itemIds[1], aisha, `${dayFromToday(-12)} 09:00:00`, custodian, dayFromToday(-10),
+        `${dayFromToday(-10)} 16:30:00`, custodian, 'Walk-in for a CCS seminar']
     );
     await conn.query(
-      `INSERT INTO resolutions (resolution_no, title, body, date_adopted, status, created_by,
-         reviewed_by, published_at)
-       VALUES (?, ?, ?, ?, 'published', ?, ?, NOW())`,
-      [`SSC-RES-${year}-001`, 'Adopting the SSC calendar of activities',
-        'Resolved, that the SSC adopts the attached calendar of activities for the school year.',
-        dayFromToday(-20), secretary, president]
+      `INSERT INTO item_loans (item_id, borrower_id, quantity, released_at, released_by, due_date, notes)
+       VALUES (?, ?, 2, ?, ?, ?, ?)`,
+      [itemIds[0], liza, `${dayFromToday(-4)} 13:00:00`, custodian, dayFromToday(-1), 'Walk-in for a booth']
     );
+
+    // ---------- annual budget and liquidation reports (decision C18) ----------
+    await conn.query(
+      'INSERT INTO annual_budgets (school_year, amount, updated_by) VALUES (?, ?, ?)',
+      ['2026-2027', 1000000.00, treasurer]
+    );
+
+    // The SSC's liquidation reports, line by line. Totals are NOT stored: the app adds them up
+    // (SaurBETes: expenses 6,446.00, sales 6,930.00, net income 484.00; ORSEM 2026: expenses 5,731.00).
+    const liquidations = [
+      {
+        title: 'Liquidation Report: SSC SaurBETes',
+        start: '2026-08-04', end: '2026-08-05',
+        notes: 'Held on August 4 and 5, 2026.',
+        // item, receipt no. (null = acknowledgement receipt), date, particulars, amount
+        expenses: [
+          ['Ice Cream', null, '2026-08-04', 'Acknowledgement Receipt', 3100.00],
+          ['Ice Cream', null, '2026-08-05', 'Acknowledgement Receipt', 3100.00],
+          ['Tissues', '0001283', '2026-08-04', 'C.G Baking\'s and Milktea Supplies Trading', 65.00],
+          ['Tissues', '018105', '2026-08-05', 'LCC Supermarket', 58.00],
+          ['Utensils', '0001286', '2026-08-04', 'C.G Baking\'s and Milktea Supplies Trading', 48.00],
+          ['Utensils', '0001288', '2026-08-04', 'C.G Baking\'s and Milktea Supplies Trading', 75.00]
+        ],
+        // product, quantity sold, unit price
+        sales: [
+          ['Ice Cream (Cone)', 206, 15.00],
+          ['Ice Cream (Cup)', 192, 20.00]
+        ]
+      },
+      {
+        title: 'Liquidation Report: ORSEM 2026',
+        start: '2026-08-04', end: '2026-08-05',
+        notes: 'Held on August 4 and 5, 2026. Receipts are dated from July 15 to August 5, 2026.',
+        expenses: [
+          ['Meals', '1168', '2026-07-15', 'Jollibee Nabua', 400.00],
+          ['Meals', '001165', '2026-07-20', 'Drewvalle Frukt Skaka Fruit Shake', 80.00],
+          ['Meals', '1179', '2026-07-20', 'Jollibee Nabua', 320.00],
+          ['Meals', '1181', '2026-07-20', 'Jollibee Nabua', 320.00],
+          ['Meals', '1197', '2026-07-24', 'Jollibee Nabua', 594.00],
+          ['Meals', '018058', '2026-07-24', 'LCC Supermarket', 67.00],
+          ['Meals', '0172', '2026-08-04', 'DMR Wet and Dry Goods Store', 72.00],
+          ['Meals', '018085', '2026-08-04', 'LCC Supermarket', 671.00],
+          ['Meals', '018086', '2026-08-04', 'LCC Supermarket', 378.00],
+          ['Meals', '000488', '2026-08-04', 'Derecho Meat Stand', 600.00],
+          ['Meals', '10313', '2026-08-04', 'Baino-Bergantin Sari-Sari Store', 321.00],
+          ['Meals', '0438', '2026-08-04', 'A&J Water Refilling Station', 140.00],
+          ['Meals', '0001284', '2026-08-04', 'C.G Baking\'s and Milktea Supplies Trading', 262.00],
+          ['Meals', '000061', '2026-08-05', 'Dok-Tonton Grocery Products Trading', 60.00],
+          ['Meals', '000486', '2026-08-05', 'Derecho Meat Stand', 600.00],
+          ['Meals', '018103', '2026-08-05', 'LCC Supermarket', 461.75],
+          ['Meals', '018104', '2026-08-05', 'LCC Supermarket', 189.00],
+          ['Meals', '018106', '2026-08-05', 'LCC Supermarket', 19.25],
+          ['Meals', '0174', '2026-08-05', 'DMR Wet and Dry Goods Store', 176.00]
+        ],
+        sales: []
+      }
+    ];
+    for (const report of liquidations) {
+      const [result] = await conn.query(
+        `INSERT INTO financial_reports (title, school_year, period_start, period_end, notes,
+           status, created_by, reviewed_by, published_at)
+         VALUES (?, '2026-2027', ?, ?, ?, 'published', ?, ?, '2026-08-12 10:00:00')`,
+        [report.title, report.start, report.end, report.notes, treasurer, president]
+      );
+      for (const [item, receiptNo, date, particulars, amount] of report.expenses) {
+        await conn.query(
+          `INSERT INTO financial_report_expenses (report_id, item, receipt_no, receipt_date, particulars, amount)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [result.insertId, item, receiptNo, date, particulars, amount]
+        );
+      }
+      for (const [product, quantity, unitPrice] of report.sales) {
+        await conn.query(
+          'INSERT INTO financial_report_sales (report_id, product, quantity, unit_price) VALUES (?, ?, ?, ?)',
+          [result.insertId, product, quantity, unitPrice]
+        );
+      }
+    }
+
+    // ---------- resolutions: the SSC's official resolutions, s. 2025-2026 (decision C17) ----------
+    // Pubmats in public/img/resolutions/, signed copies in public/files/resolutions/.
+    // The text is the "RESOLVED" clause of each PDF, word for word (typos included, to match the signed copy).
+    const resolutions = [
+      ['001', '2025-07-02',
+        'Resolution Approving the Conduct of Aqua-Ask InfoDesk: The 40th Commencement Exercises Facilitation ' +
+          'and Disbursement of Fund Amounting to Nineteen Thousand Eight Hundred Sixty-Six Pesos (P19,866.00)',
+        'RESOLVED, AS IT IS HEREBY RESOLVED, that the office authorizes the conduct of Aqua-Ask InfoDesk: ' +
+          'The 40th Commencement Exercises Facilitation on July 7,9, and 10, 2025 and an amount of Nineteen ' +
+          'Thousand Eight Hundred Sixty-Six (P19,866.00) shall be disbursed.'],
+      ['002', '2025-07-02',
+        'Resolution Approving the Appointment of Dr. Seth B. Barandon as One of the Organization’s Advisers ' +
+          'for the Academic Year',
+        'RESOLVED, AS IT IS HEREBY RESOLVED, that the organization confirms and approves the appointment of ' +
+          'DR. SETH B. BARANDON to serve as one of the faculty advisers of the CSPC – Supreme Student Council, ' +
+          'which functions include overseeing the organizational bureaucratic processes, ensure ethical ' +
+          'practices of all officers, and shall aid and guide in all decisional affairs of the body;'],
+      ['003', '2025-07-21',
+        'Resolution Approving the Conduct of the Search for SSC Assistants and Committee Directors 2025 and ' +
+          'Disbursement of Fund Amounting to Eight Thousand Thirty Pesos (Php 8,030.00)',
+        'NOW, THEREFORE, BE IT RESOLVED, that the CSPC – Supreme Student Council approves the conduct of ' +
+          'Search for SSC Assistants and Committee Directors 2025 that will span from July 22-29, 2025, and the ' +
+          'disbursement of fund amounting to Eight Thousand Thirty Pesos (Php 8,030.00) to finance the event.'],
+      ['004', '2025-07-21',
+        'Resolution Approving the Conduct of the Supreme Student Council’s Facilitation and Contribution to ' +
+          'CSPC’s Orientation Seminar 2025 and Disbursement of Fund Amounting to Twelve Thousand Six Hundred ' +
+          'Fifty Pesos (Php 12,650.00)',
+        'NOW, THEREFORE, BE IT RESOLVED, that the CSPC – Supreme Student Council approves its facilitation ' +
+          'and contribution during the ORSEM 2025: Igniting the Flame of CSPCean Culture: Guiding New Journeys ' +
+          'Toward Brilliance and Belonging at the CSPC Gymnasium on July 31 and August 1, 2025, d the ' +
+          'disbursement of fund amounting to Twelve Thousand Six Hundred Pesos (Php 12,650.00) to finance ' +
+          'the council’s needs for the event.'],
+      ['005', '2025-07-21',
+        'Resolution Approving the Conduct of ORGbit: ORSEM 2025 Booth Fair; SSC’s SaurBETes and Disbursement ' +
+          'of Fund Amounting to Seven Thousand Seven Hundred Seventy-Seven (Php 7,777.00)',
+        'NOW, THEREFORE, BE IT RESOLVED, that the CSPC – Supreme Student Council approves ORGbit: ORSEM 2025 ' +
+          'Booth Fair; SSC’s SaurBETes, the disbursement of fund amounting to Seven Thousand Seven Hundred ' +
+          'Seventy-Seven (Php 7,777.00), and shall oversee the registration, allocation, and adherence to ' +
+          'guidelines for all participating recognized student organizations, ensuring the successful ' +
+          'implementation of this initiative.']
+    ];
+    for (const [no, adopted, title, body] of resolutions) {
+      await conn.query(
+        `INSERT INTO resolutions (resolution_no, title, body, date_adopted, photo_path, pdf_path, status,
+           created_by, reviewed_by, published_at)
+         VALUES (?, ?, ?, ?, ?, ?, 'published', ?, ?, ?)`,
+        [`SSC-RES-2025-${no}`, title, body, adopted, `/img/resolutions/res-${no}.jpg`,
+          `/files/resolutions/resolution-${no}-s2025-2026.pdf`, secretary, president, adopted]
+      );
+    }
     await conn.query(
       `INSERT INTO documents (title, doc_type, body, status, created_by)
        VALUES (?, ?, ?, 'draft', ?)`,

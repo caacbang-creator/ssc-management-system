@@ -1,13 +1,24 @@
 <%- include('../../partials/head') %>
 <%- include('../../partials/nav') %>
 
-<% const r = report; %>
+<%
+  const r = report;
+  const canWrite = ['treasurer', 'president'].includes(currentUser.role);
+  const editable = canWrite && r.status === 'draft';
+  const base = '/manage/financial-reports/' + r.id;
+  const spent = Number(r.total_expenses);
+  const sold = Number(r.total_sales);
+  // The "add" forms show their own errors and typed values after a failed submit
+  const expenseOld = lineForm === 'expense' ? oldLine : {};
+  const saleOld = lineForm === 'sale' ? oldLine : {};
+%>
 
 <main id="main" class="container">
   <a class="back-link" href="/manage/financial-reports"><span aria-hidden="true">&larr;</span> Financial reports</a>
 
   <div class="page-heading">
     <div>
+      <p class="eyebrow">School year <%= r.school_year.replace('-', '–') %></p>
       <h1><%= r.title %></h1>
       <p class="page-lead"><%= formatDate(r.period_start) %> &ndash; <%= formatDate(r.period_end) %></p>
     </div>
@@ -23,20 +34,94 @@
         </div>
       <% } %>
 
+      <%# Totals: worked out from the lines below %>
       <div class="card-grid-3">
         <div class="card stat-card">
-          <span class="stat-number"><%= formatMoney(r.budget) %></span>
-          <span class="stat-label">Budget</span>
+          <span class="stat-number"><%= formatMoney(spent) %></span>
+          <span class="stat-label">Total expenses</span>
         </div>
         <div class="card stat-card">
-          <span class="stat-number"><%= formatMoney(r.expenses) %></span>
-          <span class="stat-label">Spent</span>
+          <span class="stat-number"><%= formatMoney(sold) %></span>
+          <span class="stat-label">Total sales</span>
         </div>
         <div class="card stat-card stat-card-active">
-          <span class="stat-number"><%= formatMoney(r.remaining_balance) %></span>
-          <span class="stat-label"><%= Number(r.remaining_balance) < 0 ? 'Over budget' : 'Left' %></span>
+          <span class="stat-number"><%= formatMoney(sold - spent) %></span>
+          <span class="stat-label"><%= sold === 0 ? 'Spent from the budget' : (sold - spent >= 0 ? 'Net income' : 'Net loss') %></span>
         </div>
       </div>
+
+      <%# ---------- Receipts ---------- %>
+      <section class="card section-gap" id="expenses" aria-labelledby="expenses-title">
+        <h2 id="expenses-title">Receipts (<%= expenses.length %>)</h2>
+        <% if (expenses.length === 0) { %>
+          <p class="muted">No receipts yet.<% if (editable) { %> Add the first one below.<% } %></p>
+        <% } else { %>
+          <%- include('../../partials/expense-table', { expenses, editBase: editable ? base : '' }) %>
+        <% } %>
+
+        <% if (editable) { %>
+          <h3 class="section-gap-sm">Add a receipt</h3>
+          <% if (lineForm === 'expense') { %><%- include('../../partials/form-errors', { errors: lineErrors }) %><% } %>
+          <form method="post" action="<%= base %>/expenses" class="line-form" novalidate>
+            <div class="form-field">
+              <label for="item">Item</label>
+              <input type="text" id="item" name="item" value="<%= expenseOld.item || '' %>" maxlength="60" placeholder="Meals" required>
+            </div>
+            <div class="form-field">
+              <label for="receipt_no">Receipt no. <span class="optional">(optional)</span></label>
+              <input type="text" id="receipt_no" name="receipt_no" value="<%= expenseOld.receipt_no || '' %>" maxlength="30" placeholder="0001283">
+            </div>
+            <div class="form-field">
+              <label for="receipt_date">Date</label>
+              <input type="date" id="receipt_date" name="receipt_date" value="<%= expenseOld.receipt_date || '' %>" required>
+            </div>
+            <div class="form-field line-form-wide">
+              <label for="particulars">Particulars</label>
+              <input type="text" id="particulars" name="particulars" value="<%= expenseOld.particulars || '' %>" maxlength="150" placeholder="LCC Supermarket" required>
+            </div>
+            <div class="form-field">
+              <label for="amount">Amount (₱)</label>
+              <input type="text" id="amount" name="amount" value="<%= expenseOld.amount || '' %>" inputmode="decimal" maxlength="16" placeholder="58.00" required>
+            </div>
+            <div class="line-form-button">
+              <button type="submit" class="btn btn-primary">Add receipt</button>
+            </div>
+          </form>
+          <p class="hint">Leave the receipt number empty for an acknowledgement receipt.</p>
+        <% } %>
+      </section>
+
+      <%# ---------- Sales ---------- %>
+      <section class="card section-gap" id="sales" aria-labelledby="sales-title">
+        <h2 id="sales-title">Sales (<%= sales.length %>)</h2>
+        <% if (sales.length === 0) { %>
+          <p class="muted">No sales. Most activities don't sell anything, so this can stay empty.</p>
+        <% } else { %>
+          <%- include('../../partials/sales-table', { sales, editBase: editable ? base : '' }) %>
+        <% } %>
+
+        <% if (editable) { %>
+          <h3 class="section-gap-sm">Add a product sold</h3>
+          <% if (lineForm === 'sale') { %><%- include('../../partials/form-errors', { errors: lineErrors }) %><% } %>
+          <form method="post" action="<%= base %>/sales" class="line-form" novalidate>
+            <div class="form-field line-form-wide">
+              <label for="product">Product</label>
+              <input type="text" id="product" name="product" value="<%= saleOld.product || '' %>" maxlength="100" placeholder="Ice Cream (Cone)" required>
+            </div>
+            <div class="form-field">
+              <label for="quantity">Quantity sold</label>
+              <input type="text" id="quantity" name="quantity" value="<%= saleOld.quantity || '' %>" inputmode="numeric" maxlength="5" placeholder="206" required>
+            </div>
+            <div class="form-field">
+              <label for="unit_price">Unit price (₱)</label>
+              <input type="text" id="unit_price" name="unit_price" value="<%= saleOld.unit_price || '' %>" inputmode="decimal" maxlength="16" placeholder="15.00" required>
+            </div>
+            <div class="line-form-button">
+              <button type="submit" class="btn btn-secondary">Add product</button>
+            </div>
+          </form>
+        <% } %>
+      </section>
 
       <% if (r.notes) { %>
         <section class="card section-gap">
@@ -54,10 +139,13 @@
     <aside class="split-aside" aria-label="Next step">
       <%- include('../../partials/review-actions', {
         base: '/manage/financial-reports', id: r.id, status: r.status, label: 'report',
-        canWrite: ['treasurer', 'president'].includes(currentUser.role),
+        canWrite,
         canPublish: currentUser.role === 'president',
         publicUrl: '/documents/financial-reports/' + r.id
       }) %>
+      <% if (canWrite && r.status !== 'draft') { %>
+        <p class="hint">Receipts and sales can only be changed on a draft. The President can unpublish or return it.</p>
+      <% } %>
     </aside>
   </div>
 </main>

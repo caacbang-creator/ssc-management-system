@@ -1,0 +1,46 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/manage/financial-reports/<%= report.id %>#expenses"><span aria-hidden="true">&larr;</span> <%= report.title %></a>
+
+  <section class="card">
+    <h1>Edit receipt</h1>
+    <p class="muted">The report's totals update when you save.</p>
+    <%- include('../../partials/form-errors') %>
+
+    <form method="post" action="/manage/financial-reports/<%= report.id %>/expenses/<%= lineId %>" novalidate>
+      <div class="form-row">
+        <div class="form-field">
+          <label for="item">Item</label>
+          <input type="text" id="item" name="item" value="<%= old.item || '' %>" maxlength="60" required>
+        </div>
+        <div class="form-field">
+          <label for="receipt_no">Receipt no. <span class="optional">(optional)</span></label>
+          <input type="text" id="receipt_no" name="receipt_no" value="<%= old.receipt_no || '' %>" maxlength="30" aria-describedby="receipt-hint">
+          <p class="hint" id="receipt-hint">Empty for an acknowledgement receipt.</p>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label for="receipt_date">Date</label>
+          <input type="date" id="receipt_date" name="receipt_date" value="<%= old.receipt_date || '' %>" required>
+        </div>
+        <div class="form-field">
+          <label for="amount">Amount (₱)</label>
+          <input type="text" id="amount" name="amount" value="<%= old.amount || '' %>" inputmode="decimal" maxlength="16" required>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="particulars">Particulars</label>
+        <input type="text" id="particulars" name="particulars" value="<%= old.particulars || '' %>" maxlength="150" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save receipt</button>
+        <a class="btn btn-secondary" href="/manage/financial-reports/<%= report.id %>#expenses">Cancel</a>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

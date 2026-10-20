@@ -37,6 +37,11 @@ const OFFICER_TASKS = {
     ['Resolutions waiting for the President', 'resolutions_pending', '/manage/resolutions?status=pending'],
     ['Documents waiting for the President', 'documents_pending', '/manage/documents?status=pending']
   ],
+  property_custodian: [
+    ['Approved requests to hand over', 'loans_to_release', '/manage/items/loans'],
+    ['Overdue returns', 'loans_overdue', '/manage/items/loans'],
+    ['Items out on loan', 'loans_out', '/manage/items/loans']
+  ],
   president: [
     ['Officer role requests', 'officer_requests_pending', '/manage/officer-requests'],
     ['Financial reports to publish', 'financial_pending', '/manage/financial-reports?status=pending'],
@@ -52,11 +57,12 @@ const OFFICER_TASKS = {
 // Management pages each officer role can open (shortcut links on the dashboard)
 const OFFICER_LINKS = {
   pro: [['Announcements', '/manage/announcements'], ['Events', '/manage/events'], ['Concerns', '/manage/concerns'],
-    ['Requests', '/manage/transactions'], ['Items', '/manage/items'], ['Officer directory', '/manage/officers']],
+    ['Requests', '/manage/transactions'], ['Officer directory', '/manage/officers']],
   vp_internal: [['Announcements', '/manage/announcements'], ['Events', '/manage/events'], ['Concerns', '/manage/concerns'],
     ['Requests', '/manage/transactions'], ['Financial reports', '/manage/financial-reports'], ['Resolutions', '/manage/resolutions']],
   treasurer: [['Financial reports', '/manage/financial-reports']],
   secretary: [['Resolutions', '/manage/resolutions'], ['Documents', '/manage/documents']],
+  property_custodian: [['Borrowing desk', '/manage/items/loans'], ['Items', '/manage/items']],
   president: [['Officer requests', '/manage/officer-requests'], ['About SSC', '/manage/about'],
     ['Officer directory', '/manage/officers'], ['Announcements', '/manage/announcements'], ['Events', '/manage/events'],
     ['Concerns', '/manage/concerns'], ['Requests', '/manage/transactions'], ['Items', '/manage/items'],

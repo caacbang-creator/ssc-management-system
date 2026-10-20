@@ -53,7 +53,7 @@
           </form>
           <div class="action-row section-gap">
             <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/edit">Edit draft</a>
-            <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Posters</a>
+            <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Posters and videos</a>
             <form method="post" action="/manage/announcements/<%= a.id %>/delete" class="inline-form">
               <button type="submit" class="btn btn-danger btn-sm">Delete draft</button>
             </form>
@@ -87,13 +87,17 @@
             <p class="hint">Changing a live post sends it back for approval.</p>
             <div class="action-row">
               <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/edit">Edit post</a>
-              <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Change posters</a>
+              <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Posters and videos</a>
             </div>
           <% } %>
           <% if (canReview) { %>
             <form method="post" action="/manage/announcements/<%= a.id %>/unpublish">
               <button type="submit" class="btn btn-secondary">Unpublish</button>
             </form>
+          <% } %>
+          <%# President only (C23): leads to a confirmation page, nothing is deleted yet %>
+          <% if (currentUser.role === 'president') { %>
+            <a class="btn btn-danger btn-sm section-gap" href="/manage/announcements/<%= a.id %>/remove">Delete permanently&hellip;</a>
           <% } %>
         <% } %>
       </div>

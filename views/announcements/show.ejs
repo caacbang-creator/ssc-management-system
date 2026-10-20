@@ -30,6 +30,10 @@
     </div>
   </article>
 
+  <% if (videos.length > 0) { %>
+    <%- include('../partials/video-list', { videos }) %>
+  <% } %>
+
   <% if (photos.length > 0) { %>
     <%- include('../partials/photo-viewer', { photos, title: announcement.title, label: 'Poster' }) %>
   <% } %>

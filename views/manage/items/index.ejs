@@ -4,11 +4,14 @@
 <main id="main" class="container">
   <div class="page-heading">
     <div>
-      <p class="eyebrow">Officer tools</p>
+      <p class="eyebrow">Property Custodian</p>
       <h1>Items to borrow</h1>
-      <p class="page-lead">What students can ask to borrow from the SSC.</p>
+      <p class="page-lead">Mark what can be borrowed, see who has it, and keep the borrowing log.</p>
     </div>
-    <a class="btn btn-primary" href="/manage/items/new">Add an item <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    <div class="action-row">
+      <a class="btn btn-secondary" href="/manage/items/new">Add an item</a>
+      <a class="btn btn-primary" href="/manage/items/loans">Borrowing desk <span class="arrow" aria-hidden="true">&rarr;</span></a>
+    </div>
   </div>
 
   <% if (items.length === 0) { %>
@@ -16,41 +19,58 @@
       <p>No items yet. Add something students can borrow.</p>
     </div>
   <% } else { %>
-    <div class="card table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Item</th>
-            <th scope="col">Details</th>
-            <th scope="col" class="num">Stock</th>
-            <th scope="col" class="num">Open requests</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% items.forEach((i) => { %>
-            <tr>
-              <td><strong><%= i.name %></strong></td>
-              <td class="muted"><%= i.description || '' %></td>
-              <td class="num"><%= i.quantity %></td>
-              <td class="num"><%= i.active_requests %></td>
-              <td class="actions">
-                <a class="btn btn-secondary btn-sm" href="/manage/items/<%= i.id %>/edit">Edit</a>
-                <form method="post" action="/manage/items/<%= i.id %>/delete" class="inline-form">
-                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                </form>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+    <div class="item-grid">
+      <% items.forEach((i) => { %>
+        <% const inOffice = i.quantity - Number(i.units_out); %>
+        <article class="card item-card<%= i.status === 'available' ? '' : ' item-card-off' %>">
+          <div class="item-card-head">
+            <span class="icon-tile icon-tile-sm"><%- include('../../partials/icon', { name: 'box' }) %></span>
+            <div>
+              <h2 class="item-name"><%= i.name %></h2>
+              <% if (i.description) { %><p class="meta"><%= i.description %></p><% } %>
+            </div>
+          </div>
+
+          <p class="item-status">
+            <% if (i.status === 'available') { %>
+              <span class="pill pill-approved">Available</span>
+            <% } else { %>
+              <span class="pill pill-rejected">Not available</span>
+              <span class="meta"><%= i.status_note %></span>
+            <% } %>
+          </p>
+
+          <dl class="item-facts">
+            <div><dt>In the office</dt><dd><strong><%= inOffice %></strong> of <%= i.quantity %></dd></div>
+            <div><dt>Out on loan</dt><dd><%= i.units_out %></dd></div>
+            <div><dt>Open requests</dt><dd><%= i.active_requests %></dd></div>
+            <div>
+              <dt>Last borrower</dt>
+              <dd>
+                <% if (i.last_borrower) { %>
+                  <%= i.last_borrower %>
+                  <span class="meta">&middot; <%= i.last_returned_at ? 'returned ' + formatDate(i.last_returned_at) : 'still has it' %></span>
+                <% } else { %>
+                  <span class="muted">Never lent out</span>
+                <% } %>
+              </dd>
+            </div>
+          </dl>
+
+          <div class="action-row item-actions">
+            <a class="btn btn-secondary btn-sm" href="/manage/items/<%= i.id %>/history">History and status</a>
+            <% if (i.status === 'available' && inOffice > 0) { %>
+              <a class="btn btn-secondary btn-sm" href="/manage/items/loans/new?item=<%= i.id %>">Lend (walk-in)</a>
+            <% } %>
+            <a class="btn btn-secondary btn-sm" href="/manage/items/<%= i.id %>/edit">Edit</a>
+            <form method="post" action="/manage/items/<%= i.id %>/delete" class="inline-form">
+              <button type="submit" class="btn btn-danger btn-sm">Delete <span class="visually-hidden"><%= i.name %></span></button>
+            </form>
+          </div>
+        </article>
+      <% }) %>
     </div>
   <% } %>
-
-  <div class="page-end">
-    <p>Check who asked to borrow what.</p>
-    <a class="btn btn-secondary" href="/manage/transactions?type=item_borrowing">Borrowing requests <span class="arrow" aria-hidden="true">&rarr;</span></a>
-  </div>
 </main>
 
 <%- include('../../partials/foot') %>

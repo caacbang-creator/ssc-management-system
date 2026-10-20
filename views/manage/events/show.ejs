@@ -18,7 +18,7 @@
   <div class="page-heading">
     <div>
       <h1><%= e.title %></h1>
-      <p class="page-lead"><%= formatDate(e.event_date) %> &middot; <%= formatTime(e.start_time) %><% if (e.end_time) { %> &ndash; <%= formatTime(e.end_time) %><% } %> &middot; <%= e.venue %></p>
+      <p class="page-lead"><%= formatDate(e.event_date) %> &middot; <%= formatTime(e.start_time) %><% if (e.end_time) { %> &ndash; <%= formatTime(e.end_time) %><% } %> &middot; <%= e.venue || 'Venue to be announced' %></p>
     </div>
     <%- include('../../partials/status-pill', { status: e.status }) %>
   </div>
@@ -33,7 +33,7 @@
       <% } %>
 
       <a class="card stat-card" href="/manage/events/<%= e.id %>/registrants">
-        <span class="stat-number"><%= e.registered_count %> / <%= e.capacity %></span>
+        <span class="stat-number"><%= e.registered_count %><%= e.capacity === null ? '' : ' / ' + e.capacity %></span>
         <span class="stat-label">Signed up &middot; see the list <span class="arrow" aria-hidden="true">&rarr;</span></span>
       </a>
 
@@ -120,12 +120,42 @@
 
         <% if (e.status === 'completed' && canWrite) { %>
           <a class="btn btn-primary" href="/manage/events/<%= e.id %>/documentation"><%= e.documentation ? 'Edit the write-up' : 'Write how it went' %></a>
-          <a class="btn btn-secondary section-gap" href="/manage/events/<%= e.id %>/photos">Manage photos</a>
         <% } %>
         <% if (e.status === 'cancelled') { %>
           <p class="muted">This event was cancelled.</p>
         <% } %>
       </div>
+
+      <%# President only (C23): leads to a confirmation page, nothing is deleted yet %>
+      <% if (currentUser.role === 'president' && ['published', 'completed', 'cancelled'].includes(e.status)) { %>
+        <div class="card">
+          <h2 class="aside-title">Delete the event</h2>
+          <p class="hint">Removes it for good, with its registrations, photos and videos.</p>
+          <a class="btn btn-danger btn-sm" href="/manage/events/<%= e.id %>/remove">Delete permanently&hellip;</a>
+        </div>
+      <% } %>
+
+      <%# Always visible to the PRO / President, so they know where uploads are and when they open %>
+      <% if (canWrite) { %>
+        <div class="card">
+          <h2 class="aside-title">Photos and videos</h2>
+          <% if (e.status === 'draft' || e.status === 'completed') { %>
+            <p class="hint">
+              <%= e.status === 'draft'
+                ? 'Prepare them now. Students see them once the event is completed.'
+                : 'Shown on the public event page.' %>
+            </p>
+            <a class="btn btn-secondary" href="/manage/events/<%= e.id %>/photos">Upload photos and videos <span class="arrow" aria-hidden="true">&rarr;</span></a>
+          <% } else if (e.status === 'cancelled') { %>
+            <p class="muted">Not available for a cancelled event.</p>
+          <% } else { %>
+            <p class="muted">
+              Locked while the event is <%= e.status === 'pending' ? 'waiting for approval' : 'live' %>.
+              They open again once it is marked completed<%= e.status === 'published' && e.event_date > today ? ' (on or after ' + formatDate(e.event_date) + ')' : '' %>.
+            </p>
+          <% } %>
+        </div>
+      <% } %>
     </aside>
   </div>
 </main>

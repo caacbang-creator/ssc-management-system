@@ -32,7 +32,7 @@
             <tr>
               <td><a href="/events/<%= r.id %>"><%= r.title %></a></td>
               <td><%= formatDate(r.event_date) %>, <%= formatTime(r.start_time) %></td>
-              <td><%= r.venue %></td>
+              <td><%= r.venue || 'To be announced' %></td>
               <td>
                 <% if (r.status === 'published') { %>
                   <span class="pill pill-published">Upcoming</span>

@@ -39,6 +39,20 @@
         canPublish: currentUser.role === 'president',
         publicUrl: '/documents/resolutions/' + r.id
       }) %>
+
+      <%# Photo and PDF: Secretary and President, on drafts and published resolutions (C17) %>
+      <div class="card">
+        <h2 class="aside-title">Photo and PDF</h2>
+        <p class="meta">
+          Photo: <strong><%= r.photo_path ? 'added' : 'none' %></strong> &middot;
+          PDF: <strong><%= r.pdf_path ? 'added' : 'none' %></strong>
+        </p>
+        <% if (['secretary', 'president'].includes(currentUser.role) && ['draft', 'published'].includes(r.status)) { %>
+          <a class="btn btn-secondary btn-sm" href="/manage/resolutions/<%= r.id %>/files"><%= r.photo_path || r.pdf_path ? 'Change files' : 'Add photo and PDF' %></a>
+        <% } else if (r.status === 'pending') { %>
+          <p class="hint">Locked while the President decides.</p>
+        <% } %>
+      </div>
     </aside>
   </div>
 </main>

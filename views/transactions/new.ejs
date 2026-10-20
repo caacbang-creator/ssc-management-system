@@ -45,7 +45,7 @@
           <select id="item_id" name="item_id">
             <option value="">Choose an item</option>
             <% items.forEach((i) => { %>
-              <option value="<%= i.id %>"<% if (String(i.id) === (old.item_id || '')) { %> selected<% } %>><%= i.name %> (<%= i.quantity %> in stock)</option>
+              <option value="<%= i.id %>"<% if (String(i.id) === (old.item_id || '')) { %> selected<% } %>><%= i.name %> (<%= i.quantity %> in total)</option>
             <% }) %>
           </select>
         </div>

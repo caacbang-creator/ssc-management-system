@@ -1,0 +1,57 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<main id="main" class="container form-page">
+  <a class="back-link" href="/manage/items/loans"><span aria-hidden="true">&larr;</span> Borrowing desk</a>
+
+  <section class="card">
+    <h1>Record a walk-in loan</h1>
+    <p class="muted">For someone who borrows at the office without an online request. They must have an account.</p>
+    <%- include('../../partials/form-errors') %>
+
+    <% if (items.length === 0) { %>
+      <p class="alert alert-info">No item is available right now.</p>
+    <% } else { %>
+      <form method="post" action="/manage/items/loans" novalidate>
+        <div class="form-field">
+          <label for="student_no">Borrower's student number</label>
+          <input type="text" id="student_no" name="student_no" value="<%= old.student_no || '' %>" maxlength="10"
+            placeholder="2025-10009" aria-describedby="student-hint" autocomplete="off" required>
+          <p class="hint" id="student-hint">Check their school ID. The log records who borrowed it.</p>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="item_id">Item</label>
+            <select id="item_id" name="item_id">
+              <option value="">Choose an item</option>
+              <% items.forEach((i) => { %>
+                <% const inOffice = i.quantity - Number(i.units_out); %>
+                <option value="<%= i.id %>"<% if (String(old.item_id) === String(i.id)) { %> selected<% } %><% if (inOffice < 1) { %> disabled<% } %>>
+                  <%= i.name %> (<%= inOffice %> in the office)
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="quantity">Quantity</label>
+            <input type="text" id="quantity" name="quantity" value="<%= old.quantity || '1' %>" inputmode="numeric" maxlength="4" required>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="due_date">Due back</label>
+          <input type="date" id="due_date" name="due_date" value="<%= old.due_date || '' %>" min="<%= minDate %>" required>
+        </div>
+        <div class="form-field">
+          <label for="notes">Note <span class="optional">(optional)</span></label>
+          <input type="text" id="notes" name="notes" value="<%= old.notes || '' %>" maxlength="255" placeholder="e.g. for the CCS general assembly">
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Lend it out</button>
+          <a class="btn btn-secondary" href="/manage/items/loans">Cancel</a>
+        </div>
+      </form>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../../partials/foot') %>

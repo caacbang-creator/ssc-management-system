@@ -6,7 +6,7 @@
 
   <div class="page-heading">
     <div>
-      <p class="eyebrow">News posters</p>
+      <p class="eyebrow">News posters and videos</p>
       <h1><%= announcement.title %></h1>
       <p class="page-lead">The first poster is the cover. Two or more posters make a carousel.</p>
     </div>
@@ -22,6 +22,10 @@
 
   <%- include('../../partials/photo-manager', {
     photos, basePath: `/manage/announcements/${announcement.id}/photos`, label: 'poster', maxFiles, errors
+  }) %>
+
+  <%- include('../../partials/video-manager', {
+    videos, basePath: `/manage/announcements/${announcement.id}/videos`, videoErrors, videoTitle
   }) %>
 </main>
 

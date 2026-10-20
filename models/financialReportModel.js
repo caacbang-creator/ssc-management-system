@@ -1,31 +1,47 @@
 // All SQL for the financial_reports table.
-// The remaining balance is COMPUTED here (budget - expenses) and never stored,
-// so it can never disagree with the numbers it comes from.
+// A report's totals are COMPUTED here from its expense and sales lines and never stored,
+// so they can never disagree with the lines they come from.
 // Every status change has the CURRENT status in its WHERE clause.
 const pool = require('../db');
 
-const BALANCE = '(f.budget - f.expenses) AS remaining_balance';
+const TOTALS = `
+  (SELECT COALESCE(SUM(x.amount), 0) FROM financial_report_expenses x WHERE x.report_id = f.id) AS total_expenses,
+  (SELECT COALESCE(SUM(s.quantity * s.unit_price), 0) FROM financial_report_sales s WHERE s.report_id = f.id) AS total_sales`;
 
 // ---------- Public ----------
 async function listPublished() {
   const [rows] = await pool.query(
-    `SELECT f.id, f.title, f.period_start, f.period_end, f.budget, f.expenses, ${BALANCE}, f.published_at
+    `SELECT f.id, f.title, f.school_year, f.period_start, f.period_end, f.published_at, ${TOTALS}
      FROM financial_reports f
      WHERE f.status = 'published'
-     ORDER BY f.period_end DESC`
+     ORDER BY f.period_end DESC, f.id DESC`
   );
   return rows;
 }
 
 async function findPublishedById(id) {
   const [rows] = await pool.query(
-    `SELECT f.id, f.title, f.period_start, f.period_end, f.budget, f.expenses, ${BALANCE},
-            f.notes, f.published_at
+    `SELECT f.id, f.title, f.school_year, f.period_start, f.period_end, f.notes, f.published_at, ${TOTALS}
      FROM financial_reports f
      WHERE f.id = ? AND f.status = 'published'`,
     [id]
   );
   return rows[0] || null;
+}
+
+// What the published reports of one school year spent and earned (for the annual budget)
+async function yearTotals(schoolYear) {
+  const [rows] = await pool.query(
+    `SELECT
+       (SELECT COALESCE(SUM(x.amount), 0)
+        FROM financial_report_expenses x JOIN financial_reports f ON f.id = x.report_id
+        WHERE f.school_year = ? AND f.status = 'published') AS spent,
+       (SELECT COALESCE(SUM(s.quantity * s.unit_price), 0)
+        FROM financial_report_sales s JOIN financial_reports f ON f.id = s.report_id
+        WHERE f.school_year = ? AND f.status = 'published') AS sales`,
+    [schoolYear, schoolYear]
+  );
+  return rows[0];
 }
 
 // ---------- Officers ----------
@@ -37,7 +53,7 @@ async function listForManage(status) {
     params.push(status);
   }
   const [rows] = await pool.query(
-    `SELECT f.id, f.title, f.period_start, f.period_end, f.status, ${BALANCE}, f.updated_at
+    `SELECT f.id, f.title, f.school_year, f.period_start, f.period_end, f.status, f.updated_at, ${TOTALS}
      FROM financial_reports f
      ${where}
      ORDER BY f.updated_at DESC`,
@@ -48,8 +64,8 @@ async function listForManage(status) {
 
 async function findById(id) {
   const [rows] = await pool.query(
-    `SELECT f.id, f.title, f.period_start, f.period_end, f.budget, f.expenses, ${BALANCE},
-            f.notes, f.status, f.review_remarks, f.published_at, f.updated_at,
+    `SELECT f.id, f.title, f.school_year, f.period_start, f.period_end, f.notes, f.status,
+            f.review_remarks, f.published_at, f.updated_at, ${TOTALS},
             CONCAT(u.first_name, ' ', u.last_name) AS author_name,
             CONCAT(r.first_name, ' ', r.last_name) AS reviewer_name
      FROM financial_reports f
@@ -63,9 +79,9 @@ async function findById(id) {
 
 async function create(report, userId) {
   const [result] = await pool.query(
-    `INSERT INTO financial_reports (title, period_start, period_end, budget, expenses, notes, status, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`,
-    [report.title, report.periodStart, report.periodEnd, report.budget, report.expenses, report.notes, userId]
+    `INSERT INTO financial_reports (title, school_year, period_start, period_end, notes, status, created_by)
+     VALUES (?, ?, ?, ?, ?, 'draft', ?)`,
+    [report.title, report.schoolYear, report.periodStart, report.periodEnd, report.notes, userId]
   );
   return result.insertId;
 }
@@ -73,13 +89,14 @@ async function create(report, userId) {
 async function updateDraft(id, report) {
   const [result] = await pool.query(
     `UPDATE financial_reports
-     SET title = ?, period_start = ?, period_end = ?, budget = ?, expenses = ?, notes = ?
+     SET title = ?, school_year = ?, period_start = ?, period_end = ?, notes = ?
      WHERE id = ? AND status = 'draft'`,
-    [report.title, report.periodStart, report.periodEnd, report.budget, report.expenses, report.notes, id]
+    [report.title, report.schoolYear, report.periodStart, report.periodEnd, report.notes, id]
   );
   return result.affectedRows;
 }
 
+// Its expense and sales lines are deleted with it (ON DELETE CASCADE)
 async function deleteDraft(id) {
   const [result] = await pool.query(
     `DELETE FROM financial_reports WHERE id = ? AND status = 'draft'`,
@@ -129,6 +146,6 @@ async function unpublish(id, reviewerId) {
 }
 
 module.exports = {
-  listPublished, findPublishedById, listForManage, findById, create,
+  listPublished, findPublishedById, yearTotals, listForManage, findById, create,
   updateDraft, deleteDraft, submit, publish, returnToDraft, unpublish
 };

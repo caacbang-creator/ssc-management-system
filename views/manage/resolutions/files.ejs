@@ -1,0 +1,79 @@
+<%- include('../../partials/head') %>
+<%- include('../../partials/nav') %>
+
+<% const r = resolution; %>
+
+<main id="main" class="container">
+  <a class="back-link" href="/manage/resolutions/<%= r.id %>"><span aria-hidden="true">&larr;</span> Back to the resolution</a>
+
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow"><%= r.resolution_no %> &middot; Photo and PDF</p>
+      <h1><%= r.title %></h1>
+    </div>
+    <%- include('../../partials/status-pill', { status: r.status }) %>
+  </div>
+
+  <% if (r.status === 'published') { %>
+    <div class="alert alert-info" role="note">
+      <p><strong>This resolution is public.</strong> Changing or removing a file sends it back to the
+        President, and it is hidden from the Documents page until the President publishes it again.</p>
+    </div>
+  <% } %>
+
+  <div class="wide-split">
+    <section class="card" aria-labelledby="upload-title">
+      <h2 id="upload-title">Upload files</h2>
+      <%- include('../../partials/form-errors') %>
+      <%# multipart/form-data is required to send files %>
+      <form method="post" action="/manage/resolutions/<%= r.id %>/files" enctype="multipart/form-data" novalidate>
+        <div class="form-field">
+          <label for="photo">Photo (pubmat)</label>
+          <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" aria-describedby="photo-hint">
+          <p class="hint" id="photo-hint">JPG, PNG or WebP, up to 10 MB. A square image looks best. Replaces the current photo.</p>
+        </div>
+        <div class="form-field">
+          <label for="pdf">Signed copy (PDF)</label>
+          <input type="file" id="pdf" name="pdf" accept="application/pdf" aria-describedby="pdf-hint">
+          <p class="hint" id="pdf-hint">PDF only, up to 10 MB. Replaces the current PDF.</p>
+        </div>
+        <p class="hint">You can upload one of them, or both at once.</p>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Upload <span class="arrow" aria-hidden="true">&rarr;</span></button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="wide-aside" aria-labelledby="current-title">
+      <div class="card">
+        <h2 id="current-title" class="aside-title">Current files</h2>
+
+        <h3 class="file-label">Photo</h3>
+        <% if (r.photo_path) { %>
+          <img class="file-thumb" src="<%= r.photo_path %>" alt="Current photo of <%= r.resolution_no %>">
+          <form method="post" action="/manage/resolutions/<%= r.id %>/files/remove">
+            <input type="hidden" name="which" value="photo">
+            <button type="submit" class="btn btn-danger btn-sm">Remove photo</button>
+          </form>
+        <% } else { %>
+          <p class="muted">No photo yet.</p>
+        <% } %>
+
+        <h3 class="file-label section-gap-sm">PDF</h3>
+        <% if (r.pdf_path) { %>
+          <div class="action-row">
+            <a class="btn btn-secondary btn-sm" href="<%= r.pdf_path %>" target="_blank" rel="noopener">Preview <span class="visually-hidden">(opens in a new tab)</span></a>
+            <form method="post" action="/manage/resolutions/<%= r.id %>/files/remove" class="inline-form">
+              <input type="hidden" name="which" value="pdf">
+              <button type="submit" class="btn btn-danger btn-sm">Remove PDF</button>
+            </form>
+          </div>
+        <% } else { %>
+          <p class="muted">No PDF yet.</p>
+        <% } %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('../../partials/foot') %>

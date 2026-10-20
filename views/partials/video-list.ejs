@@ -1,0 +1,18 @@
+<%#
+  Public video section. Needs: videos (file_path, title).
+  The browser's own player (controls), so no JavaScript. preload="metadata" loads only the
+  first frame and the length, so a visitor does not download 250 MB without pressing play.
+%>
+<section class="card section-gap" id="videos" aria-labelledby="public-videos-title">
+  <h2 id="public-videos-title">Videos (<%= videos.length %>)</h2>
+  <div class="video-grid">
+    <% videos.forEach((v) => { %>
+      <figure class="video-figure">
+        <video src="<%= v.file_path %>" controls preload="metadata" playsinline aria-label="<%= v.title %>">
+          <a href="<%= v.file_path %>">Download the video: <%= v.title %></a>
+        </video>
+        <figcaption><%= v.title %></figcaption>
+      </figure>
+    <% }) %>
+  </div>
+</section>

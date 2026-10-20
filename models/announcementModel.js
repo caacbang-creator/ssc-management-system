@@ -104,6 +104,16 @@ async function deleteDraft(id) {
   return result.affectedRows;
 }
 
+// President only (C23): permanently deletes a PUBLISHED announcement.
+// Its posters and videos rows go with it (ON DELETE CASCADE); the route deletes their files.
+async function deletePublished(id) {
+  const [result] = await pool.query(
+    `DELETE FROM announcements WHERE id = ? AND status = 'published'`,
+    [id]
+  );
+  return result.affectedRows;
+}
+
 // draft -> pending
 async function submit(id) {
   const [result] = await pool.query(
@@ -168,6 +178,7 @@ module.exports = {
   updateDraft,
   updatePublished,
   deleteDraft,
+  deletePublished,
   submit,
   approve,
   returnToDraft,
