@@ -106,19 +106,23 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// ---------- Edit (drafts only) ----------
+// ---------- Edit (drafts, and published posts -> back to pending, C14) ----------
+const EDITABLE = ['draft', 'published'];
+const NOT_EDITABLE = 'Only drafts and published posts can be edited. Pending posts wait for the reviewer.';
+
 router.get('/:id/edit', writersOnly, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
     const announcement = id ? await announcementModel.findById(id) : null;
     if (!announcement) return notFound(res);
-    if (announcement.status !== 'draft') {
-      req.session.flash = { type: 'error', message: 'Only drafts can be edited.' };
+    if (!EDITABLE.includes(announcement.status)) {
+      req.session.flash = { type: 'error', message: NOT_EDITABLE };
       return res.redirect(303, `/manage/announcements/${id}`);
     }
     res.render('manage/announcements/form', {
       title: 'Edit announcement', action: `/manage/announcements/${id}`, categories: CATEGORIES,
-      errors: [], old: announcement, remarks: announcement.review_remarks
+      errors: [], old: announcement, remarks: announcement.review_remarks,
+      live: announcement.status === 'published'
     });
   } catch (err) {
     next(err);
@@ -128,19 +132,30 @@ router.get('/:id/edit', writersOnly, async (req, res, next) => {
 router.post('/:id', writersOnly, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
-    if (!id) return notFound(res);
+    const existing = id ? await announcementModel.findById(id) : null;
+    if (!existing) return notFound(res);
+    if (!EDITABLE.includes(existing.status)) return refuseOrNotFound(req, res, id, NOT_EDITABLE);
+    const live = existing.status === 'published';
+
     const { old, errors } = validate(req.body);
     if (errors.length > 0) {
-      const existing = await announcementModel.findById(id);
-      if (!existing) return notFound(res);
       return res.status(422).render('manage/announcements/form', {
         title: 'Edit announcement', action: `/manage/announcements/${id}`, categories: CATEGORIES,
-        errors, old, remarks: existing.review_remarks
+        errors, old, remarks: existing.review_remarks, live
       });
     }
-    const changed = await announcementModel.updateDraft(id, old);
-    if (changed === 0) return refuseOrNotFound(req, res, id, 'Only drafts can be edited.');
-    req.session.flash = { type: 'success', message: 'Draft updated.' };
+
+    // The status is checked again inside the SQL, in case it changed since we read it
+    const changed = live
+      ? await announcementModel.updatePublished(id, old)
+      : await announcementModel.updateDraft(id, old);
+    if (changed === 0) return refuseOrNotFound(req, res, id, NOT_EDITABLE);
+    req.session.flash = {
+      type: 'success',
+      message: live
+        ? 'Changes saved and sent for approval. The post is hidden until it is approved again.'
+        : 'Draft updated.'
+    };
     res.redirect(303, `/manage/announcements/${id}`);
   } catch (err) {
     next(err);

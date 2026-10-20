@@ -108,6 +108,8 @@
             <% } else { %>
               <p class="hint">You can mark it completed on or after <%= formatDate(e.event_date) %>.</p>
             <% } %>
+            <p class="hint section-gap">Editing a live event sends it back for approval.</p>
+            <a class="btn btn-secondary btn-sm" href="/manage/events/<%= e.id %>/edit">Edit event</a>
           <% } %>
           <% if (canReview) { %>
             <form method="post" action="/manage/events/<%= e.id %>/cancel" class="section-gap">

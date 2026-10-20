@@ -84,6 +84,17 @@ async function updateDraft(id, announcement) {
   return result.affectedRows;
 }
 
+// Editing a published announcement sends it back for approval (C14): the new text and the
+// status change happen in ONE query, so the public never sees unapproved text.
+async function updatePublished(id, announcement) {
+  const [result] = await pool.query(
+    `UPDATE announcements SET title = ?, category = ?, body = ?, status = 'pending', review_remarks = NULL
+     WHERE id = ? AND status = 'published'`,
+    [announcement.title, announcement.category, announcement.body, id]
+  );
+  return result.affectedRows;
+}
+
 // Only drafts can be deleted
 async function deleteDraft(id) {
   const [result] = await pool.query(
@@ -155,6 +166,7 @@ module.exports = {
   findById,
   create,
   updateDraft,
+  updatePublished,
   deleteDraft,
   submit,
   approve,

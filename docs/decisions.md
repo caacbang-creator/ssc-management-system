@@ -49,3 +49,18 @@ resolutions and documents: those stay structured data, with no file uploads.
 
 **Simpler alternative we did not choose:** the team copies files into `public/img/` and the PRO
 only picks, orders and captions them (no new library).
+
+## C14 — Editing published content sends it back to Pending (keeps C3)
+
+**Date:** 2026-10-20
+
+**Decision:** The PRO may change published announcements (text or posters) and published
+events. Saving a change moves the record from **Published back to Pending**: it is hidden from
+the public until the VP Internal or the President approves it again. "Only drafts are edited"
+now reads: drafts and published records can be edited; pending records are locked.
+
+**Why:** fixing a mistake should not need an unpublish → edit → resubmit round trip, but
+nothing reaches the public without an approver seeing it (C3).
+
+**Exception:** photos of a **completed** event are documentation (like the write-up) and do not
+need new approval.

@@ -115,8 +115,9 @@ async function refuseOrNotFound(req, res, id, message) {
   res.redirect(303, `/manage/events/${id}`);
 }
 
-function renderForm(res, status, title, action, errors, old, remarks) {
-  res.status(status).render('manage/events/form', { title, action, errors, old, remarks, minDate: today() });
+// live = editing a published event (the form warns that saving sends it back for approval)
+function renderForm(res, status, title, action, errors, old, remarks, live = false) {
+  res.status(status).render('manage/events/form', { title, action, errors, old, remarks, live, minDate: today() });
 }
 
 // ---------- List ----------
@@ -161,17 +162,21 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// ---------- Edit (drafts only) ----------
+// ---------- Edit (drafts, and published events -> back to pending, C14) ----------
+const EDITABLE = ['draft', 'published'];
+const NOT_EDITABLE = 'Only drafts and published events can be edited. Pending events wait for the reviewer.';
+
 router.get('/:id/edit', writersOnly, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
     const event = id ? await eventModel.findById(id) : null;
     if (!event) return notFound(res);
-    if (event.status !== 'draft') {
-      req.session.flash = { type: 'error', message: 'Only drafts can be edited.' };
+    if (!EDITABLE.includes(event.status)) {
+      req.session.flash = { type: 'error', message: NOT_EDITABLE };
       return res.redirect(303, `/manage/events/${id}`);
     }
-    renderForm(res, 200, 'Edit event', `/manage/events/${id}`, [], toFormValues(event), event.review_remarks);
+    renderForm(res, 200, 'Edit event', `/manage/events/${id}`, [], toFormValues(event), event.review_remarks,
+      event.status === 'published');
   } catch (err) {
     next(err);
   }
@@ -180,16 +185,31 @@ router.get('/:id/edit', writersOnly, async (req, res, next) => {
 router.post('/:id', writersOnly, async (req, res, next) => {
   try {
     const id = parseId(req.params.id);
-    if (!id) return notFound(res);
+    const existing = id ? await eventModel.findById(id) : null;
+    if (!existing) return notFound(res);
+    if (!EDITABLE.includes(existing.status)) return refuseOrNotFound(req, res, id, NOT_EDITABLE);
+    const live = existing.status === 'published';
+
     const { old, errors } = validate(req.body);
-    if (errors.length > 0) {
-      const existing = await eventModel.findById(id);
-      if (!existing) return notFound(res);
-      return renderForm(res, 422, 'Edit event', `/manage/events/${id}`, errors, old, existing.review_remarks);
+    // Students may already be registered: the new capacity must still fit them
+    if (errors.length === 0 && Number(old.capacity) < existing.registered_count) {
+      errors.push(`Capacity cannot be lower than the ${existing.registered_count} students already registered.`);
     }
-    const changed = await eventModel.updateDraft(id, toRecord(old));
-    if (changed === 0) return refuseOrNotFound(req, res, id, 'Only drafts can be edited.');
-    req.session.flash = { type: 'success', message: 'Draft updated.' };
+    if (errors.length > 0) {
+      return renderForm(res, 422, 'Edit event', `/manage/events/${id}`, errors, old, existing.review_remarks, live);
+    }
+
+    // The status is checked again inside the SQL, in case it changed since we read it
+    const changed = live
+      ? await eventModel.updatePublished(id, toRecord(old))
+      : await eventModel.updateDraft(id, toRecord(old));
+    if (changed === 0) return refuseOrNotFound(req, res, id, NOT_EDITABLE);
+    req.session.flash = {
+      type: 'success',
+      message: live
+        ? 'Changes saved and sent for approval. The event is hidden until it is approved again.'
+        : 'Draft updated.'
+    };
     res.redirect(303, `/manage/events/${id}`);
   } catch (err) {
     next(err);

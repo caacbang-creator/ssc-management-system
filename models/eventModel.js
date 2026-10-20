@@ -167,6 +167,20 @@ async function updateDraft(id, event) {
   return result.affectedRows;
 }
 
+// Editing a published event sends it back for approval (C14): the new details and the
+// status change happen in ONE query, so a live event can never show unapproved text.
+async function updatePublished(id, event) {
+  const [result] = await pool.query(
+    `UPDATE events
+     SET title = ?, description = ?, venue = ?, event_date = ?, start_time = ?, end_time = ?, capacity = ?,
+         status = 'pending', review_remarks = NULL
+     WHERE id = ? AND status = 'published'`,
+    [event.title, event.description, event.venue, event.eventDate, event.startTime,
+      event.endTime, event.capacity, id]
+  );
+  return result.affectedRows;
+}
+
 async function deleteDraft(id) {
   const [result] = await pool.query(
     `DELETE FROM events WHERE id = ? AND status = 'draft'`,
@@ -257,6 +271,7 @@ module.exports = {
   findById,
   create,
   updateDraft,
+  updatePublished,
   deleteDraft,
   submit,
   approve,

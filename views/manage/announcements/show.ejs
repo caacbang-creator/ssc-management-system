@@ -84,8 +84,11 @@
         <% if (a.status === 'published') { %>
           <p><a class="text-link" href="/announcements/<%= a.id %>">See the public page <span class="arrow" aria-hidden="true">&rarr;</span></a></p>
           <% if (canWrite) { %>
-            <p class="hint">Changing a live post's posters sends it back for approval.</p>
-            <a class="btn btn-secondary section-gap" href="/manage/announcements/<%= a.id %>/photos">Change posters</a>
+            <p class="hint">Changing a live post sends it back for approval.</p>
+            <div class="action-row">
+              <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/edit">Edit post</a>
+              <a class="btn btn-secondary btn-sm" href="/manage/announcements/<%= a.id %>/photos">Change posters</a>
+            </div>
           <% } %>
           <% if (canReview) { %>
             <form method="post" action="/manage/announcements/<%= a.id %>/unpublish">
