@@ -4,6 +4,7 @@ const express = require('express');
 const dashboardModel = require('../models/dashboardModel');
 const announcementModel = require('../models/announcementModel');
 const eventModel = require('../models/eventModel');
+const eventPhotoModel = require('../models/eventPhotoModel');
 
 const router = express.Router();
 
@@ -62,11 +63,48 @@ const OFFICER_LINKS = {
     ['Financial reports', '/manage/financial-reports'], ['Resolutions', '/manage/resolutions'], ['Documents', '/manage/documents']]
 };
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// "Good morning" / "Good afternoon" / "Good evening" by the server's local time
+function greeting(date) {
+  const hour = date.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+// 'YYYY-MM-DD' in local time (toISOString would give the UTC date: yesterday before 8 AM here)
+function localDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// Whole days from today to 'YYYY-MM-DD' (0 = today). Both dates at midnight, so no time-of-day error.
+function daysUntil(dateText) {
+  const [y, m, d] = String(dateText).slice(0, 10).split('-').map(Number);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((new Date(y, m - 1, d) - today) / 86400000);
+}
+
 router.get('/dashboard', async (req, res, next) => {
   try {
     const summary = await dashboardModel.getStudentSummary(req.user.id);
-    const announcements = (await announcementModel.listPublished()).slice(0, 3);
-    const events = (await eventModel.listUpcoming()).filter((e) => e.status === 'published').slice(0, 3);
+    const announcements = (await announcementModel.listPublished()).slice(0, 4);
+    const events = (await eventModel.listUpcoming()).filter((e) => e.status === 'published');
+    const photos = await eventPhotoModel.listRecent(5);
+
+    // The soonest event gets a spotlight card; is this user already registered?
+    const nextEvent = events[0] || null;
+    if (nextEvent) {
+      nextEvent.days_left = daysUntil(nextEvent.event_date);
+      nextEvent.registered = await eventModel.isRegistered(nextEvent.id, req.user.id);
+    }
+
+    // Hero background: the cover of the latest completed event that has photos
+    const covers = (await eventModel.listCompleted()).filter((e) => e.cover_path);
+    const heroPhoto = covers.length > 0 ? covers[0].cover_path : null;
+
+    const now = new Date();
 
     // Officer section: only for officer roles, and only that role's tasks
     let tasks = [];
@@ -80,7 +118,11 @@ router.get('/dashboard', async (req, res, next) => {
       title: 'Dashboard',
       summary,
       announcements,
-      events,
+      nextEvent,
+      photos,
+      heroPhoto,
+      hello: greeting(now),
+      todayText: `${DAYS[now.getDay()]}, ${res.app.locals.formatDate(localDate(now))}`,
       tasks,
       officerLinks: OFFICER_LINKS[role] || []
     });

@@ -15,6 +15,21 @@ async function listForEvent(eventId) {
   return rows;
 }
 
+// Newest photos across completed events (for the dashboard strip).
+// limit is a number set in the route, never user input.
+async function listRecent(limit) {
+  const [rows] = await pool.query(
+    `SELECT p.id, p.file_path, p.caption, e.id AS event_id, e.title
+     FROM event_photos p
+     JOIN events e ON e.id = p.event_id
+     WHERE e.status = 'completed'
+     ORDER BY e.event_date DESC, p.sort_order ASC
+     LIMIT ?`,
+    [limit]
+  );
+  return rows;
+}
+
 // Adds photos at the end of the list. The transaction locks this event's rows,
 // so two uploads at the same moment cannot get the same sort_order.
 async function addMany(eventId, filePaths) {
@@ -95,4 +110,4 @@ async function remove(eventId, photoId) {
   return rows[0].file_path;
 }
 
-module.exports = { listForEvent, addMany, updateCaption, move, remove };
+module.exports = { listForEvent, listRecent, addMany, updateCaption, move, remove };

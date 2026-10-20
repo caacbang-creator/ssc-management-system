@@ -2329,6 +2329,316 @@ a.poster-frame:hover {
   flex: 1 1 220px;
 }
 
+/* ---------- Dashboard ---------- */
+/* Hero: the latest event photo, darkened by a navy overlay so white text stays readable */
+.photo-hero {
+  position: relative;
+  overflow: hidden;
+  color: var(--white);
+  background: linear-gradient(135deg, var(--royal) 0%, var(--night) 100%);
+}
+
+.photo-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The overlay sits between the photo and the text (about 10:1 contrast for white text) */
+.photo-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(2, 5, 31, 0.92) 0%, rgba(4, 10, 61, 0.78) 55%, rgba(4, 10, 61, 0.55) 100%);
+}
+
+.photo-hero-inner {
+  position: relative;
+  z-index: 1;
+  padding-top: 2.5rem;
+  padding-bottom: 5.5rem; /* room for the stat cards that overlap the bottom */
+}
+
+.photo-hero h1 {
+  margin: 0.5rem 0;
+  font-size: var(--text-display);
+  line-height: 1.1;
+  color: var(--white);
+}
+
+.hero-accent {
+  color: var(--gold); /* gold text on navy: about 9:1 */
+}
+
+.photo-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.dash-role {
+  padding: 0.1rem 0.7rem;
+  border: 1px solid var(--gold-soft);
+  border-radius: 999px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.photo-hero-lead {
+  margin: 0 0 1.25rem;
+  font-size: var(--text-lg);
+  color: var(--silver);
+}
+
+/* My numbers: three cards pulled up over the bottom of the hero */
+.dash-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: -3.5rem;
+}
+
+@media (min-width: 700px) {
+  .dash-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dash-stat {
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.dash-stat .stat-number,
+.dash-stat .stat-label {
+  display: block;
+}
+
+.icon-tile-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.icon-tile-sm svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dash-task-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.dash-caught-up {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dash-caught-up p {
+  margin: 0;
+}
+
+/* Next event + quick actions side by side on wide screens */
+.dash-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.dash-split > .card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 900px) {
+  .dash-split {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+
+.dash-next {
+  border-top: 3px solid var(--gold);
+}
+
+.dash-next-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.dash-next h2 {
+  margin: 0.15rem 0 0.25rem;
+  font-size: var(--text-lg);
+}
+
+.dash-next h2 a {
+  color: var(--white);
+  text-decoration: none;
+}
+
+.dash-next h2 a:hover {
+  text-decoration: underline;
+}
+
+.date-badge-lg {
+  width: 76px;
+  padding: 0.6rem 0;
+}
+
+.dash-countdown {
+  margin: 0;
+  color: var(--gold);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--text-sm);
+}
+
+.dash-going {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Quick actions: icon tiles in a 2- or 3-column grid */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 520px) {
+  .quick-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.quick-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-height: 100%;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--white);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: transform var(--speed) ease, border-color var(--speed) ease, background-color var(--speed) ease;
+}
+
+.quick-tile:hover {
+  color: var(--white);
+  border-color: var(--gold);
+  background: rgba(242, 193, 78, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Latest news: a row of posters (2 columns on phones, 4 on wide screens) */
+.dash-news {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.dash-news > .card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 900px) {
+  .dash-news {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.dash-news-card {
+  padding: 0.75rem;
+}
+
+.dash-news-card h3 {
+  font-size: var(--text-base);
+}
+
+.dash-news-empty {
+  display: grid;
+  place-items: center;
+}
+
+/* Event photos: one big photo + four small ones (4 x 2 grid); 2 columns on phones */
+.photo-strip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 130px;
+  gap: 0.5rem;
+}
+
+@media (min-width: 700px) {
+  .photo-strip {
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 150px;
+  }
+}
+
+.photo-strip-item {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.photo-strip-item:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.photo-strip-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--speed) ease;
+}
+
+.photo-strip-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Event name on a dark strip at the bottom of each photo */
+.photo-strip-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.5rem 0.6rem 0.45rem;
+  background: linear-gradient(transparent, rgba(2, 5, 31, 0.9));
+  color: var(--white);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
 /* ---------- Reduced motion (accessibility) ---------- */
 /* People who ask their device for less motion get no animations or transitions at all. */
 @media (prefers-reduced-motion: reduce) {
@@ -2357,7 +2667,9 @@ a.poster-frame:hover {
   .back-link:hover span,
   .mosaic-tile:hover img,
   .mosaic-tile:focus-visible img,
-  .past-event-card:hover .event-cover img {
+  .past-event-card:hover .event-cover img,
+  .quick-tile:hover,
+  .photo-strip-item:hover img {
     transform: none;
   }
 }
