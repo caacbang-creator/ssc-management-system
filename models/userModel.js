@@ -87,9 +87,45 @@ async function findByStudentNo(studentNo) {
   return rows[0] || null;
 }
 
+// ---------- Office duty (C25) ----------
+// Officers = every user whose role is not student, with their directory photo and position
+// (officers.user_id links a directory entry to a login; NULL photo = initials are shown)
+async function listOfficers() {
+  const [rows] = await pool.query(
+    `SELECT u.id, u.first_name, u.last_name, u.role, o.photo_path, o.position
+     FROM users u
+     LEFT JOIN officers o ON o.user_id = u.id
+     WHERE u.role <> 'student'
+     ORDER BY COALESCE(o.sort_order, 999), u.first_name`
+  );
+  return rows;
+}
+
+// One officer (not a student) with photo, or null
+async function findOfficerById(id) {
+  const [rows] = await pool.query(
+    `SELECT u.id, u.first_name, u.last_name, u.role, o.photo_path, o.position
+     FROM users u
+     LEFT JOIN officers o ON o.user_id = u.id
+     WHERE u.id = ? AND u.role <> 'student'`,
+    [id]
+  );
+  return rows[0] || null;
+}
+
+// Office Time In asks for the password again. Like findByEmailForLogin, this reads the hash
+// only to compare it with bcrypt; the hash never leaves the route.
+async function findPasswordHash(id) {
+  const [rows] = await pool.query('SELECT password_hash FROM users WHERE id = ?', [id]);
+  return rows[0] ? rows[0].password_hash : null;
+}
+
 module.exports = {
   findById,
   findByStudentNo,
+  listOfficers,
+  findOfficerById,
+  findPasswordHash,
   findByEmailForLogin,
   findDuplicate,
   create,
