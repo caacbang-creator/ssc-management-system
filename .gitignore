@@ -4,3 +4,6 @@ course-materials/
 
 # Photos uploaded through the app (user content, not part of the code)
 public/uploads/
+
+# Original full-size officer photos (web copies are in public/img/officers/)
+public/directory/

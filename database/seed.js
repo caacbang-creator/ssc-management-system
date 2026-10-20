@@ -122,21 +122,22 @@ async function main() {
     }
 
     const term = '2026-2027';
+    // Official SSC portraits, resized for the web, in public/img/officers/ (decision C16)
     const officers = [
-      ['Jester Carl SJ. Sumpay', 'President', null, 1],
-      ['Ralph Joe Francis Abonal', 'Vice President for Internal Affairs', committeeIds[0], 2],
-      ['Jessil Martinez', 'Vice President for External Affairs', null, 3],
-      ['Ma. Lourdes Tulabot', 'Secretary', null, 4],
-      ['Rj Patrick Sernal', 'Treasurer', committeeIds[2], 5],
-      ['Krystine Gospe', 'Auditor', null, 6],
-      ['Camille Salvadora', 'Public Information Officer', committeeIds[3], 7],
-      ['Luke Ronquillo', 'Property Custodian', null, 8]
+      ['Jester Carl SJ. Sumpay', 'President', null, 'president.jpg', 1],
+      ['Ralph Joe Francis Abonal', 'Vice President for Internal Affairs', committeeIds[0], 'vp-internal.jpg', 2],
+      ['Jessil Martinez', 'Vice President for External Affairs', null, 'vp-external.jpg', 3],
+      ['Ma. Lourdes Tulabot', 'Secretary', null, 'secretary.jpg', 4],
+      ['Rj Patrick Sernal', 'Treasurer', committeeIds[2], 'treasurer.jpg', 5],
+      ['Krystine Gospe', 'Auditor', null, 'auditor.jpg', 6],
+      ['Camille Salvadora', 'Public Information Officer', committeeIds[3], 'pio.jpg', 7],
+      ['Luke Ronquillo', 'Property Custodian', null, 'property-custodian.jpg', 8]
     ];
-    for (const [fullName, position, committeeId, sortOrder] of officers) {
+    for (const [fullName, position, committeeId, photo, sortOrder] of officers) {
       await conn.query(
-        `INSERT INTO officers (full_name, position, committee_id, term, sort_order)
-         VALUES (?, ?, ?, ?, ?)`,
-        [fullName, position, committeeId, term, sortOrder]
+        `INSERT INTO officers (full_name, position, committee_id, term, photo_path, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [fullName, position, committeeId, term, `/img/officers/${photo}`, sortOrder]
       );
     }
 

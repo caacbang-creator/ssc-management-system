@@ -95,7 +95,11 @@
         <ul class="team-grid">
           <% officers.forEach((o) => { %>
             <li class="card team-card">
-              <span class="team-avatar" aria-hidden="true"><%= initials(o.full_name) %></span>
+              <% if (o.photo_path) { %>
+                <img class="team-avatar" src="<%= o.photo_path %>" alt="" loading="lazy" width="72" height="72">
+              <% } else { %>
+                <span class="team-avatar" aria-hidden="true"><%= initials(o.full_name) %></span>
+              <% } %>
               <span class="team-name"><%= o.full_name %></span>
               <span class="team-position"><%= o.position %></span>
             </li>

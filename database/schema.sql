@@ -81,6 +81,7 @@ CREATE TABLE officers (
   position VARCHAR(100) NOT NULL,
   committee_id INT UNSIGNED NULL,
   term VARCHAR(20) NOT NULL,
+  photo_path VARCHAR(255) NULL,   -- e.g. /img/officers/president.jpg (C16); NULL = show initials
   sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

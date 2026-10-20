@@ -98,3 +98,17 @@ Student accounts stay fake.
   their account goes back to a fake demo e-mail.
 - Before any real deployment (Round 2), every officer sets their own password.
 - Keep the GitHub repository private, or replace the e-mails with fake ones before making it public.
+
+## C16 — Officer directory shows official portraits (changes "no photo column")
+
+**Date:** 2026-10-20 · **Status:** chosen by caacbang-creator; the other two members confirm in the PR review.
+
+**Decision:** `officers` gets an optional `photo_path` column. The directory and the About page
+show each officer's official SSC portrait; an officer without a photo shows their initials.
+
+**How:** the originals (7–10 MB each, about 65 MB) stay in `public/directory/`, which is git-ignored.
+Web copies resized to 600 × 900 px (about 60 KB each) are in `public/img/officers/` and committed.
+The photos are not uploaded through the app; the team replaces the file to change a photo.
+
+**Conditions:** same as C12 and C15: official SSC photos only, each officer agrees, and a photo is
+removed if the officer asks.

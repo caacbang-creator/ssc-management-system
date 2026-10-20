@@ -3,7 +3,7 @@ const pool = require('../db');
 
 async function listAll() {
   const [rows] = await pool.query(
-    `SELECT o.id, o.full_name, o.position, o.term, o.sort_order, c.name AS committee_name
+    `SELECT o.id, o.full_name, o.position, o.term, o.photo_path, o.sort_order, c.name AS committee_name
      FROM officers o
      LEFT JOIN committees c ON c.id = o.committee_id
      ORDER BY o.sort_order ASC, o.full_name ASC`

@@ -18,20 +18,29 @@
       <p>We'll introduce the officers here soon.</p>
     </div>
   <% } else { %>
-    <div class="card-grid">
+    <ul class="portrait-grid">
       <% officers.forEach((o) => { %>
         <%
-          // Initials stand in for a photo (no photos are stored)
+          // Initials stand in when an officer has no photo
           const initials = o.full_name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
         %>
-        <section class="card officer-card">
-          <span class="officer-initials" aria-hidden="true"><%= initials %></span>
-          <p class="officer-position"><%= o.position %></p>
-          <h2 class="officer-name"><%= o.full_name %></h2>
-          <p class="meta"><% if (o.committee_name) { %><%= o.committee_name %> &middot; <% } %><%= o.term %></p>
-        </section>
+        <li class="card portrait-card">
+          <span class="portrait-frame">
+            <% if (o.photo_path) { %>
+              <%# The name is right below, so the photo is decorative for screen readers %>
+              <img src="<%= o.photo_path %>" alt="" loading="lazy" width="600" height="900">
+            <% } else { %>
+              <span class="portrait-initials" aria-hidden="true"><%= initials %></span>
+            <% } %>
+          </span>
+          <span class="portrait-body">
+            <span class="officer-position"><%= o.position %></span>
+            <h2 class="officer-name"><%= o.full_name %></h2>
+            <span class="meta"><% if (o.committee_name) { %><%= o.committee_name %> &middot; <% } %><%= o.term %></span>
+          </span>
+        </li>
       <% }) %>
-    </div>
+    </ul>
   <% } %>
 
   <div class="page-end">
