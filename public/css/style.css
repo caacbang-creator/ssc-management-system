@@ -2305,6 +2305,402 @@ a.poster-frame:hover {
   flex: 1 1 220px;
 }
 
+/* ---------- Concerns ---------- */
+/* Wide two-column layout: main content + help panel (uses the full container width) */
+.wide-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .wide-split {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .wide-aside {
+    position: sticky;
+    top: 90px;
+  }
+}
+
+.wide-split > .card,
+.wide-aside .card {
+  margin-bottom: 1rem;
+}
+
+.aside-title {
+  margin: 0 0 0.75rem;
+  font-size: var(--text-lg);
+}
+
+.section-gap-sm {
+  margin-top: 0.75rem;
+}
+
+/* List with gold check marks */
+.check-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  position: relative;
+  padding-left: 1.6rem;
+  color: var(--muted);
+}
+
+.check-list li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.check-list strong {
+  color: var(--white);
+}
+
+/* Topic tiles: each is a <label> around a real radio button */
+.tile-picker {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  border: 0;
+}
+
+.tile-picker legend {
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+
+.tile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+@media (min-width: 700px) {
+  .tile-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.choice-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: border-color var(--speed) ease, background-color var(--speed) ease;
+}
+
+.choice-tile:hover {
+  border-color: var(--gold-soft);
+}
+
+/* The radio stays visible in the corner, so "chosen" never depends on colour alone */
+.choice-tile input {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--gold);
+}
+
+.choice-tile:has(input:checked) {
+  border-color: var(--gold);
+  background: rgba(242, 193, 78, 0.10);
+}
+
+.choice-tile:has(input:focus-visible) {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.choice-title {
+  font-weight: 700;
+  color: var(--white);
+}
+
+.choice-hint {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* The "keep my name private" option in its own box */
+.anon-box {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem 0.1rem;
+  border: 1px dashed var(--gold-soft);
+  border-radius: var(--radius);
+  background: rgba(242, 193, 78, 0.05);
+}
+
+/* How it works: 4 numbered steps in a row */
+.how-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 600px) {
+  .how-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .how-steps {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.how-step {
+  position: relative;
+  margin-bottom: 0;
+}
+
+.how-step h3 {
+  margin: 0.75rem 0 0.25rem;
+  font-size: var(--text-base);
+}
+
+.how-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.how-number {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--gold-soft);
+}
+
+.privacy-card h3 {
+  margin: 0.75rem 0 0.75rem;
+}
+
+/* Concern cards (hub + My concerns) */
+.concern-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.concern-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: start;
+  margin-bottom: 0;
+  color: var(--white);
+  text-decoration: none;
+  transition: transform var(--speed) ease, border-color var(--speed) ease;
+}
+
+.concern-card:hover {
+  color: var(--white);
+  border-color: var(--gold-soft);
+  transform: translateY(-2px);
+}
+
+.concern-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.concern-card-side {
+  grid-column: 2;
+}
+
+@media (min-width: 700px) {
+  .concern-card {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .concern-card-side {
+    grid-column: auto;
+  }
+}
+
+.concern-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.concern-subject {
+  font-weight: 700;
+  font-size: var(--text-lg);
+}
+
+.new-reply {
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--night-deep); /* dark text on gold: about 11:1 */
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.progress-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.progress-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 28px);
+  gap: 4px;
+}
+
+.progress-bar span {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.progress-bar span.is-on {
+  background: var(--gold);
+}
+
+.progress-text {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* My concerns: three summary numbers */
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.summary-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  padding: 0.85rem 1rem;
+}
+
+.empty-state-big {
+  padding: 3rem 1.25rem;
+}
+
+/* Steps laid out across the page on wide screens (one concern, tracking) */
+@media (min-width: 700px) {
+  .steps-wide .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: 0;
+  }
+
+  .steps-wide .step {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.4rem;
+  }
+
+  /* The joining line runs across instead of down */
+  .steps-wide .step:not(:last-child)::after {
+    left: calc(50% + 16px);
+    right: calc(-50% + 16px);
+    top: calc(0.3rem + 11px);
+    width: auto;
+    height: 2px;
+  }
+}
+
+/* Our reply: highlighted with a gold edge once there is one */
+.reply-card.has-reply {
+  border-left: 4px solid var(--gold);
+}
+
+.reply-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.reply-head h2 {
+  margin: 0;
+}
+
+.reply-head .meta {
+  margin: 0.15rem 0 0;
+}
+
+.track-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem 1rem;
+  align-items: end;
+}
+
+@media (min-width: 600px) {
+  .track-form {
+    grid-template-columns: 1fr auto;
+  }
+
+  .track-form .form-field {
+    margin-bottom: 0;
+  }
+
+  /* Line the button up with the input, above the hint */
+  .track-form .btn {
+    margin-bottom: 1.6rem;
+  }
+}
+
+.result-heading {
+  margin-bottom: 1rem;
+}
+
+.result-heading h2 {
+  margin: 0;
+}
+
+.track-reply {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.track-reply h3 {
+  margin-top: 0;
+}
+
 /* ---------- About page ---------- */
 /* Header: SSC seal beside the title on wide screens (uses .photo-hero below) */
 .about-hero-inner {
@@ -2616,7 +3012,8 @@ img.team-avatar {
 }
 
 /* My numbers: three cards pulled up over the bottom of the hero */
-.dash-stats {
+.dash-stats,
+.hero-overlap {
   position: relative;
   z-index: 1;
   display: grid;
@@ -2626,7 +3023,8 @@ img.team-avatar {
 }
 
 @media (min-width: 700px) {
-  .dash-stats {
+  .dash-stats,
+  .hero-overlap {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -2889,6 +3287,7 @@ img.team-avatar {
   .past-event-card:hover .event-cover img,
   .quick-tile:hover,
   .goal-card:hover,
+  .concern-card:hover,
   .portrait-card:hover,
   .portrait-card:hover .portrait-frame img,
   .photo-strip-item:hover img {

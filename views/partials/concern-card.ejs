@@ -1,0 +1,27 @@
+<%
+  // One of the user's concerns as a clickable card. Usage: include('partials/concern-card', { c })
+  // Needs categoryInfo (set by routes/concerns.js).
+  const info = categoryInfo[c.category] || categoryInfo.other;
+  const STEP_WORDS = ['Received', 'Being reviewed', 'We replied', 'Resolved'];
+  const step = ['submitted', 'under_review', 'responded', 'resolved'].indexOf(c.status);
+%>
+<a class="card concern-card" href="/concerns/<%= c.id %>">
+  <span class="icon-tile"><%- include('icon', { name: info.icon }) %></span>
+  <span class="concern-card-main">
+    <span class="concern-card-title">
+      <span class="concern-subject"><%= c.subject %></span>
+      <% if (c.has_reply && c.status === 'responded') { %>
+        <span class="new-reply">New reply</span>
+      <% } %>
+    </span>
+    <span class="meta"><%= info.label %> &middot; <%= formatDate(c.created_at) %> &middot; <%= c.reference_no %></span>
+    <%# 4 segments filled up to the current step; the words after it say the same thing in text %>
+    <span class="progress-row">
+      <span class="progress-bar" aria-hidden="true">
+        <% for (let i = 0; i < 4; i++) { %><span class="<%= i <= step ? 'is-on' : '' %>"></span><% } %>
+      </span>
+      <span class="progress-text">Step <%= step + 1 %> of 4: <%= STEP_WORDS[step] %></span>
+    </span>
+  </span>
+  <span class="concern-card-side"><%- include('status-pill', { status: c.status }) %></span>
+</a>

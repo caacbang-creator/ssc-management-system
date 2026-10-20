@@ -1,43 +1,82 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
-<main id="main" class="container form-page">
+<main id="main" class="container">
   <a class="back-link" href="/concerns"><span aria-hidden="true">&larr;</span> Concerns</a>
 
-  <section class="card">
-    <h1>Raise a concern</h1>
-    <p class="muted">Tell us what happened. We'll reply as soon as we can.</p>
-    <%- include('../partials/form-errors') %>
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Concerns</p>
+      <h1>Raise a concern</h1>
+      <p class="page-lead">Tell us what happened. An SSC officer will read it and reply here.</p>
+    </div>
+  </div>
 
-    <form method="post" action="/concerns" novalidate>
-      <div class="form-field">
-        <label for="category">Category</label>
-        <select id="category" name="category">
-          <option value="">Choose a topic</option>
-          <% categories.forEach((c) => { %>
-            <option value="<%= c %>"<% if (old.category === c) { %> selected<% } %>><%= (c.charAt(0).toUpperCase() + c.slice(1)).replace('_', ' ') %></option>
-          <% }) %>
-        </select>
+  <div class="wide-split">
+    <section class="card" aria-labelledby="form-title">
+      <h2 id="form-title" class="visually-hidden">Your concern</h2>
+      <%- include('../partials/form-errors') %>
+
+      <form method="post" action="/concerns" novalidate>
+        <%# Topic tiles: real radio buttons inside a fieldset, so keyboards and screen readers work as usual %>
+        <fieldset class="tile-picker">
+          <legend>What is it about?</legend>
+          <div class="tile-grid">
+            <% categories.forEach((c) => { %>
+              <% const info = categoryInfo[c]; %>
+              <label class="choice-tile" for="category-<%= c %>">
+                <input type="radio" id="category-<%= c %>" name="category" value="<%= c %>"<% if (old.category === c) { %> checked<% } %>>
+                <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: info.icon }) %></span>
+                <span class="choice-title"><%= info.label %></span>
+                <span class="choice-hint"><%= info.hint %></span>
+              </label>
+            <% }) %>
+          </div>
+        </fieldset>
+
+        <div class="form-field">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" name="subject" value="<%= old.subject || '' %>" maxlength="150"
+            aria-describedby="subject-hint" required>
+          <p class="hint" id="subject-hint">One line, e.g. "Broken ceiling fan in Room 204".</p>
+        </div>
+        <div class="form-field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" rows="9" maxlength="5000" aria-describedby="message-hint" required><%= old.message || '' %></textarea>
+          <p class="hint" id="message-hint">What happened, where and since when. Up to 5,000 characters.</p>
+        </div>
+
+        <div class="anon-box">
+          <div class="form-field checkbox-field">
+            <input type="checkbox" id="anonymous" name="anonymous" value="1" aria-describedby="anonymous-hint"<% if (old.anonymous) { %> checked<% } %>>
+            <label for="anonymous">Keep my name private</label>
+            <p class="hint" id="anonymous-hint">We won't save your name. Keep the reference code we show you, since it's the only way to follow up.</p>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Send concern <span class="arrow" aria-hidden="true">&rarr;</span></button>
+          <a class="btn btn-secondary" href="/concerns">Cancel</a>
+        </div>
+      </form>
+    </section>
+
+    <aside class="wide-aside" aria-label="Help">
+      <div class="card">
+        <h2 class="aside-title">What happens next</h2>
+        <%- include('../partials/steps', { steps: ['Received', 'Being reviewed', 'We replied', 'Resolved'], current: -1, stopped: false }) %>
       </div>
-      <div class="form-field">
-        <label for="subject">Subject</label>
-        <input type="text" id="subject" name="subject" value="<%= old.subject || '' %>" maxlength="150" required>
+      <div class="card">
+        <h2 class="aside-title">Tips for a quick reply</h2>
+        <ul class="check-list">
+          <li>Say <strong>where</strong>: building and room</li>
+          <li>Say <strong>when</strong> it started</li>
+          <li>One concern per form</li>
+          <li>Keep it respectful; we're on your side</li>
+        </ul>
       </div>
-      <div class="form-field">
-        <label for="message">Message</label>
-        <textarea id="message" name="message" rows="7" maxlength="5000" required><%= old.message || '' %></textarea>
-      </div>
-      <div class="form-field checkbox-field">
-        <input type="checkbox" id="anonymous" name="anonymous" value="1" aria-describedby="anonymous-hint"<% if (old.anonymous) { %> checked<% } %>>
-        <label for="anonymous">Keep my name private</label>
-        <p class="hint" id="anonymous-hint">We won't save your name. Keep the reference code we show you, since it's the only way to follow up.</p>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Send concern <span class="arrow" aria-hidden="true">&rarr;</span></button>
-        <a class="btn btn-secondary" href="/concerns">Cancel</a>
-      </div>
-    </form>
-  </section>
+    </aside>
+  </div>
 </main>
 
 <%- include('../partials/foot') %>

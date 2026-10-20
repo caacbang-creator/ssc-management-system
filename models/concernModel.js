@@ -37,7 +37,8 @@ async function create(concern, userId) {
 // ---------- Owner (named concerns only) ----------
 async function listForUser(userId) {
   const [rows] = await pool.query(
-    `SELECT id, reference_no, category, subject, status, created_at
+    `SELECT id, reference_no, category, subject, status, created_at,
+            response IS NOT NULL AS has_reply
      FROM concerns
      WHERE user_id = ?
      ORDER BY created_at DESC`,

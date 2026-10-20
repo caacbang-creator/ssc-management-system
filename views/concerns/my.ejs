@@ -1,6 +1,15 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
+<%
+  const count = (statuses) => concerns.filter((c) => statuses.includes(c.status)).length;
+  const summary = [
+    ['Waiting', count(['submitted', 'under_review']), 'search'],
+    ['Replied', count(['responded']), 'reply'],
+    ['Resolved', count(['resolved']), 'check']
+  ];
+%>
+
 <main id="main" class="container">
   <div class="page-heading">
     <div>
@@ -12,31 +21,26 @@
   </div>
 
   <% if (concerns.length === 0) { %>
-    <div class="card empty-state">
-      <p>You haven't sent any concerns yet. We hope that means all is well!</p>
+    <div class="card empty-state empty-state-big">
+      <span class="icon-tile"><%- include('../partials/icon', { name: 'check' }) %></span>
+      <p><strong>No concerns yet.</strong> We hope that means all is well!</p>
+      <a class="btn btn-secondary" href="/concerns/new">Raise one</a>
     </div>
   <% } else { %>
-    <div class="card table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">Subject</th>
-            <th scope="col">Status</th>
-            <th scope="col">Sent</th>
-            <th scope="col">Code</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% concerns.forEach((c) => { %>
-            <tr>
-              <td><a href="/concerns/<%= c.id %>"><%= c.subject %></a></td>
-              <td><%- include('../partials/status-pill', { status: c.status }) %></td>
-              <td><%= formatDate(c.created_at) %></td>
-              <td class="muted"><%= c.reference_no %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+    <div class="summary-row">
+      <% summary.forEach(([label, number, icon]) => { %>
+        <div class="card summary-chip">
+          <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: icon }) %></span>
+          <span><span class="stat-number"><%= number %></span> <span class="stat-label"><%= label %></span></span>
+        </div>
+      <% }) %>
+    </div>
+
+    <h2 class="visually-hidden">All my concerns, newest first</h2>
+    <div class="concern-list">
+      <% concerns.forEach((c) => { %>
+        <%- include('../partials/concern-card', { c }) %>
+      <% }) %>
     </div>
   <% } %>
 </main>

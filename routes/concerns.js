@@ -8,14 +8,33 @@ const router = express.Router();
 const CATEGORIES = ['academic', 'facilities', 'student_services', 'other'];
 const REFERENCE_PATTERN = /^C-\d{4}-\d{4,}$/;
 
+// Label, icon and example for each category (used by every concerns page)
+const CATEGORY_INFO = {
+  academic: { label: 'Academic', icon: 'book', hint: 'Classes, grades, faculty' },
+  facilities: { label: 'Facilities', icon: 'building', hint: 'Rooms, restrooms, equipment' },
+  student_services: { label: 'Student services', icon: 'users', hint: 'Registrar, clinic, library' },
+  other: { label: 'Other', icon: 'chat', hint: 'Anything else on campus' }
+};
+
+router.use((req, res, next) => {
+  res.locals.categoryInfo = CATEGORY_INFO;
+  next();
+});
+
 // Turns '12' into 12; anything else (e.g. 'abc', '-1', '1.5') into null
 function parseId(value) {
   return /^[1-9]\d*$/.test(value) ? Number(value) : null;
 }
 
 // ---------- Hub page (public) ----------
-router.get('/', (req, res) => {
-  res.render('concerns/index', { title: 'Concerns' });
+router.get('/', async (req, res, next) => {
+  try {
+    // Logged in: show their three newest named concerns (anonymous ones have no owner)
+    const recent = req.user ? (await concernModel.listForUser(req.user.id)).slice(0, 3) : [];
+    res.render('concerns/index', { title: 'Concerns', recent });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- Submit (login required) ----------

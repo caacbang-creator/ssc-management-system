@@ -1,44 +1,69 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
-<main id="main" class="container form-page">
+<main id="main" class="container">
   <a class="back-link" href="/concerns"><span aria-hidden="true">&larr;</span> Concerns</a>
 
-  <section class="card">
-    <h1>Track a concern</h1>
-    <p class="muted">Enter the code you got when you sent it.</p>
-    <%- include('../partials/form-errors') %>
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Concerns</p>
+      <h1>Track a concern</h1>
+      <p class="page-lead">Enter the code you got when you sent it. No login needed.</p>
+    </div>
+  </div>
 
-    <form method="get" action="/concerns/track" novalidate>
-      <div class="form-field">
-        <label for="ref">Reference code</label>
-        <input type="text" id="ref" name="ref" value="<%= ref %>" maxlength="20"
-          aria-describedby="ref-hint" autocomplete="off" placeholder="C-2026-0001" required>
-        <p class="hint" id="ref-hint">It looks like C-2026-0001</p>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Check status <span class="arrow" aria-hidden="true">&rarr;</span></button>
-      </div>
-    </form>
-  </section>
+  <div class="wide-split">
+    <div>
+      <section class="card track-card" aria-labelledby="track-form-title">
+        <h2 id="track-form-title" class="visually-hidden">Reference code</h2>
+        <%- include('../partials/form-errors') %>
+        <form method="get" action="/concerns/track" novalidate class="track-form">
+          <div class="form-field">
+            <label for="ref">Reference code</label>
+            <input type="text" id="ref" name="ref" value="<%= ref %>" maxlength="20"
+              aria-describedby="ref-hint" autocomplete="off" placeholder="C-2026-0001" required>
+            <p class="hint" id="ref-hint">It looks like C-2026-0001</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Check status <span class="arrow" aria-hidden="true">&rarr;</span></button>
+        </form>
+      </section>
 
-  <% if (concern) { %>
-    <%# Only status and response are shown here - never the subject, message or who sent it %>
-    <%
-      const stepIndex = ['submitted', 'under_review', 'responded', 'resolved'].indexOf(concern.status);
-    %>
-    <section class="card" aria-labelledby="result-title">
-      <h2 id="result-title">Concern <%= concern.reference_no %></h2>
-      <%- include('../partials/steps', { steps: ['Received', 'Being reviewed', 'We replied', 'Resolved'], current: stepIndex, stopped: false }) %>
-      <h3>Our reply</h3>
-      <% if (concern.response) { %>
-        <p class="meta">Replied <%= formatDate(concern.responded_at) %></p>
-        <p class="keep-lines"><%= concern.response %></p>
-      <% } else { %>
-        <p class="muted">No reply yet. Please check again later.</p>
+      <% if (concern) { %>
+        <%# Only status and response are shown here - never the subject, message or who sent it %>
+        <% const stepIndex = ['submitted', 'under_review', 'responded', 'resolved'].indexOf(concern.status); %>
+        <section class="card section-gap" aria-labelledby="result-title">
+          <div class="page-heading result-heading">
+            <h2 id="result-title">Concern <%= concern.reference_no %></h2>
+            <%- include('../partials/status-pill', { status: concern.status }) %>
+          </div>
+          <div class="steps-wide">
+            <%- include('../partials/steps', { steps: ['Received', 'Being reviewed', 'We replied', 'Resolved'], current: stepIndex, stopped: false }) %>
+          </div>
+          <div class="reply-card<%= concern.response ? ' has-reply' : '' %> track-reply">
+            <h3>Our reply</h3>
+            <% if (concern.response) { %>
+              <p class="meta">Replied <%= formatDate(concern.responded_at) %></p>
+              <p class="keep-lines prose"><%= concern.response %></p>
+            <% } else { %>
+              <p class="muted">No reply yet. Please check again later.</p>
+            <% } %>
+          </div>
+        </section>
       <% } %>
-    </section>
-  <% } %>
+    </div>
+
+    <aside class="wide-aside" aria-label="About tracking">
+      <div class="card">
+        <span class="icon-tile"><%- include('../partials/icon', { name: 'lock' }) %></span>
+        <h2 class="aside-title section-gap-sm">Your privacy</h2>
+        <ul class="check-list">
+          <li>This page shows <strong>only</strong> the status and our reply</li>
+          <li>It never shows the subject, the message or who sent it</li>
+          <li>Lost your code? We can't look it up for you, because we don't know who sent it</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
 </main>
 
 <%- include('../partials/foot') %>

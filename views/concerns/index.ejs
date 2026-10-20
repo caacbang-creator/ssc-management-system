@@ -1,41 +1,109 @@
 <%- include('../partials/head') %>
 <%- include('../partials/nav') %>
 
-<main id="main" class="container">
-  <div class="page-heading">
-    <div>
+<%
+  const actions = [
+    ['Raise a concern', 'A short form. You can use your name or stay anonymous.', '/concerns/new', 'send', 'Start'],
+    ['My concerns', 'See our replies to the concerns you sent with your name.', '/concerns/my', 'chat', 'Open'],
+    ['Track with a code', 'Sent one anonymously? Use your reference code. No login needed.', '/concerns/track', 'search', 'Track']
+  ];
+  const howSteps = [
+    ['send', 'You send it', 'Pick a topic and tell us what happened.'],
+    ['search', 'We review it', 'An SSC officer looks into it.'],
+    ['reply', 'We reply', 'Our answer appears on your concern.'],
+    ['check', 'Resolved', 'We close it once it is settled.']
+  ];
+%>
+
+<main id="main">
+  <section class="photo-hero" aria-labelledby="concerns-title">
+    <div class="container photo-hero-inner fade-up">
       <p class="eyebrow">Concerns</p>
-      <h1>We're here to listen</h1>
-      <p class="page-lead">Tell us about a problem on campus. You can use your name or stay anonymous.</p>
+      <h1 id="concerns-title">We're here to <span class="hero-accent">listen</span>.</h1>
+      <p class="photo-hero-lead">Tell us about a problem on campus. Every concern is read by an SSC officer.</p>
+      <div class="action-row">
+        <a class="btn btn-light" href="/concerns/new">Raise a concern <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        <a class="btn btn-outline-light" href="/concerns/track">Track with a code</a>
+      </div>
     </div>
-    <a class="btn btn-primary" href="/concerns/new">Raise a concern <span class="arrow" aria-hidden="true">&rarr;</span></a>
-  </div>
+  </section>
 
-  <%# Ordered by what most people come here to do %>
-  <div class="card-grid-3">
-    <a class="card link-card" href="/concerns/new">
-      <h2>Raise a concern</h2>
-      <p>A short form. You'll need to log in first.</p>
-      <span class="card-link">Start <span class="arrow" aria-hidden="true">&rarr;</span></span>
-    </a>
-    <a class="card link-card" href="/concerns/my">
-      <h2>My concerns</h2>
-      <p>See our replies to the concerns you sent with your name.</p>
-      <span class="card-link">Open <span class="arrow" aria-hidden="true">&rarr;</span></span>
-    </a>
-    <a class="card link-card" href="/concerns/track">
-      <h2>Track with a code</h2>
-      <p>Sent one anonymously? Use your reference code. No login needed.</p>
-      <span class="card-link">Track <span class="arrow" aria-hidden="true">&rarr;</span></span>
-    </a>
-  </div>
-
-  <% if (currentUser && ['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
-    <div class="page-end">
-      <p>For officers: review and answer concerns.</p>
-      <a class="btn btn-secondary" href="/manage/concerns">Manage concerns</a>
+  <div class="container">
+    <h2 class="visually-hidden">What you can do here</h2>
+    <div class="hero-overlap fade-up fade-up-delay-1">
+      <% actions.forEach(([title, text, href, icon, cta]) => { %>
+        <a class="card feature-card" href="<%= href %>">
+          <span class="icon-tile"><%- include('../partials/icon', { name: icon }) %></span>
+          <h3><%= title %></h3>
+          <p><%= text %></p>
+          <span class="card-link"><%= cta %> <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+      <% }) %>
     </div>
-  <% } %>
+
+    <% if (recent.length > 0) { %>
+      <section class="section-gap" aria-labelledby="recent-title">
+        <div class="section-heading">
+          <h2 id="recent-title">Your recent concerns</h2>
+          <a class="text-link" href="/concerns/my">See all <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        </div>
+        <div class="concern-list">
+          <% recent.forEach((c) => { %>
+            <%- include('../partials/concern-card', { c }) %>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+
+    <section class="section-gap" aria-labelledby="how-title">
+      <div class="section-heading">
+        <h2 id="how-title">How it works</h2>
+      </div>
+      <ol class="how-steps">
+        <% howSteps.forEach(([icon, title, text], i) => { %>
+          <li class="card how-step">
+            <span class="how-number" aria-hidden="true"><%= i + 1 %></span>
+            <span class="icon-tile"><%- include('../partials/icon', { name: icon }) %></span>
+            <h3><%= title %></h3>
+            <p><%= text %></p>
+          </li>
+        <% }) %>
+      </ol>
+    </section>
+
+    <section class="section-gap" aria-labelledby="privacy-title">
+      <div class="section-heading">
+        <h2 id="privacy-title">Your name, your choice</h2>
+      </div>
+      <div class="card-grid-2">
+        <div class="card privacy-card">
+          <span class="icon-tile"><%- include('../partials/icon', { name: 'users' }) %></span>
+          <h3>With your name</h3>
+          <ul class="check-list">
+            <li>It appears under <strong>My concerns</strong></li>
+            <li>You can read our reply any time you log in</li>
+            <li>We can follow up with you if we need more details</li>
+          </ul>
+        </div>
+        <div class="card privacy-card">
+          <span class="icon-tile"><%- include('../partials/icon', { name: 'lock' }) %></span>
+          <h3>Anonymous</h3>
+          <ul class="check-list">
+            <li>Your name is <strong>not saved</strong> with the concern</li>
+            <li>You get a reference code like <strong>C-2026-0001</strong></li>
+            <li>The tracking page shows only the status and our reply</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <% if (currentUser && ['pro', 'vp_internal', 'president'].includes(currentUser.role)) { %>
+      <div class="page-end">
+        <p>For officers: review and answer concerns.</p>
+        <a class="btn btn-secondary" href="/manage/concerns">Manage concerns</a>
+      </div>
+    <% } %>
+  </div>
 </main>
 
 <%- include('../partials/foot') %>
