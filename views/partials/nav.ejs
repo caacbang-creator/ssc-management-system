@@ -42,7 +42,7 @@
             <form method="post" action="/logout" class="inline-form">
               <button type="submit" class="link-button">Log out</button>
             </form>
-            <a class="nav-cta" href="/dashboard"<% if (path === '/dashboard') { %> aria-current="page"<% } %>>Hi, <%= user.first_name %></a>
+            <a class="nav-cta" href="/dashboard"<% if (path === '/dashboard') { %> aria-current="page"<% } %>><span class="visually-hidden">Hi, <%= user.first_name %>. </span>My dashboard</a>
           </li>
         <% } else { %>
           <li><a href="/login"<% if (path === '/login') { %> aria-current="page"<% } %>>Log in</a></li>
