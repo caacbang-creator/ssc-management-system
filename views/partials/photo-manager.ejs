@@ -1,0 +1,68 @@
+<%#
+  Upload form + list of photos with caption, move and remove. Shared by event photos
+  and announcement posters. Needs: photos, basePath (e.g. /manage/events/5/photos),
+  label ('photo' or 'poster'), maxFiles, errors.
+  Every button is a POST form; the server checks the role and the record again.
+%>
+<section class="card" aria-labelledby="upload-title">
+  <h2 id="upload-title">Add <%= label %>s</h2>
+  <%- include('form-errors') %>
+  <%# enctype="multipart/form-data" is required to send files; a normal form sends only text %>
+  <form method="post" action="<%= basePath %>" enctype="multipart/form-data" novalidate>
+    <div class="form-field">
+      <label for="photos">Choose <%= label %>s</label>
+      <input type="file" id="photos" name="photos" multiple accept="image/jpeg,image/png,image/webp" aria-describedby="photos-hint">
+      <p class="hint" id="photos-hint">JPG, PNG or WebP. Up to <%= maxFiles %> files at a time, 5 MB each. They are added at the end, in the order you choose them.</p>
+    </div>
+    <button type="submit" class="btn btn-primary">Upload <span class="arrow" aria-hidden="true">&rarr;</span></button>
+  </form>
+</section>
+
+<section class="section-gap" aria-labelledby="list-title">
+  <div class="section-heading">
+    <h2 id="list-title"><%= label.charAt(0).toUpperCase() + label.slice(1) %>s (<%= photos.length %>)</h2>
+  </div>
+
+  <% if (photos.length === 0) { %>
+    <div class="card empty-state">
+      <p>No <%= label %>s yet. Upload some above.</p>
+    </div>
+  <% } else { %>
+    <ol class="photo-admin-list">
+      <% photos.forEach((photo, i) => { %>
+        <li class="card photo-admin-item">
+          <img src="<%= photo.file_path %>" alt="<%= photo.caption || `${label} ${i + 1}` %>" loading="lazy">
+          <div class="photo-admin-body">
+            <p class="meta"><strong><%= label.charAt(0).toUpperCase() + label.slice(1) %> <%= i + 1 %></strong><% if (i === 0) { %> &middot; cover<% } %></p>
+
+            <form method="post" action="<%= basePath %>/<%= photo.id %>/caption" class="caption-form">
+              <label for="caption-<%= photo.id %>">Caption (optional, also used as the alt text)</label>
+              <div class="caption-row">
+                <input type="text" id="caption-<%= photo.id %>" name="caption" maxlength="150" value="<%= photo.caption || '' %>">
+                <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+              </div>
+            </form>
+
+            <div class="action-row">
+              <% if (i > 0) { %>
+                <form method="post" action="<%= basePath %>/<%= photo.id %>/move" class="inline-form">
+                  <input type="hidden" name="direction" value="up">
+                  <button type="submit" class="btn btn-secondary btn-sm"><span aria-hidden="true">&uarr;</span> Move up</button>
+                </form>
+              <% } %>
+              <% if (i < photos.length - 1) { %>
+                <form method="post" action="<%= basePath %>/<%= photo.id %>/move" class="inline-form">
+                  <input type="hidden" name="direction" value="down">
+                  <button type="submit" class="btn btn-secondary btn-sm"><span aria-hidden="true">&darr;</span> Move down</button>
+                </form>
+              <% } %>
+              <form method="post" action="<%= basePath %>/<%= photo.id %>/delete" class="inline-form">
+                <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+              </form>
+            </div>
+          </div>
+        </li>
+      <% }) %>
+    </ol>
+  <% } %>
+</section>

@@ -2276,6 +2276,59 @@ a.poster-frame:hover {
   margin-top: 0.5rem;
 }
 
+/* ---------- Officer photo manager ---------- */
+.photo-admin-list {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photo-admin-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.photo-admin-item img {
+  width: 100%;
+  max-width: 260px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--field);
+}
+
+@media (min-width: 700px) {
+  .photo-admin-item {
+    grid-template-columns: 160px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.photo-admin-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.photo-admin-body .meta {
+  margin: 0;
+}
+
+.caption-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.caption-row input {
+  flex: 1 1 220px;
+}
+
 /* ---------- Reduced motion (accessibility) ---------- */
 /* People who ask their device for less motion get no animations or transitions at all. */
 @media (prefers-reduced-motion: reduce) {

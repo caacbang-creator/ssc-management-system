@@ -136,7 +136,19 @@ async function unpublish(id, reviewerId) {
   return result.affectedRows;
 }
 
+// published -> pending: a published post was changed, so it must be approved again (C14).
+// It is hidden from the public until a VP Internal or the President approves it.
+async function sendBackForApproval(id) {
+  const [result] = await pool.query(
+    `UPDATE announcements SET status = 'pending', review_remarks = NULL
+     WHERE id = ? AND status = 'published'`,
+    [id]
+  );
+  return result.affectedRows;
+}
+
 module.exports = {
+  sendBackForApproval,
   listPublished,
   findPublishedById,
   listForManage,

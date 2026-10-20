@@ -118,6 +118,7 @@
 
         <% if (e.status === 'completed' && canWrite) { %>
           <a class="btn btn-primary" href="/manage/events/<%= e.id %>/documentation"><%= e.documentation ? 'Edit the write-up' : 'Write how it went' %></a>
+          <a class="btn btn-secondary section-gap" href="/manage/events/<%= e.id %>/photos">Manage photos</a>
         <% } %>
         <% if (e.status === 'cancelled') { %>
           <p class="muted">This event was cancelled.</p>

@@ -5,7 +5,9 @@
 //   reviewers (VP Internal, President): approve, return with remarks, unpublish
 const express = require('express');
 const announcementModel = require('../models/announcementModel');
+const announcementPhotoModel = require('../models/announcementPhotoModel');
 const { requireRole } = require('../middleware/auth');
+const { photoUpload, isRealImage, removeFiles, removeUploadedPhoto, MAX_FILES } = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -223,6 +225,143 @@ router.post('/:id/unpublish', reviewersOnly, async (req, res, next) => {
     if (changed === 0) return refuseOrNotFound(req, res, id, 'Only published announcements can be unpublished.');
     req.session.flash = { type: 'success', message: 'Announcement unpublished. It is a draft again.' };
     res.redirect(303, `/manage/announcements/${id}`);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Posters (PRO and President) ----------
+// Drafts: change freely. Published: any change sends the post back to Pending (C14),
+// so a VP Internal or the President approves the new version. Pending: locked.
+const uploadPosters = photoUpload('news');
+
+// Finds the announcement for a poster page. Sends the 404 / refusal itself and returns null.
+async function findPosterPost(req, res) {
+  const id = parseId(req.params.id);
+  const announcement = id ? await announcementModel.findById(id) : null;
+  if (!announcement) {
+    notFound(res);
+    return null;
+  }
+  if (!['draft', 'published'].includes(announcement.status)) {
+    req.session.flash = { type: 'error', message: 'Posters cannot be changed while the post is waiting for approval.' };
+    res.redirect(303, `/manage/announcements/${id}`);
+    return null;
+  }
+  return announcement;
+}
+
+async function renderPosters(res, status, announcement, errors) {
+  const photos = await announcementPhotoModel.listForAnnouncement(announcement.id);
+  res.status(status).render('manage/announcements/photos', {
+    title: `Posters: ${announcement.title}`, announcement, photos, errors, maxFiles: MAX_FILES
+  });
+}
+
+// After a successful change: a published post goes back to Pending. Returns the flash text.
+async function afterPosterChange(announcement, message) {
+  if (announcement.status !== 'published') return message;
+  await announcementModel.sendBackForApproval(announcement.id);
+  return `${message} The post was sent back for approval and is hidden until it is approved.`;
+}
+
+// A published post is Pending after a change, and the poster page is locked while pending,
+// so go to the post's page (it shows the new status); drafts stay on the poster page.
+function posterRedirect(announcement) {
+  return announcement.status === 'published'
+    ? `/manage/announcements/${announcement.id}`
+    : `/manage/announcements/${announcement.id}/photos`;
+}
+
+router.get('/:id/photos', writersOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return;
+    await renderPosters(res, 200, announcement, []);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// writersOnly runs BEFORE uploadPosters, so no file is saved for the wrong role
+router.post('/:id/photos', writersOnly, uploadPosters, async (req, res, next) => {
+  const files = req.files || [];
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return removeFiles(files);
+
+    const real = files.filter((file) => isRealImage(file.path));
+    const skipped = (req.skippedFiles || 0) + (files.length - real.length);
+    const errors = [];
+    if (req.uploadError) errors.push(req.uploadError);
+    if (skipped > 0) errors.push(`Only JPG, PNG or WebP images can be uploaded (${skipped} file(s) refused).`);
+    if (files.length === 0 && errors.length === 0) errors.push('Choose at least one poster to upload.');
+    if (errors.length > 0) {
+      removeFiles(files); // all or nothing: fix the selection and upload again
+      return renderPosters(res, 422, announcement, errors);
+    }
+
+    await announcementPhotoModel.addMany(announcement.id, real.map((file) => `/uploads/news/${file.filename}`));
+    const message = await afterPosterChange(announcement, `${real.length} poster(s) added.`);
+    req.session.flash = { type: 'success', message };
+    res.redirect(303, posterRedirect(announcement));
+  } catch (err) {
+    removeFiles(files);
+    next(err);
+  }
+});
+
+router.post('/:id/photos/:photoId/caption', writersOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return;
+    const photoId = parseId(req.params.photoId);
+    const caption = String(req.body.caption ?? '').trim();
+    if (caption.length > 150) {
+      return renderPosters(res, 422, announcement, ['A caption can be up to 150 characters.']);
+    }
+    const changed = photoId
+      ? await announcementPhotoModel.updateCaption(announcement.id, photoId, caption || null)
+      : 0;
+    if (changed === 0) return notFound(res);
+    req.session.flash = { type: 'success', message: await afterPosterChange(announcement, 'Caption saved.') };
+    res.redirect(303, posterRedirect(announcement));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/photos/:photoId/move', writersOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return;
+    const photoId = parseId(req.params.photoId);
+    const direction = req.body.direction;
+    if (!photoId || !['up', 'down'].includes(direction)) return notFound(res);
+    const result = await announcementPhotoModel.move(announcement.id, photoId, direction);
+    if (result === 'not_found') return notFound(res);
+    if (result === 'edge') {
+      // Nothing changed, so the post keeps its status
+      req.session.flash = { type: 'error', message: 'That poster cannot move any further.' };
+      return res.redirect(303, `/manage/announcements/${announcement.id}/photos`);
+    }
+    req.session.flash = { type: 'success', message: await afterPosterChange(announcement, 'Order changed.') };
+    res.redirect(303, posterRedirect(announcement));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/:id/photos/:photoId/delete', writersOnly, async (req, res, next) => {
+  try {
+    const announcement = await findPosterPost(req, res);
+    if (!announcement) return;
+    const photoId = parseId(req.params.photoId);
+    const filePath = photoId ? await announcementPhotoModel.remove(announcement.id, photoId) : null;
+    if (!filePath) return notFound(res);
+    removeUploadedPhoto(filePath);
+    req.session.flash = { type: 'success', message: await afterPosterChange(announcement, 'Poster removed.') };
+    res.redirect(303, posterRedirect(announcement));
   } catch (err) {
     next(err);
   }
