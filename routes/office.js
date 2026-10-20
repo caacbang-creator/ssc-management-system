@@ -17,7 +17,8 @@ const officeLogModel = require('../models/officeLogModel');
 const router = express.Router();
 router.use(requireOfficer);
 
-const CODE_PATTERN = /^[A-Z0-9]{6}$/;
+// The President may set their own code (4-10 letters or digits) or generate a random 6-character one
+const CODE_PATTERN = /^[A-Z0-9]{4,10}$/;
 
 // '2026-10-20 08:02:00' -> '8:02 AM' (formatTime expects 'HH:MM:SS')
 function clockOf(app, dateTime) {

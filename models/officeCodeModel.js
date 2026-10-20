@@ -29,4 +29,13 @@ async function regenerate(userId) {
   return code;
 }
 
-module.exports = { get, regenerate, LENGTH };
+// The President types their own code (already checked by the route: 4-10 letters or digits, capitals)
+async function setCustom(code, userId) {
+  await pool.query(
+    `INSERT INTO office_code (id, code, updated_by) VALUES (1, ?, ?)
+     ON DUPLICATE KEY UPDATE code = VALUES(code), updated_by = VALUES(updated_by)`,
+    [code, userId]
+  );
+}
+
+module.exports = { get, regenerate, setCustom, LENGTH };

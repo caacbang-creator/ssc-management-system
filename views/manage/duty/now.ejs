@@ -2,20 +2,24 @@
 <%- include('../../partials/nav') %>
 
 <main id="main" class="container">
-  <a class="back-link" href="/manage/duty"><span aria-hidden="true">&larr;</span> Officer of the Day</a>
-
-  <div class="page-heading">
+  <div class="page-heading duty-heading">
     <div>
       <p class="eyebrow">President</p>
-      <h1>Office now</h1>
-      <p class="page-lead">Who is in the SSC office right now. Times are from the server clock.</p>
+      <h1>Office Now</h1>
     </div>
-    <%# No auto-refresh JavaScript: a normal link reloads the page %>
-    <a class="btn btn-secondary" href="/manage/duty/now">Refresh</a>
+    <%# No auto-refresh JavaScript: the Refresh link simply reloads the page %>
+    <div class="duty-updated">
+      <span class="muted">Updated <%= updatedAt %></span>
+      <a class="btn btn-secondary btn-sm" href="/manage/duty/now">Refresh</a>
+    </div>
   </div>
 
-  <div class="card-grid">
-    <div class="card stat-card">
+  <%- include('../../partials/duty-tabs', { active: 'now' }) %>
+
+  <%# ---------- The four numbers ---------- %>
+  <h2 class="visually-hidden">Right now</h2>
+  <div class="card-grid duty-stats">
+    <div class="card stat-card stat-card-active">
       <span class="stat-number"><%= counts.present %></span>
       <span class="stat-label">In the office now</span>
     </div>
@@ -27,15 +31,15 @@
       <span class="stat-number"><%= counts.visit %></span>
       <span class="stat-label">Visiting</span>
     </div>
-    <div class="card stat-card<%= counts.notIn > 0 ? ' stat-card-active' : '' %>">
+    <div class="card stat-card<%= counts.notIn > 0 ? ' stat-card-warn' : '' %>">
       <span class="stat-number"><%= counts.notIn %></span>
-      <span class="stat-label">Scheduled but not in yet</span>
+      <span class="stat-label">Duty officer not in yet</span>
     </div>
   </div>
 
-  <%# ---------- Photo row ---------- %>
+  <%# ---------- Photo view ---------- %>
   <section class="card section-gap" aria-labelledby="row-title">
-    <h2 id="row-title">In the office</h2>
+    <h2 id="row-title">In the office (photo view)</h2>
     <% if (present.length === 0) { %>
       <p class="muted">No one is checked in right now.</p>
     <% } else { %>
@@ -43,26 +47,28 @@
         <% present.forEach((p) => { %>
           <li class="presence-item">
             <%- include('../../partials/avatar', { person: p, size: '', duty: p.log_type === 'duty' }) %>
-            <span class="presence-name"><%= p.first_name %></span>
-            <span class="tag<%= p.log_type === 'duty' ? ' tag-duty' : '' %>"><%= p.log_type === 'duty' ? 'OOTD' : 'Visit' %></span>
+            <span class="presence-name"><%= p.first_name.split(' ')[0] %></span>
+            <span class="presence-type<%= p.log_type === 'duty' ? ' presence-type-duty' : '' %>"><%= p.log_type === 'duty' ? 'OOTD' : 'Visit' %></span>
           </li>
         <% }) %>
       </ul>
     <% } %>
 
     <% if (notIn.length > 0) { %>
-      <h3 class="section-gap-sm">Scheduled today, not in yet</h3>
-      <ul class="plain-list">
-        <% notIn.forEach((n) => { %>
-          <li>
-            <span class="person">
-              <%- include('../../partials/avatar', { person: n, size: 'sm', duty: false }) %>
-              <span><strong><%= n.first_name %> <%= n.last_name %></strong> &middot; starts <%= formatTime(n.start_time) %>
-                <% if (n.past_late_mark) { %><span class="pill pill-rejected">Late</span><% } %></span>
-            </span>
-          </li>
-        <% }) %>
-      </ul>
+      <div class="not-in-box">
+        <h3>Scheduled today, not in yet</h3>
+        <ul class="plain-list">
+          <% notIn.forEach((n) => { %>
+            <li>
+              <span class="person">
+                <%- include('../../partials/avatar', { person: n, size: 'sm', duty: false }) %>
+                <span><strong><%= n.first_name %> <%= n.last_name %></strong> &middot; starts <%= formatTime(n.start_time) %>
+                  <% if (n.past_late_mark) { %><span class="pill pill-rejected">Late</span><% } %></span>
+              </span>
+            </li>
+          <% }) %>
+        </ul>
+      </div>
     <% } %>
   </section>
 
@@ -73,14 +79,14 @@
       <p class="muted">No one is checked in right now.</p>
     <% } else { %>
       <div class="table-wrap">
-        <table>
+        <table class="duty-table">
           <thead>
             <tr>
               <th scope="col">Officer</th>
               <th scope="col">Position</th>
               <th scope="col">Type</th>
               <th scope="col">Time in</th>
-              <th scope="col">In for</th>
+              <th scope="col">In office for</th>
             </tr>
           </thead>
           <tbody>
@@ -94,11 +100,11 @@
                 </th>
                 <td><%= p.position || roleLabels[p.role] %></td>
                 <td>
-                  <span class="tag<%= p.log_type === 'duty' ? ' tag-duty' : '' %>"><%= p.log_type === 'duty' ? 'Duty' : 'Visit' %></span>
+                  <span class="tag<%= p.log_type === 'duty' ? ' tag-duty' : '' %>"><%= p.log_type === 'duty' ? 'Duty (OOTD)' : 'Visit' %></span>
                   <% if (p.is_late) { %><span class="pill pill-rejected">Late</span><% } %>
                 </td>
                 <td class="nowrap"><%= clock(p.time_in) %></td>
-                <td class="nowrap"><%= duration(p.minutes_in) %></td>
+                <td class="nowrap time-in-office"><%= duration(p.minutes_in) %></td>
               </tr>
             <% }) %>
           </tbody>
@@ -114,7 +120,7 @@
       <p class="muted">No one has timed out yet today.</p>
     <% } else { %>
       <div class="table-wrap">
-        <table>
+        <table class="duty-table">
           <thead>
             <tr>
               <th scope="col">Officer</th>

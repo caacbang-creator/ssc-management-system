@@ -1,0 +1,19 @@
+<%# Tabs across the President's office duty pages. Usage: include('partials/duty-tabs', { active: 'now' }) %>
+<%
+  const dutyTabs = [
+    ['schedule', '/manage/duty', 'Schedule and code', 'calendar'],
+    ['now', '/manage/duty/now', 'Office now', 'users'],
+    ['performance', '/manage/duty/performance', 'Officer performance', 'check']
+  ];
+%>
+<nav class="duty-tabs" aria-label="Office duty pages">
+  <ul>
+    <% dutyTabs.forEach(([key, href, label, icon]) => { %>
+      <li>
+        <a href="<%= href %>"<% if (active === key) { %> aria-current="page"<% } %>>
+          <span class="duty-tab-icon"><%- include('icon', { name: icon }) %></span><%= label %>
+        </a>
+      </li>
+    <% }) %>
+  </ul>
+</nav>

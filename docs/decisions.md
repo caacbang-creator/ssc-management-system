@@ -284,8 +284,10 @@ it, so the app has **no QR, camera or chart code at all**. **No new npm packages
   15 minutes** after it counts as **late** (computed in SQL).
 - The schedule, the office code, Office Now and Performance are **President only**
   (`requireRole('president')` at the mount).
-- **One** office code for the whole office: 6 characters, letters and digits **without look-alikes**
-  (no 0/O, no 1/I). The President can regenerate it any time; the old code stops working at once.
+- **One** office code for the whole office, set by the **President**: either **their own code** (4–10
+  letters or numbers, saved in capitals so case does not matter; no spaces or symbols because it is typed
+  on phones and goes into the printed link) or a **random** 6-character code without look-alikes
+  (no 0/O, no 1/I). The old code stops working at once.
 - **Time In** needs the office code **and** the officer's password; **Time Out** needs only the code.
 - **One open log at a time**, and only for **today**: a log without a time-out from an earlier day is a
   "missing time-out" and never blocks a new Time In.

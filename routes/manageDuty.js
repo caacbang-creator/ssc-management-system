@@ -28,16 +28,20 @@ function isValidTime(value) {
 }
 
 // ---------- Duty schedule + office code ----------
-async function renderSchedule(req, res, status, errors, old) {
+// extra: { codeErrors, customCode } after a refused custom code
+async function renderSchedule(req, res, status, errors, old, extra = {}) {
   const week = await dutyScheduleModel.listWeek();
   const officers = await userModel.listOfficers();
   const office = await officeCodeModel.get();
   // The link the President can put in a QR code. Built from this request, so it matches the
   // address the site is reached at (e.g. http://192.168.1.10:3000 on the office Wi-Fi).
-  const checkInLink = office ? `${req.protocol}://${req.get('host')}/office/check-in?code=${office.code}` : '';
+  const checkInLink = office
+    ? `${req.protocol}://${req.get('host')}/office/check-in?code=${encodeURIComponent(office.code)}`
+    : '';
   res.status(status).render('manage/duty/index', {
     title: 'Officer of the Day', week, officers, office, checkInLink,
-    dayNames: DAY_NAMES, weekOrder: WEEK_ORDER, errors, old
+    dayNames: DAY_NAMES, weekOrder: WEEK_ORDER, errors, old,
+    codeErrors: extra.codeErrors || [], customCode: extra.customCode || ''
   });
 }
 
@@ -93,7 +97,33 @@ router.post('/schedule/:id/delete', async (req, res, next) => {
   }
 });
 
-// A new code: the old printed code / QR link stops working at once
+// The President's own code. Letters and digits only, 4 to 10: it is typed on phones and goes
+// into the printed check-in link, where spaces or symbols would break the address.
+router.post('/code/custom', async (req, res, next) => {
+  const code = String(req.body.code ?? '').trim().toUpperCase();
+  try {
+    const errors = [];
+    if (!/^[A-Z0-9]{4,10}$/.test(code)) {
+      errors.push('The office code must be 4 to 10 letters or numbers (no spaces or symbols).');
+    } else {
+      const current = await officeCodeModel.get();
+      if (current && current.code === code) errors.push('That is already the office code.');
+    }
+    if (errors.length > 0) {
+      return renderSchedule(req, res, 422, [], { user_id: '', day_of_week: '', start_time: '08:00' }, { codeErrors: errors, customCode: code });
+    }
+    await officeCodeModel.setCustom(code, req.user.id);
+    req.session.flash = {
+      type: 'success',
+      message: `Office code changed to ${code}. The old code no longer works, so print the new link or QR code.`
+    };
+    res.redirect(303, '/manage/duty');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// A random new code: the old printed code / QR link stops working at once
 router.post('/code', async (req, res, next) => {
   try {
     const code = await officeCodeModel.regenerate(req.user.id);
@@ -163,6 +193,26 @@ function monthsBetween(from, to) {
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// The period dropdown on the Performance page: { key, label, from, to }
+function periodChoices(schoolYear) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const monthName = (year, month) => `${MONTH_SHORT[month]} ${year}`;
+  const firstOf = (year, month) => toText(new Date(year, month, 1));
+  const lastOf = (year, month) => toText(new Date(year, month + 1, 0)); // day 0 = last day of the month before
+  const start = Number(schoolYear.slice(0, 4));
+  const threeAgo = new Date(y, m - 2, 1);
+  const thirtyAgo = new Date(y, m, now.getDate() - 29);
+  return [
+    { key: 'year', label: `This school year (Jun ${start} – May ${start + 1})`, from: `${start}-06-01`, to: `${start + 1}-05-31` },
+    { key: 'last3', label: `${MONTH_SHORT[threeAgo.getMonth()]} – ${monthName(y, m)}`, from: toText(threeAgo), to: lastOf(y, m) },
+    { key: 'month', label: `This month (${monthName(y, m)})`, from: firstOf(y, m), to: lastOf(y, m) },
+    { key: 'lastmonth', label: `Last month (${monthName(new Date(y, m - 1, 1).getFullYear(), (m + 11) % 12)})`, from: firstOf(y, m - 1), to: lastOf(y, m - 1) },
+    { key: 'last30', label: 'Last 30 days', from: toText(thirtyAgo), to: toText(now) }
+  ];
+}
+
 router.get('/performance', async (req, res, next) => {
   try {
     const officers = await userModel.listOfficers();
@@ -173,6 +223,7 @@ router.get('/performance', async (req, res, next) => {
     const schoolYear = req.app.locals.schoolYearOf();
     const startYear = Number(schoolYear.slice(0, 4));
     const defaults = { user: officers[0] ? officers[0].id : null, from: `${startYear}-06-01`, to: `${startYear + 1}-05-31` };
+    const periods = periodChoices(schoolYear);
 
     // ---- Validate the query string; bad values give a 422 message, never a crash ----
     const errors = [];
@@ -186,7 +237,15 @@ router.get('/performance', async (req, res, next) => {
     let to = defaults.to;
     const qFrom = String(req.query.from ?? '').trim();
     const qTo = String(req.query.to ?? '').trim();
-    if (qFrom !== '' || qTo !== '') {
+    // ?period= picks a preset; 'custom' (or from/to without a period) uses the two dates
+    let period = String(req.query.period ?? '');
+    if (period === '' && (qFrom !== '' || qTo !== '')) period = 'custom';
+    if (period !== 'custom' && !periods.some((p) => p.key === period)) period = 'year';
+    if (period !== 'custom') {
+      const preset = periods.find((p) => p.key === period);
+      from = preset.from;
+      to = preset.to;
+    } else {
       if (!isValidDate(qFrom) || !isValidDate(qTo)) {
         errors.push('Enter real dates for From and To.');
       } else if (qFrom > qTo) {
@@ -203,11 +262,12 @@ router.get('/performance', async (req, res, next) => {
       userId = defaults.user;
       from = defaults.from;
       to = defaults.to;
+      period = 'year';
     }
 
     if (!userId) {
       return res.status(errors.length ? 422 : 200).render('manage/duty/performance', {
-        title: 'Officer performance', officers, errors, noOfficers: true, filter: { user: '', from, to }
+        title: 'Officer performance', officers, periods, errors, noOfficers: true, filter: { user: '', from, to, period }
       });
     }
 
@@ -251,8 +311,13 @@ router.get('/performance', async (req, res, next) => {
       missingTimeouts: Number(totals.missing_timeouts),
       visits: Number(totals.visits),
       dutyHours: (Number(totals.duty_minutes) / 60).toFixed(1),
-      visitHours: (Number(totals.visit_minutes) / 60).toFixed(1)
+      visitHours: (Number(totals.visit_minutes) / 60).toFixed(1),
+      totalHours: ((Number(totals.duty_minutes) + Number(totals.visit_minutes)) / 60).toFixed(1)
     };
+    // "Hours in the office" bar: the duty part and the visit part always add up to 100%
+    const allMinutes = Number(totals.duty_minutes) + Number(totals.visit_minutes);
+    stats.dutyPct = pct(Number(totals.duty_minutes), allMinutes);
+    stats.visitPct = allMinutes > 0 ? 100 - stats.dutyPct : 0;
 
     // ---- Duties per month (vertical bars) ----
     const perMonth = hasRange ? await officeLogModel.dutiesPerMonth(userId, from, end) : [];
@@ -279,7 +344,8 @@ router.get('/performance', async (req, res, next) => {
     res.status(errors.length ? 422 : 200).render('manage/duty/performance', {
       title: `Performance: ${officer.first_name}`,
       officers, errors, noOfficers: false,
-      filter: { user: userId, from, to },
+      periods,
+      filter: { user: userId, from, to, period },
       officer,
       scheduleText: mySchedule.map((d) => `Every ${DAY_NAMES[d.day_of_week]}, ${req.app.locals.formatTime(d.start_time)}`),
       countedUntil: hasRange ? end : null,
@@ -304,8 +370,11 @@ router.get('/now', async (req, res, next) => {
     const present = await officeLogModel.listPresentNow();
     const left = await officeLogModel.listLeftToday();
     const notIn = await dutyScheduleModel.listScheduledNotInToday();
+    const now = new Date();
     res.render('manage/duty/now', {
       title: 'Office now',
+      // "Updated 9:15 AM": when this page was made (refresh the page for a newer view)
+      updatedAt: req.app.locals.formatTime(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`),
       present,
       left,
       notIn,

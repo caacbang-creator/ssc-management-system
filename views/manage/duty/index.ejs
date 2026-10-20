@@ -8,11 +8,9 @@
       <h1>Officer of the Day</h1>
       <p class="page-lead">Who is on duty in the SSC office each weekday, and the code officers type to check in.</p>
     </div>
-    <div class="action-row">
-      <a class="btn btn-secondary" href="/manage/duty/now">Office now</a>
-      <a class="btn btn-secondary" href="/manage/duty/performance">Performance</a>
-    </div>
   </div>
+
+  <%- include('../../partials/duty-tabs', { active: 'schedule' }) %>
 
   <div class="wide-split">
     <%# ---------- Weekly schedule ---------- %>
@@ -96,10 +94,25 @@
         <% } else { %>
           <p class="muted">No code yet. Create one below.</p>
         <% } %>
-        <form method="post" action="/manage/duty/code" class="section-gap-sm">
-          <button type="submit" class="btn btn-danger"><%= office ? 'Regenerate code' : 'Create a code' %></button>
+        <%# ---------- The President sets the code: their own, or a random one ---------- %>
+        <h3 class="file-label section-gap-sm">Set your own code</h3>
+        <% if (codeErrors.length > 0) { %><%- include('../../partials/form-errors', { errors: codeErrors }) %><% } %>
+        <form method="post" action="/manage/duty/code/custom" class="code-form" novalidate>
+          <div class="form-field">
+            <label for="custom-code">New office code</label>
+            <input type="text" id="custom-code" name="code" value="<%= customCode %>" maxlength="10"
+              autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="SSC2026"
+              aria-describedby="custom-code-hint" required>
+            <p class="hint" id="custom-code-hint">4 to 10 letters or numbers, no spaces. Saved in capitals, so officers can type it either way.</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Save code</button>
         </form>
-        <p class="hint">A new code stops the old code and old QR links at once. Do it weekly, or right away if it leaks.</p>
+
+        <p class="code-or" aria-hidden="true">or</p>
+        <form method="post" action="/manage/duty/code">
+          <button type="submit" class="btn btn-secondary"><%= office ? 'Generate a random code' : 'Create a random code' %></button>
+        </form>
+        <p class="hint">Either way, the old code and old QR links stop working at once. Change it weekly, or right away if it leaks.</p>
       </div>
     </aside>
   </div>

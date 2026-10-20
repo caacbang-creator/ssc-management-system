@@ -2,78 +2,91 @@
 <%- include('../../partials/nav') %>
 
 <main id="main" class="container">
-  <a class="back-link" href="/manage/duty"><span aria-hidden="true">&larr;</span> Officer of the Day</a>
-
-  <div class="page-heading">
+  <%# ---------- Title on the left, the officer and period pickers on the right ---------- %>
+  <div class="page-heading duty-heading">
     <div>
       <p class="eyebrow">President</p>
-      <h1>Officer performance</h1>
-      <p class="page-lead">Duty record from the office check-in log. All times are from the server clock.</p>
+      <h1>Officer Performance</h1>
     </div>
-    <a class="btn btn-secondary" href="/manage/duty/now">Office now</a>
+    <%# A GET form: it only reads data, so the address can be bookmarked or shared %>
+    <form method="get" action="/manage/duty/performance" class="perf-picker" novalidate>
+      <label for="user" class="visually-hidden">Officer</label>
+      <select id="user" name="user">
+        <% officers.forEach((o) => { %>
+          <option value="<%= o.id %>"<% if (o.id === filter.user) { %> selected<% } %>><%= o.first_name %> <%= o.last_name %> (<%= o.position || roleLabels[o.role] %>)</option>
+        <% }) %>
+      </select>
+      <label for="period" class="visually-hidden">Period</label>
+      <select id="period" name="period">
+        <% periods.forEach((p) => { %>
+          <option value="<%= p.key %>"<% if (filter.period === p.key) { %> selected<% } %>><%= p.label %></option>
+        <% }) %>
+        <option value="custom"<% if (filter.period === 'custom') { %> selected<% } %>>Custom dates (below)</option>
+      </select>
+      <%# Custom dates without JavaScript: a <details> box that opens by itself when they are in use %>
+      <details class="perf-custom"<% if (filter.period === 'custom') { %> open<% } %>>
+        <summary>Custom dates</summary>
+        <div class="perf-dates">
+          <div class="form-field">
+            <label for="from">From</label>
+            <input type="date" id="from" name="from" value="<%= filter.from %>">
+          </div>
+          <div class="form-field">
+            <label for="to">To</label>
+            <input type="date" id="to" name="to" value="<%= filter.to %>">
+          </div>
+        </div>
+        <p class="hint">Choose "Custom dates" in the period list to use these.</p>
+      </details>
+      <button type="submit" class="btn btn-primary">View</button>
+    </form>
   </div>
 
-  <%# ---------- Filter (a GET form: it only reads, so the URL can be bookmarked) ---------- %>
-  <section class="card" aria-labelledby="filter-title">
-    <h2 id="filter-title" class="visually-hidden">Choose an officer and a period</h2>
-    <%- include('../../partials/form-errors') %>
-    <form method="get" action="/manage/duty/performance" class="performance-filter" novalidate>
-      <div class="form-field">
-        <label for="user">Officer</label>
-        <select id="user" name="user">
-          <% officers.forEach((o) => { %>
-            <option value="<%= o.id %>"<% if (o.id === filter.user) { %> selected<% } %>><%= o.first_name %> <%= o.last_name %> (<%= o.position || roleLabels[o.role] %>)</option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="form-field">
-        <label for="from">From</label>
-        <input type="date" id="from" name="from" value="<%= filter.from %>">
-      </div>
-      <div class="form-field">
-        <label for="to">To</label>
-        <input type="date" id="to" name="to" value="<%= filter.to %>">
-      </div>
-      <button type="submit" class="btn btn-primary">Show</button>
-    </form>
-  </section>
+  <%- include('../../partials/duty-tabs', { active: 'performance' }) %>
+  <%- include('../../partials/form-errors') %>
 
   <% if (noOfficers) { %>
-    <div class="card empty-state section-gap"><p>There are no officers yet.</p></div>
+    <div class="card empty-state"><p>There are no officers yet.</p></div>
   <% } else { %>
 
     <%# ---------- Who ---------- %>
-    <section class="card section-gap" aria-labelledby="officer-title">
+    <section class="card officer-card-head" aria-labelledby="officer-title">
       <div class="officer-head">
         <%- include('../../partials/avatar', { person: officer, size: 'lg', duty: scheduleText.length > 0 }) %>
         <div>
           <h2 id="officer-title"><%= officer.first_name %> <%= officer.last_name %></h2>
-          <p class="meta"><%= officer.position || roleLabels[officer.role] %></p>
-          <% if (scheduleText.length > 0) { %>
-            <p><span class="tag tag-duty">OOTD</span> <%= scheduleText.join(' · ') %></p>
-          <% } else { %>
-            <p class="muted">Not on the duty schedule.</p>
-          <% } %>
-          <p class="hint"><%= formatDate(filter.from) %> to <%= formatDate(filter.to) %><% if (countedUntil && countedUntil !== filter.to) { %>, counted up to <%= formatDate(countedUntil) %> (later days have not happened yet)<% } %>.</p>
+          <p class="meta">
+            <%= officer.position || roleLabels[officer.role] %> &middot;
+            <% if (scheduleText.length > 0) { %>scheduled <%= scheduleText.map((t) => t.replace('Every', 'every')).join(', ') %><% } else { %>not on the duty schedule<% } %>
+          </p>
+          <p class="hint"><%= formatDate(filter.from) %> to <%= formatDate(filter.to) %><% if (countedUntil && countedUntil !== filter.to) { %> &middot; counted up to <%= formatDate(countedUntil) %> (later days have not happened yet)<% } %></p>
         </div>
       </div>
     </section>
 
-    <%# ---------- The numbers ---------- %>
+    <%# ---------- The four main numbers ---------- %>
     <h2 class="visually-hidden">Duty record</h2>
-    <div class="card-grid section-gap">
-      <div class="card stat-card"><span class="stat-number"><%= stats.scheduled %></span><span class="stat-label">Duties scheduled</span></div>
-      <div class="card stat-card"><span class="stat-number"><%= stats.done %></span><span class="stat-label">Duties completed</span></div>
-      <div class="card stat-card stat-card-active"><span class="stat-number"><%= stats.rate %></span><span class="stat-label">Attendance rate</span></div>
-      <div class="card stat-card<%= stats.missed > 0 ? ' stat-card-active' : '' %>"><span class="stat-number"><%= stats.missed %></span><span class="stat-label">Missed duties</span></div>
-      <div class="card stat-card"><span class="stat-number"><%= stats.late %></span><span class="stat-label">Late arrivals (15+ min)</span></div>
-      <div class="card stat-card"><span class="stat-number"><%= stats.missingTimeouts %></span><span class="stat-label">Missing time-outs</span></div>
-      <div class="card stat-card"><span class="stat-number"><%= stats.dutyHours %> h</span><span class="stat-label">Hours on duty</span></div>
-      <div class="card stat-card"><span class="stat-number"><%= stats.visitHours %> h</span><span class="stat-label">Hours visiting (<%= stats.visits %> visits)</span></div>
+    <div class="card-grid duty-stats section-gap-sm">
+      <div class="card stat-card">
+        <span class="stat-number"><%= stats.done %> / <%= stats.scheduled %></span>
+        <span class="stat-label">Duties completed<% if (stats.missed > 0) { %> &middot; <%= stats.missed %> missed<% } %></span>
+      </div>
+      <div class="card stat-card stat-card-active">
+        <span class="stat-number"><%= stats.rate %></span>
+        <span class="stat-label">Attendance rate</span>
+      </div>
+      <div class="card stat-card<%= stats.late > 0 ? ' stat-card-warn' : '' %>">
+        <span class="stat-number"><%= stats.late %></span>
+        <span class="stat-label">Late arrivals (15+ min)</span>
+      </div>
+      <div class="card stat-card<%= stats.missingTimeouts > 0 ? ' stat-card-warn' : '' %>">
+        <span class="stat-number"><%= stats.missingTimeouts %></span>
+        <span class="stat-label">Missing time-out<%= stats.missingTimeouts === 1 ? '' : 's' %></span>
+      </div>
     </div>
 
     <div class="card-grid-2 section-gap">
-      <%# ---------- Duties per month: vertical bars, height set from a 0-100 percent ---------- %>
+      <%# ---------- Duties per month: vertical bars, height = a 0-100 percent from the route ---------- %>
       <section class="card" aria-labelledby="month-title">
         <h2 id="month-title">Duties per month</h2>
         <% if (monthBars.length === 0) { %>
@@ -89,34 +102,50 @@
             <% }) %>
           </ul>
           <ul class="bar-labels" aria-hidden="true">
-            <% monthBars.forEach((b) => { %><li><%= b.label %></li><% }) %>
+            <% monthBars.forEach((b) => { %><li><%= b.label.split(' ')[0].toUpperCase() %></li><% }) %>
           </ul>
         <% } %>
       </section>
 
-      <%# ---------- Attendance rate, all officers: horizontal bars, width set from a 0-100 percent ---------- %>
-      <section class="card" aria-labelledby="rate-title">
-        <h2 id="rate-title">Attendance rate, all officers</h2>
-        <% if (rateBars.length === 0) { %>
-          <p class="muted">No one is on the duty schedule yet.</p>
-        <% } else { %>
-          <ul class="bar-list">
-            <% rateBars.forEach((b) => { %>
-              <li class="bar-row<%= b.selected ? ' bar-row-selected' : '' %>">
-                <%- include('../../partials/avatar', { person: b.person, size: 'sm', duty: false }) %>
-                <span class="bar-row-name"><%= b.person.first_name %></span>
-                <span class="bar-track" aria-hidden="true">
-                  <span class="bar-fill<%= b.selected ? ' bar-fill-selected' : (b.low ? ' bar-fill-low' : '') %>" style="width: <%= b.rate %>%"></span>
-                </span>
-                <%# The number is always printed, so the meaning never depends on colour alone %>
-                <span class="bar-row-value"><%= b.rateText %></span>
-              </li>
-            <% }) %>
-          </ul>
-          <p class="hint section-gap-sm">Gold = the officer shown above. Red = below 60%.</p>
+      <%# ---------- Hours in the office: one bar split into duty and visits ---------- %>
+      <section class="card" aria-labelledby="hours-title">
+        <h2 id="hours-title">Hours in the office</h2>
+        <p class="hours-total"><%= stats.totalHours %> h</p>
+        <% if (Number(stats.totalHours) > 0) { %>
+          <span class="hours-bar" aria-hidden="true">
+            <span class="hours-duty" style="width: <%= stats.dutyPct %>%"></span><span class="hours-visit" style="width: <%= stats.visitPct %>%"></span>
+          </span>
         <% } %>
+        <ul class="hours-legend">
+          <li><span class="legend-dot legend-duty" aria-hidden="true"></span>Duty <strong><%= stats.dutyHours %> h</strong></li>
+          <li><span class="legend-dot legend-visit" aria-hidden="true"></span>Visits <strong><%= stats.visitHours %> h</strong> (<%= stats.visits %> visit<%= stats.visits === 1 ? '' : 's' %>)</li>
+        </ul>
+        <p class="hint">Counted from Time In to Time Out; days without a time-out are left out.</p>
       </section>
     </div>
+
+    <%# ---------- Attendance rate, all officers: horizontal bars, width = a 0-100 percent ---------- %>
+    <section class="card section-gap" aria-labelledby="rate-title">
+      <h2 id="rate-title">Attendance rate, all officers</h2>
+      <% if (rateBars.length === 0) { %>
+        <p class="muted">No one is on the duty schedule yet.</p>
+      <% } else { %>
+        <ul class="bar-list">
+          <% rateBars.forEach((b) => { %>
+            <li class="bar-row<%= b.selected ? ' bar-row-selected' : '' %>">
+              <%- include('../../partials/avatar', { person: b.person, size: 'sm', duty: false }) %>
+              <span class="bar-row-name"><%= b.person.first_name.split(' ')[0] %></span>
+              <span class="bar-track" aria-hidden="true">
+                <span class="bar-fill<%= b.selected ? ' bar-fill-selected' : (b.low ? ' bar-fill-low' : '') %>" style="width: <%= b.rate %>%"></span>
+              </span>
+              <%# The number is always printed, so the meaning never depends on colour alone %>
+              <span class="bar-row-value"><%= b.rateText %></span>
+            </li>
+          <% }) %>
+        </ul>
+        <p class="hint section-gap-sm">Gold is the officer shown above. Below 60% is shown in red, and the number is always printed too, so the meaning doesn't depend on colour alone.</p>
+      <% } %>
+    </section>
   <% } %>
 </main>
 

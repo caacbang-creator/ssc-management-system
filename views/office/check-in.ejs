@@ -31,9 +31,9 @@
       <form method="post" action="/office/check-out" novalidate>
         <div class="form-field">
           <label for="code">Office code</label>
-          <input type="text" id="code" name="code" value="<%= code %>" maxlength="6" autocomplete="off"
+          <input type="text" id="code" name="code" value="<%= code %>" maxlength="10" autocomplete="off"
             autocapitalize="characters" spellcheck="false" aria-describedby="code-hint" required>
-          <p class="hint" id="code-hint">The 6-character code shown at the SSC office.</p>
+          <p class="hint" id="code-hint">The office code shown at the SSC office.</p>
         </div>
         <button type="submit" class="btn btn-primary">Time Out</button>
       </form>
@@ -42,9 +42,9 @@
       <form method="post" action="/office/check-in" novalidate>
         <div class="form-field">
           <label for="code">Office code</label>
-          <input type="text" id="code" name="code" value="<%= code %>" maxlength="6" autocomplete="off"
+          <input type="text" id="code" name="code" value="<%= code %>" maxlength="10" autocomplete="off"
             autocapitalize="characters" spellcheck="false" aria-describedby="code-hint" required>
-          <p class="hint" id="code-hint">The 6-character code shown at the SSC office. The QR code fills it in for you.</p>
+          <p class="hint" id="code-hint">The office code shown at the SSC office. The QR code fills it in for you.</p>
         </div>
         <div class="form-field">
           <label for="password">Confirm your password</label>

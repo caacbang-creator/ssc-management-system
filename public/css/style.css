@@ -4214,3 +4214,217 @@ img.team-avatar {
     margin-bottom: 1.1rem;
   }
 }
+
+/* Office duty: tabs, page headings and the sample-design layout */
+.duty-tabs {
+  margin: 0 0 1.25rem;
+}
+
+.duty-tabs ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.duty-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: var(--tap);
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--white);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.duty-tabs a:hover {
+  border-color: var(--gold-soft);
+}
+
+/* The page you are on: gold edge AND aria-current (not colour alone) */
+.duty-tabs a[aria-current="page"] {
+  border-color: var(--gold);
+  background: rgba(242, 193, 78, 0.12);
+  color: var(--gold);
+}
+
+.duty-tab-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.duty-heading {
+  align-items: center;
+}
+
+.duty-updated {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Stat labels in small capitals, like the sample design */
+.duty-stats .stat-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.duty-stats .stat-card-active {
+  border-left: 4px solid var(--gold);
+}
+
+/* Something needs attention (late, missing): a red edge; the number says it too */
+.stat-card-warn {
+  border-left: 4px solid #F87171;
+}
+
+.presence-type {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.presence-type-duty {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.not-in-box {
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed #FCA5A5;
+  border-radius: var(--radius);
+}
+
+.not-in-box h3 {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-base);
+}
+
+.duty-table th[scope="col"] {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.duty-table tbody th {
+  color: var(--white);
+  font-size: var(--text-base);
+  font-weight: 700;
+  white-space: normal;
+}
+
+/* How long someone has been in: green text (about 9:1 on the card) */
+.time-in-office {
+  color: #6EE7B7;
+  font-weight: 700;
+}
+
+/* Office code: own code form */
+.code-form {
+  display: grid;
+  gap: 0;
+}
+
+.code-or {
+  margin: 0.5rem 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* Performance: officer and period pickers beside the title */
+.perf-picker {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 520px;
+}
+
+.perf-custom summary {
+  cursor: pointer;
+  color: var(--link);
+  font-size: var(--text-sm);
+}
+
+.perf-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.perf-picker .btn {
+  justify-self: start;
+}
+
+.officer-card-head {
+  margin-bottom: 0;
+}
+
+/* Hours in the office: one bar split into duty (blue) and visits (gold) */
+.hours-total {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.hours-bar {
+  display: flex;
+  height: 18px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: var(--line);
+}
+
+.hours-duty { background: linear-gradient(90deg, var(--blue) 0%, var(--blue-bright) 100%); }
+.hours-visit { background: linear-gradient(90deg, #E6B23E 0%, var(--gold) 100%); }
+
+.hours-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+}
+
+.legend-duty { background: var(--blue-bright); }
+.legend-visit { background: var(--gold); }
+
+/* Bars with a soft gradient, like the sample */
+.bar-col-fill { background: linear-gradient(180deg, var(--blue-bright) 0%, var(--blue) 100%); }
+.bar-fill { background: linear-gradient(90deg, var(--blue) 0%, var(--blue-bright) 100%); }
+.bar-fill-selected { background: linear-gradient(90deg, #C99A2E 0%, var(--gold) 100%); }
+.bar-fill-low { background: linear-gradient(90deg, #991B1B 0%, #EF4444 100%); }
+
+.bar-list .bar-row {
+  grid-template-columns: auto 8rem minmax(0, 1fr) 3.5rem;
+}
+
+@media (max-width: 599px) {
+  .bar-list .bar-row {
+    grid-template-columns: auto 5rem minmax(0, 1fr) 3rem;
+  }
+
+  .perf-dates {
+    grid-template-columns: 1fr;
+  }
+}
