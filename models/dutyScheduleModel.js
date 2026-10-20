@@ -5,7 +5,7 @@ const pool = require('../db');
 // The whole week, Monday first (Sunday = 1 is moved to the end), joined with the officer's name
 async function listWeek() {
   const [rows] = await pool.query(
-    `SELECT d.id, d.user_id, d.day_of_week, d.start_time,
+    `SELECT d.id, d.user_id, d.day_of_week, d.start_time, DATE(d.created_at) AS since,
             u.first_name, u.last_name, u.role
      FROM duty_schedule d
      JOIN users u ON u.id = d.user_id

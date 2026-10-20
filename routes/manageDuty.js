@@ -107,6 +107,191 @@ router.post('/code', async (req, res, next) => {
   }
 });
 
+// ---------- Officer Performance ----------
+
+// True only for a real calendar date in 'YYYY-MM-DD' form (rejects 2026-13-40)
+function isValidDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+}
+
+// Date <-> 'YYYY-MM-DD' in local time (toISOString would use UTC and shift the day)
+function toText(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function toDate(text) {
+  const [y, m, d] = text.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+// How many days between from and to (inclusive), e.g. Oct 1 to Oct 3 = 3
+function daysBetween(from, to) {
+  return Math.round((toDate(to) - toDate(from)) / 86400000) + 1;
+}
+
+// How many duty days an officer had between two dates.
+// A small loop: walk day by day and count the days whose weekday is on their schedule.
+// days = the officer's weekdays in DAYOFWEEK() numbers (1 = Sunday ... 7 = Saturday);
+// JavaScript's getDay() is 0 = Sunday, so getDay() + 1 gives the same number.
+function countDutyDays(days, from, to) {
+  let count = 0;
+  for (let d = toDate(from); d <= toDate(to); d.setDate(d.getDate() + 1)) {
+    if (days.includes(d.getDay() + 1)) count++;
+  }
+  return count;
+}
+
+// Any number -> a whole percent from 0 to 100, so a bad number can never break a bar's width
+function pct(part, whole) {
+  if (!whole) return 0;
+  return Math.min(100, Math.max(0, Math.round((part / whole) * 100)));
+}
+
+// 'YYYY-MM' for every month from one date to another, so months without duties still show a bar
+function monthsBetween(from, to) {
+  const months = [];
+  const d = toDate(from);
+  d.setDate(1);
+  while (toText(d).slice(0, 7) <= to.slice(0, 7)) {
+    months.push(toText(d).slice(0, 7));
+    d.setMonth(d.getMonth() + 1);
+  }
+  return months;
+}
+
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+router.get('/performance', async (req, res, next) => {
+  try {
+    const officers = await userModel.listOfficers();
+    const week = await dutyScheduleModel.listWeek();
+    const today = toText(new Date());
+
+    // Defaults: the first officer and the current school year (June to May)
+    const schoolYear = req.app.locals.schoolYearOf();
+    const startYear = Number(schoolYear.slice(0, 4));
+    const defaults = { user: officers[0] ? officers[0].id : null, from: `${startYear}-06-01`, to: `${startYear + 1}-05-31` };
+
+    // ---- Validate the query string; bad values give a 422 message, never a crash ----
+    const errors = [];
+    let userId = defaults.user;
+    if (req.query.user !== undefined && req.query.user !== '') {
+      const asked = parseId(String(req.query.user));
+      if (asked && officers.some((o) => o.id === asked)) userId = asked;
+      else errors.push('Choose an officer from the list.');
+    }
+    let from = defaults.from;
+    let to = defaults.to;
+    const qFrom = String(req.query.from ?? '').trim();
+    const qTo = String(req.query.to ?? '').trim();
+    if (qFrom !== '' || qTo !== '') {
+      if (!isValidDate(qFrom) || !isValidDate(qTo)) {
+        errors.push('Enter real dates for From and To.');
+      } else if (qFrom > qTo) {
+        errors.push('From must be on or before To.');
+      } else if (daysBetween(qFrom, qTo) > 1100) {
+        errors.push('Choose a period of 3 years or less.');
+      } else {
+        from = qFrom;
+        to = qTo;
+      }
+    }
+    if (errors.length > 0) {
+      // Show the page with the defaults so the President still sees something useful
+      userId = defaults.user;
+      from = defaults.from;
+      to = defaults.to;
+    }
+
+    if (!userId) {
+      return res.status(errors.length ? 422 : 200).render('manage/duty/performance', {
+        title: 'Officer performance', officers, errors, noOfficers: true, filter: { user: '', from, to }
+      });
+    }
+
+    // Duties are counted up to today (future days cannot be missed yet). Today only counts once
+    // the officer has timed in, so an officer is not "missing" a duty they can still do.
+    const end = to < today ? to : today;
+    const hasRange = from <= end;
+    const scheduleOf = (id) => week.filter((d) => d.user_id === id);
+    const doneToday = hasRange && end === today
+      ? new Map((await officeLogModel.dutiesDoneByUser(today, today)).map((r) => [r.user_id, Number(r.duties)]))
+      : new Map();
+    // Scheduled duty days for one officer in [from, end]. Each weekday on their schedule counts
+    // only from the day it was added (you cannot miss a duty you were not given yet), and today
+    // is left out until they time in.
+    const scheduledFor = (id) => {
+      if (!hasRange) return 0;
+      let count = 0;
+      for (const row of scheduleOf(id)) {
+        const start = row.since > from ? row.since : from;
+        if (start <= end) count += countDutyDays([row.day_of_week], start, end);
+      }
+      const dueToday = end === today && scheduleOf(id).some((d) => d.day_of_week === new Date().getDay() + 1 && d.since <= today);
+      if (dueToday && !doneToday.get(id)) count--;
+      return Math.max(0, count);
+    };
+
+    // ---- The selected officer ----
+    const officer = officers.find((o) => o.id === userId);
+    const mySchedule = scheduleOf(userId);
+    const totals = hasRange ? await officeLogModel.totalsForUser(userId, from, end)
+      : { duties_done: 0, late_count: 0, missing_timeouts: 0, visits: 0, duty_minutes: 0, visit_minutes: 0 };
+    const scheduled = scheduledFor(userId);
+    const done = Number(totals.duties_done);
+    const stats = {
+      scheduled,
+      done,
+      // "–" when nothing was scheduled: never divide by zero
+      rate: scheduled > 0 ? `${pct(done, scheduled)}%` : '–',
+      missed: Math.max(0, scheduled - done),
+      late: Number(totals.late_count),
+      missingTimeouts: Number(totals.missing_timeouts),
+      visits: Number(totals.visits),
+      dutyHours: (Number(totals.duty_minutes) / 60).toFixed(1),
+      visitHours: (Number(totals.visit_minutes) / 60).toFixed(1)
+    };
+
+    // ---- Duties per month (vertical bars) ----
+    const perMonth = hasRange ? await officeLogModel.dutiesPerMonth(userId, from, end) : [];
+    const countByMonth = new Map(perMonth.map((r) => [r.month, Number(r.duties)]));
+    const months = hasRange ? monthsBetween(from, end) : [];
+    const maxMonth = Math.max(0, ...months.map((m) => countByMonth.get(m) || 0));
+    const monthBars = months.map((m) => {
+      const count = countByMonth.get(m) || 0;
+      return { label: `${MONTH_SHORT[Number(m.slice(5)) - 1]} ${m.slice(2, 4)}`, count, height: pct(count, maxMonth) };
+    });
+
+    // ---- Attendance rate of every scheduled officer (horizontal bars) ----
+    const doneAll = hasRange ? new Map((await officeLogModel.dutiesDoneByUser(from, end)).map((r) => [r.user_id, Number(r.duties)])) : new Map();
+    const scheduledIds = [...new Set(week.map((d) => d.user_id))];
+    const rateBars = officers
+      .filter((o) => scheduledIds.includes(o.id))
+      .map((o) => {
+        const s = scheduledFor(o.id);
+        const d = doneAll.get(o.id) || 0;
+        const rate = pct(d, s);
+        return { person: o, scheduled: s, rate, rateText: s > 0 ? `${rate}%` : '–', selected: o.id === userId, low: s > 0 && rate < 60 };
+      });
+
+    res.status(errors.length ? 422 : 200).render('manage/duty/performance', {
+      title: `Performance: ${officer.first_name}`,
+      officers, errors, noOfficers: false,
+      filter: { user: userId, from, to },
+      officer,
+      scheduleText: mySchedule.map((d) => `Every ${DAY_NAMES[d.day_of_week]}, ${req.app.locals.formatTime(d.start_time)}`),
+      countedUntil: hasRange ? end : null,
+      stats,
+      monthBars,
+      rateBars
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- Office Now ----------
 // 75 -> '1 h 15 min', 40 -> '40 min'. The minutes come from TIMESTAMPDIFF in SQL.
 function duration(minutes) {

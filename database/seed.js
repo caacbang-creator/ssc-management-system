@@ -463,8 +463,8 @@ async function main() {
     ];
     for (const [key, day, start] of schedule) {
       await conn.query(
-        'INSERT INTO duty_schedule (user_id, day_of_week, start_time) VALUES (?, ?, ?)',
-        [ids[key], day, start]
+        'INSERT INTO duty_schedule (user_id, day_of_week, start_time, created_at) VALUES (?, ?, ?, ?)',
+        [ids[key], day, start, `${dayFromToday(-42)} 07:00:00`]   // on the schedule since the first sample week
       );
     }
 
