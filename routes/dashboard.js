@@ -63,7 +63,7 @@ const OFFICER_LINKS = {
   treasurer: [['Financial reports', '/manage/financial-reports']],
   secretary: [['Resolutions', '/manage/resolutions'], ['Documents', '/manage/documents']],
   property_custodian: [['Borrowing desk', '/manage/items/loans'], ['Items', '/manage/items']],
-  president: [['Officer requests', '/manage/officer-requests'], ['About SSC', '/manage/about'],
+  president: [['Officer of the Day', '/manage/duty'], ['Officer requests', '/manage/officer-requests'], ['About SSC', '/manage/about'],
     ['Officer directory', '/manage/officers'], ['Announcements', '/manage/announcements'], ['Events', '/manage/events'],
     ['Concerns', '/manage/concerns'], ['Requests', '/manage/transactions'], ['Items', '/manage/items'],
     ['Financial reports', '/manage/financial-reports'], ['Resolutions', '/manage/resolutions'], ['Documents', '/manage/documents']]

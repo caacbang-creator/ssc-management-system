@@ -263,3 +263,43 @@ in the future. The News page, the dashboard and the post page show and sort by i
 records when it was approved on this website (shown to officers as "published here").
 Changing the date of a live post sends it back for approval, like any other edit (C14).
 Existing posts started with their news date = the day they were published.
+
+## C25 — Office duty schedule and check-in replace biometrics and a QR scanner
+
+**Date:** 2026-10-20 · **Status:** chosen by caacbang-creator; the other two members confirm in the PR review.
+
+**Decision:** The SSC's weekly **Officer of the Day (OOTD)** duty is managed in the system: a
+President-managed duty schedule, office **check-in / check-out** for officers, an **Office Now** page and an
+**Officer Performance** page with CSS bar graphs.
+
+**Why not biometrics or a QR scanner:** fingerprint (WebAuthn) and in-browser QR scanning need browser APIs
+and libraries outside the CCIT 106 Weeks 2–9 boundary. Instead, identity is proven by the officer's **own
+login**, **re-entering their password**, and an **office code that is only visible at the SSC office**. The
+President can put the check-in link (with the code) in a printed QR code; the phone's normal camera app opens
+it, so the app has **no QR, camera or chart code at all**. **No new npm packages** (only Node's built-in
+`crypto`).
+
+**Defaults:**
+- A day may have more than one officer on duty. Each schedule row has a start time; Time In **more than
+  15 minutes** after it counts as **late** (computed in SQL).
+- The schedule, the office code, Office Now and Performance are **President only**
+  (`requireRole('president')` at the mount).
+- **One** office code for the whole office: 6 characters, letters and digits **without look-alikes**
+  (no 0/O, no 1/I). The President can regenerate it any time; the old code stops working at once.
+- **Time In** needs the office code **and** the officer's password; **Time Out** needs only the code.
+- **One open log at a time**, and only for **today**: a log without a time-out from an earlier day is a
+  "missing time-out" and never blocks a new Time In.
+- Only users whose role is **not student** can check in (`requireOfficer`) or be scheduled.
+- **Duty or visit is decided on the server** from the schedule, never from the form. A second Time In on a
+  duty day, after timing out, is a visit.
+- Photos come from the directory (C16) through the new optional, unique `officers.user_id` link; no photo or
+  no link shows initials.
+- **Times come from the database clock** (`NOW()`, `CURDATE()`, `DAYOFWEEK()`), never from the form or the
+  browser. The officer is always `req.user.id`. Recording attendance is always a **POST**; `GET
+  /office/check-in?code=` only shows the form, because link previewers and scanners open GET links.
+- Performance counts a weekday's duties **from the day it was added to the schedule** up to today (future
+  days cannot be missed; today counts once the officer has timed in). The attendance rate shows "–" when
+  nothing was scheduled. Bar sizes are whole percents clamped to 0–100.
+
+**Sample data:** the seed adds six weeks of **made-up** attendance for the seeded officers (some late, one
+missing time-out, one missed duty). It is not their real record; tell the officers before a demo.
