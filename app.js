@@ -22,6 +22,7 @@ const transactionRoutes = require('./routes/transactions');
 const itemRoutes = require('./routes/items');
 const manageTransactionRoutes = require('./routes/manageTransactions');
 const manageItemRoutes = require('./routes/manageItems');
+const manageDutyRoutes = require('./routes/manageDuty');
 const documentRoutes = require('./routes/documents');
 const manageFinancialReportRoutes = require('./routes/manageFinancialReports');
 const manageResolutionRoutes = require('./routes/manageResolutions');
@@ -176,6 +177,7 @@ app.use('/manage/events', requireRole('pro', 'vp_internal', 'president'), manage
 app.use('/manage/concerns', requireRole('pro', 'vp_internal', 'president'), manageConcernRoutes);
 app.use('/manage/transactions', requireRole('pro', 'vp_internal', 'president'), manageTransactionRoutes);
 app.use('/manage/items', requireRole('property_custodian', 'president'), manageItemRoutes);
+app.use('/manage/duty', requireRole('president'), manageDutyRoutes);
 app.use('/manage/financial-reports', requireRole('treasurer', 'vp_internal', 'president'), manageFinancialReportRoutes);
 app.use('/manage/resolutions', requireRole('secretary', 'vp_internal', 'president'), manageResolutionRoutes);
 app.use('/manage/documents', requireRole('secretary', 'president'), manageDocumentRoutes);
