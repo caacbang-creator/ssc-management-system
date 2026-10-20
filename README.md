@@ -22,7 +22,10 @@ Requirements: Node.js 20 or 22 LTS and npm.
    ```
 
    This runs `database/schema.sql` and `database/seed.js`. **It deletes all existing data** in `ssc_db`.
-   Every demo account (for example `andrea.villanueva@my.cspc.edu.ph`, the President) uses `SEED_PASSWORD`.
+   Every seeded account uses `SEED_PASSWORD`. Officer accounts use the SSC officers' school e-mails
+   (decision C15), for example `jesumpay@my.cspc.edu.ph` (President), `raabonal@my.cspc.edu.ph`
+   (VP Internal), `casalvadora@my.cspc.edu.ph` (PIO, PRO role), `rjsernal@my.cspc.edu.ph` (Treasurer)
+   and `matulabot@my.cspc.edu.ph` (Secretary). Student demo accounts are fake, e.g. `paolo.reyes@my.cspc.edu.ph`.
 
 5. Start the server:
 

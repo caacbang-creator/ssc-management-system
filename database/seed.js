@@ -44,29 +44,37 @@ async function main() {
     const hash = await bcrypt.hash(seedPassword, 12);
 
     // ---------- users ----------
+    // Officers: the real SY 2026-2027 SSC officers with their school e-mails (decision C15).
+    // Their student numbers are placeholders. VP External, Auditor and Property Custodian
+    // have no officer role in the system, so they log in as students.
+    // Students: fake demo accounts.
     const users = [
-      // student_no, first, last, email, role, requested_role, request_status
-      ['2023-10001', 'Andrea', 'Villanueva', 'andrea.villanueva@my.cspc.edu.ph', 'president', null, 'none'],
-      ['2023-10002', 'Marco', 'Dela Cruz', 'marco.delacruz@my.cspc.edu.ph', 'vp_internal', null, 'none'],
-      ['2024-10003', 'Jasmine', 'Bautista', 'jasmine.bautista@my.cspc.edu.ph', 'pro', null, 'none'],
-      ['2024-10004', 'Rafael', 'Mendoza', 'rafael.mendoza@my.cspc.edu.ph', 'treasurer', null, 'none'],
-      ['2024-10005', 'Kristine', 'Santos', 'kristine.santos@my.cspc.edu.ph', 'secretary', null, 'none'],
-      ['2025-10006', 'Paolo', 'Reyes', 'paolo.reyes@my.cspc.edu.ph', 'student', null, 'none'],
-      ['2025-10007', 'Aisha', 'Mamalinta', 'aisha.mamalinta@my.cspc.edu.ph', 'student', null, 'none'],
-      ['2025-10008', 'Liza', 'Ramos', 'liza.ramos@my.cspc.edu.ph', 'student', 'pro', 'pending'],
-      ['2026-10009', 'Joshua', 'Tan', 'joshua.tan@my.cspc.edu.ph', 'student', null, 'none']
+      // key, student_no, first, last, email, role, requested_role, request_status
+      ['president', '2023-10001', 'Jester Carl SJ.', 'Sumpay', 'jesumpay@my.cspc.edu.ph', 'president', null, 'none'],
+      ['vpInternal', '2023-10002', 'Ralph Joe Francis', 'Abonal', 'raabonal@my.cspc.edu.ph', 'vp_internal', null, 'none'],
+      ['vpExternal', '2023-10003', 'Jessil', 'Martinez', 'jemartinez@my.cspc.edu.ph', 'student', null, 'none'],
+      ['secretary', '2024-10004', 'Ma. Lourdes', 'Tulabot', 'matulabot@my.cspc.edu.ph', 'secretary', null, 'none'],
+      ['treasurer', '2024-10005', 'Rj Patrick', 'Sernal', 'rjsernal@my.cspc.edu.ph', 'treasurer', null, 'none'],
+      ['auditor', '2024-10006', 'Krystine', 'Gospe', 'krgospe@my.cspc.edu.ph', 'student', null, 'none'],
+      // The PIO holds the pro role (announcements and events)
+      ['pro', '2024-10007', 'Camille', 'Salvadora', 'casalvadora@my.cspc.edu.ph', 'pro', null, 'none'],
+      ['custodian', '2024-10008', 'Luke', 'Ronquillo', 'luronquillo@my.cspc.edu.ph', 'student', null, 'none'],
+      ['paolo', '2025-10009', 'Paolo', 'Reyes', 'paolo.reyes@my.cspc.edu.ph', 'student', null, 'none'],
+      ['aisha', '2025-10010', 'Aisha', 'Mamalinta', 'aisha.mamalinta@my.cspc.edu.ph', 'student', null, 'none'],
+      ['liza', '2025-10011', 'Liza', 'Ramos', 'liza.ramos@my.cspc.edu.ph', 'student', 'pro', 'pending'],
+      ['joshua', '2026-10012', 'Joshua', 'Tan', 'joshua.tan@my.cspc.edu.ph', 'student', null, 'none']
     ];
     const ids = {};
-    for (const [studentNo, first, last, email, role, requestedRole, requestStatus] of users) {
+    for (const [key, studentNo, first, last, email, role, requestedRole, requestStatus] of users) {
       const [result] = await conn.query(
         `INSERT INTO users (student_no, first_name, last_name, email, password_hash, role,
            requested_role, officer_request_status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [studentNo, first, last, email, hash, role, requestedRole, requestStatus]
       );
-      ids[first.toLowerCase()] = result.insertId;
+      ids[key] = result.insertId;
     }
-    const { andrea, marco, jasmine, rafael, kristine, paolo, aisha, liza } = ids;
+    const { president, vpInternal, pro, treasurer, secretary, paolo, aisha, liza } = ids;
 
     // ---------- About SSC (the single row) ----------
     await conn.query(
@@ -100,13 +108,14 @@ async function main() {
 
     const term = '2026-2027';
     const officers = [
-      ['Andrea Villanueva', 'President', null, 1],
-      ['Marco Dela Cruz', 'Vice President for Internal Affairs', committeeIds[0], 2],
-      ['Jasmine Bautista', 'Public Relations Officer', committeeIds[3], 3],
-      ['Rafael Mendoza', 'Treasurer', committeeIds[2], 4],
-      ['Kristine Santos', 'Secretary', null, 5],
-      ['Noel Agbayani', 'Committee Head', committeeIds[1], 6],
-      ['Bea Lacsamana', 'Committee Head', committeeIds[4], 7]
+      ['Jester Carl SJ. Sumpay', 'President', null, 1],
+      ['Ralph Joe Francis Abonal', 'Vice President for Internal Affairs', committeeIds[0], 2],
+      ['Jessil Martinez', 'Vice President for External Affairs', null, 3],
+      ['Ma. Lourdes Tulabot', 'Secretary', null, 4],
+      ['Rj Patrick Sernal', 'Treasurer', committeeIds[2], 5],
+      ['Krystine Gospe', 'Auditor', null, 6],
+      ['Camille Salvadora', 'Public Information Officer', committeeIds[3], 7],
+      ['Luke Ronquillo', 'Property Custodian', null, 8]
     ];
     for (const [fullName, position, committeeId, sortOrder] of officers) {
       await conn.query(
@@ -122,7 +131,7 @@ async function main() {
        VALUES (?, ?, ?, 'published', ?, ?, ?)`,
       ['Enrollment advisory for the second semester', 'academic',
         'Enrollment for the second semester opens next month. Please settle your clearance early.',
-        jasmine, marco, dayFromToday(-100)]
+        pro, vpInternal, dayFromToday(-100)]
     );
 
     // ---------- published news with posters ----------
@@ -145,7 +154,7 @@ async function main() {
       const [post] = await conn.query(
         `INSERT INTO announcements (title, category, body, status, created_by, reviewed_by, published_at)
          VALUES (?, ?, ?, 'published', ?, ?, ?)`,
-        [title, category, 'Details to follow.', jasmine, marco, date]
+        [title, category, 'Details to follow.', pro, vpInternal, date]
       );
       for (let i = 0; i < files.length; i++) {
         await conn.query(
@@ -158,12 +167,12 @@ async function main() {
       `INSERT INTO announcements (title, category, body, status, created_by)
        VALUES (?, ?, ?, 'pending', ?)`,
       ['Call for student volunteers', 'opportunity',
-        'The SSC is looking for volunteers for the upcoming foundation week.', jasmine]
+        'The SSC is looking for volunteers for the upcoming foundation week.', pro]
     );
     await conn.query(
       `INSERT INTO announcements (title, category, body, status, created_by)
        VALUES (?, ?, ?, 'draft', ?)`,
-      ['Library hours update', 'advisory', 'Draft: confirm the new library hours with the admin office.', jasmine]
+      ['Library hours update', 'advisory', 'Draft: confirm the new library hours with the admin office.', pro]
     );
 
     // ---------- events ----------
@@ -172,13 +181,13 @@ async function main() {
          status, created_by, reviewed_by, published_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, NOW())`,
       ['Leadership Training Seminar', 'A half-day seminar on student leadership and teamwork.',
-        'CSPC Gymnasium', dayFromToday(14), '08:00', '12:00', 100, jasmine, marco]
+        'CSPC Gymnasium', dayFromToday(14), '08:00', '12:00', 100, pro, vpInternal]
     );
     await conn.query(
       `INSERT INTO events (title, description, venue, event_date, start_time, capacity, status, created_by)
        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
       ['Campus Clean-up Drive', 'Help keep our campus clean and green.',
-        'Main Quadrangle', dayFromToday(21), '07:00', 50, jasmine]
+        'Main Quadrangle', dayFromToday(21), '07:00', 50, pro]
     );
     await conn.query(
       `INSERT INTO events (title, description, venue, event_date, start_time, end_time, capacity,
@@ -187,7 +196,7 @@ async function main() {
       ['Freshmen Welcome Assembly', 'Orientation and welcome program for first-year students.',
         'CSPC Auditorium', dayFromToday(-30), '13:00', '17:00', 300,
         'About 250 first-year students attended. Officers introduced SSC services.',
-        jasmine, marco, dayFromToday(-45)]
+        pro, vpInternal, dayFromToday(-45)]
     );
 
     // ---------- completed events with photos ----------
@@ -209,7 +218,7 @@ async function main() {
            documentation, status, created_by, reviewed_by, published_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)`,
         [title, 'Details to follow.', 'CSPC Campus', date, '08:00', 100,
-          'Details to follow.', jasmine, marco, date]
+          'Details to follow.', pro, vpInternal, date]
       );
       for (let i = 0; i < files.length; i++) {
         await conn.query(
@@ -238,7 +247,7 @@ async function main() {
        VALUES (?, NULL, ?, ?, ?, 'responded', ?, ?, NOW())`,
       [`C-${year}-0002`, 'student_services', 'Long queue at the registrar',
         'The registrar queue takes more than two hours during enrollment.',
-        'We raised this with the registrar. An online queue will be tried next semester.', marco]
+        'We raised this with the registrar. An online queue will be tried next semester.', vpInternal]
     );
 
     // ---------- items and transactions ----------
@@ -267,7 +276,7 @@ async function main() {
          return_date, status, remarks, reviewed_by)
        VALUES (?, ?, 'item_borrowing', ?, ?, ?, ?, ?, 'approved', ?, ?)`,
       [`T-${year}-0002`, paolo, 'Class presentation', dayFromToday(3), itemIds[1], 1,
-        dayFromToday(4), 'Please pick up at the SSC office.', marco]
+        dayFromToday(4), 'Please pick up at the SSC office.', vpInternal]
     );
 
     // ---------- financial report, resolution, document ----------
@@ -276,7 +285,7 @@ async function main() {
          status, created_by, reviewed_by, published_at)
        VALUES (?, ?, ?, ?, ?, ?, 'published', ?, ?, NOW())`,
       ['Freshmen Welcome Assembly expenses', dayFromToday(-60), dayFromToday(-30), 15000.00, 12350.50,
-        'Sound system rental, snacks and printed programs.', rafael, andrea]
+        'Sound system rental, snacks and printed programs.', treasurer, president]
     );
     await conn.query(
       `INSERT INTO resolutions (resolution_no, title, body, date_adopted, status, created_by,
@@ -284,13 +293,13 @@ async function main() {
        VALUES (?, ?, ?, ?, 'published', ?, ?, NOW())`,
       [`SSC-RES-${year}-001`, 'Adopting the SSC calendar of activities',
         'Resolved, that the SSC adopts the attached calendar of activities for the school year.',
-        dayFromToday(-20), kristine, andrea]
+        dayFromToday(-20), secretary, president]
     );
     await conn.query(
       `INSERT INTO documents (title, doc_type, body, status, created_by)
        VALUES (?, ?, ?, 'draft', ?)`,
       ['Minutes of the first general assembly', 'minutes',
-        'Draft minutes: attendance, agenda items and decisions.', kristine]
+        'Draft minutes: attendance, agenda items and decisions.', secretary]
     );
 
     console.log(`Seed complete: ${users.length} users. Pending officer request: Liza Ramos (id ${liza}).`);
