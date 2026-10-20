@@ -4,7 +4,6 @@ const express = require('express');
 const dashboardModel = require('../models/dashboardModel');
 const announcementModel = require('../models/announcementModel');
 const eventModel = require('../models/eventModel');
-const eventPhotoModel = require('../models/eventPhotoModel');
 
 const router = express.Router();
 
@@ -81,9 +80,8 @@ function daysUntil(dateText) {
 router.get('/dashboard', async (req, res, next) => {
   try {
     const summary = await dashboardModel.getStudentSummary(req.user.id);
-    const announcements = (await announcementModel.listPublished()).slice(0, 4);
+    const announcements = (await announcementModel.listPublished()).slice(0, 3);
     const events = (await eventModel.listUpcoming()).filter((e) => e.status === 'published');
-    const photos = await eventPhotoModel.listRecent(5);
 
     // The soonest event gets a spotlight card; is this user already registered?
     const nextEvent = events[0] || null;
@@ -92,10 +90,6 @@ router.get('/dashboard', async (req, res, next) => {
       nextEvent.registered = await eventModel.isRegistered(nextEvent.id, req.user.id);
     }
 
-    // Hero background: the cover of the latest completed event that has photos
-    const covers = (await eventModel.listCompleted()).filter((e) => e.cover_path);
-    const heroPhoto = covers.length > 0 ? covers[0].cover_path : null;
-
     const now = new Date();
 
     // Officer section: only for officer roles, and only that role's tasks
@@ -103,7 +97,8 @@ router.get('/dashboard', async (req, res, next) => {
     const role = req.user.role;
     if (OFFICER_TASKS[role]) {
       const counts = await dashboardModel.getOfficerCounts();
-      tasks = OFFICER_TASKS[role].map(([label, field, href]) => ({ label, count: counts[field], href }));
+      // Only what needs doing (count above 0) is listed on the dashboard
+      tasks = OFFICER_TASKS[role].map(([label, field, href]) => ({ label, count: Number(counts[field]), href }));
     }
 
     res.render('dashboard/index', {
@@ -111,8 +106,6 @@ router.get('/dashboard', async (req, res, next) => {
       summary,
       announcements,
       nextEvent,
-      photos,
-      heroPhoto,
       hello: greeting(now),
       todayText: `${DAYS[now.getDay()]}, ${res.app.locals.formatDate(localDate(now))}`,
       tasks

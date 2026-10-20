@@ -2,9 +2,10 @@
 <%- include('../partials/nav') %>
 
 <%
-  // Officer tasks with something waiting come first; the zero ones go to the end
-  const sortedTasks = tasks.slice().sort((a, b) => (b.count > 0) - (a.count > 0));
-  const waiting = tasks.reduce((sum, t) => sum + Number(t.count), 0);
+  // Officers: only the tasks that have something waiting are listed
+  const waitingTasks = tasks.filter((t) => t.count > 0);
+  const waiting = tasks.reduce((sum, t) => sum + t.count, 0);
+  const isOfficer = tasks.length > 0;
 
   // Icon for a task, chosen from the page it links to
   const taskIcon = (href) => {
@@ -18,193 +19,123 @@
     return 'file';
   };
 
-  const quickActions = [
-    ['Make a request', '/transactions/new', 'clipboard'],
-    ['Raise a concern', '/concerns/new', 'chat'],
-    ['Track a concern', '/concerns/track', 'search'],
-    ['Borrow items', '/items', 'box'],
-    ['Browse events', '/events', 'calendar'],
-    ['SSC documents', '/documents', 'file']
-  ];
-
   let countdown = '';
   if (nextEvent) {
-    if (nextEvent.days_left === 0) countdown = 'Today!';
+    if (nextEvent.days_left === 0) countdown = 'Today';
     else if (nextEvent.days_left === 1) countdown = 'Tomorrow';
     else countdown = `In ${nextEvent.days_left} days`;
   }
 %>
 
-<main id="main">
-  <%# ---------- Hero: greeting over the latest event photo ---------- %>
-  <section class="photo-hero" aria-labelledby="hello-title">
-    <% if (heroPhoto) { %>
-      <img class="photo-hero-img" src="<%= heroPhoto %>" alt="">
-    <% } %>
-    <div class="container photo-hero-inner fade-up">
-      <p class="photo-hero-meta">
-        <span><%= todayText %></span>
-        <span class="dash-role"><%= roleLabels[currentUser.role] %></span>
-      </p>
-      <h1 id="hello-title"><%= hello %>, <span class="hero-accent"><%= currentUser.first_name %></span>!</h1>
-      <% if (currentUser.officer_request_status === 'pending') { %>
-        <p class="photo-hero-lead">Your officer role request is waiting for the President.</p>
-      <% } else if (tasks.length > 0) { %>
-        <p class="photo-hero-lead"><%= waiting === 0 ? 'You\'re all caught up. Nice work!' : waiting + (waiting === 1 ? ' thing needs' : ' things need') + ' your attention.' %></p>
-      <% } else { %>
-        <p class="photo-hero-lead">Here's what's happening at the SSC.</p>
+<main id="main" class="container dash">
+  <%# ---------- Short header: greeting, date, one main action ---------- %>
+  <div class="dash-head">
+    <div>
+      <h1><%= hello %>, <%= currentUser.first_name %></h1>
+      <p class="meta"><%= roleLabels[currentUser.role] %> &middot; <%= todayText %></p>
+    </div>
+    <div class="action-row">
+      <% if (isOfficer) { %>
+        <a class="btn btn-secondary" href="/office/check-in">Office check-in</a>
       <% } %>
-      <div class="action-row">
-        <a class="btn btn-light" href="/transactions/new">Make a request <span class="arrow" aria-hidden="true">&rarr;</span></a>
-        <a class="btn btn-outline-light" href="/profile">My profile</a>
-      </div>
+      <a class="btn btn-primary" href="/transactions/new">Make a request</a>
     </div>
-  </section>
+  </div>
 
-  <div class="container">
-    <%# ---------- My numbers, overlapping the bottom of the hero ---------- %>
-    <h2 class="visually-hidden">My activity</h2>
-    <div class="dash-stats fade-up fade-up-delay-1">
-      <a class="card stat-card dash-stat" href="/transactions">
-        <span class="icon-tile"><%- include('../partials/icon', { name: 'clipboard' }) %></span>
-        <span>
-          <span class="stat-number"><%= summary.active_requests %></span>
-          <span class="stat-label">Requests in progress</span>
-        </span>
-      </a>
-      <a class="card stat-card dash-stat" href="/events/my-registrations">
-        <span class="icon-tile"><%- include('../partials/icon', { name: 'calendar' }) %></span>
-        <span>
-          <span class="stat-number"><%= summary.upcoming_events %></span>
-          <span class="stat-label">Events I'm going to</span>
-        </span>
-      </a>
-      <a class="card stat-card dash-stat" href="/concerns/my">
-        <span class="icon-tile"><%- include('../partials/icon', { name: 'chat' }) %></span>
-        <span>
-          <span class="stat-number"><%= summary.open_concerns %></span>
-          <span class="stat-label">Open concerns</span>
-        </span>
-      </a>
-    </div>
+  <% if (currentUser.officer_request_status === 'pending') { %>
+    <p class="alert alert-info">Your officer role request is waiting for the President.</p>
+  <% } %>
 
-    <%# ---------- Officers: their to-do list ---------- %>
-    <% if (tasks.length > 0) { %>
-      <section class="section-gap" aria-labelledby="tasks-heading">
-        <div class="section-heading">
-          <h2 id="tasks-heading">Your to-do list</h2>
-        </div>
-        <% if (waiting === 0) { %>
-          <div class="card dash-caught-up">
-            <span class="icon-tile"><%- include('../partials/icon', { name: 'check' }) %></span>
-            <p><strong>All caught up.</strong> Nothing is waiting for you right now.</p>
-          </div>
-        <% } %>
-        <div class="card-grid">
-          <% sortedTasks.forEach((t) => { %>
-            <a class="card stat-card dash-task<%= t.count > 0 ? ' stat-card-active' : '' %>" href="<%= t.href %>">
-              <span class="dash-task-top">
-                <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: taskIcon(t.href) }) %></span>
-                <span class="stat-number"><%= t.count %></span>
-              </span>
-              <span class="stat-label"><%= t.label %></span>
-            </a>
-          <% }) %>
-        </div>
-        <%# The officer's tools ("Go to") are in the left sidebar (partials/sidebar.ejs) %>
-      </section>
+  <%# ---------- One row of numbers ---------- %>
+  <h2 class="visually-hidden">At a glance</h2>
+  <div class="dash-numbers">
+    <% if (isOfficer) { %>
+      <a class="card stat-card<%= waiting > 0 ? ' stat-card-active' : '' %>" href="#attention">
+        <span class="stat-number"><%= waiting %></span>
+        <span class="stat-label">To do</span>
+      </a>
     <% } %>
+    <a class="card stat-card" href="/transactions">
+      <span class="stat-number"><%= summary.active_requests %></span>
+      <span class="stat-label">My requests in progress</span>
+    </a>
+    <a class="card stat-card" href="/events/my-registrations">
+      <span class="stat-number"><%= summary.upcoming_events %></span>
+      <span class="stat-label">My upcoming events</span>
+    </a>
+    <a class="card stat-card" href="/concerns/my">
+      <span class="stat-number"><%= summary.open_concerns %></span>
+      <span class="stat-label">My open concerns</span>
+    </a>
+  </div>
 
-    <%# ---------- Next event spotlight + quick actions ---------- %>
-    <div class="dash-split section-gap">
-      <section class="card dash-next" aria-labelledby="next-heading">
-        <p class="eyebrow" id="next-heading">Next up</p>
-        <% if (!nextEvent) { %>
-          <p class="muted">No events scheduled yet. We'll post them on the Events page first.</p>
-          <a class="text-link" href="/events">See past events <span class="arrow" aria-hidden="true">&rarr;</span></a>
-        <% } else { %>
-          <% const badge = dateBadge(nextEvent.event_date); %>
-          <div class="dash-next-body">
-            <span class="date-badge date-badge-lg" aria-hidden="true">
-              <span class="date-badge-month"><%= badge.month %></span>
-              <span class="date-badge-day"><%= badge.day %></span>
-            </span>
-            <div>
-              <p class="dash-countdown"><%= countdown %></p>
-              <h2><a href="/events/<%= nextEvent.id %>"><%= nextEvent.title %></a></h2>
-              <p class="meta"><%= formatDate(nextEvent.event_date) %> &middot; <%= formatTime(nextEvent.start_time) %> &middot; <%= nextEvent.venue || 'Venue to be announced' %></p>
-            </div>
-          </div>
-          <% if (nextEvent.registered) { %>
-            <p class="dash-going"><span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: 'check' }) %></span> You're in! See you there.</p>
-          <% } else { %>
-            <a class="btn btn-primary" href="/events/<%= nextEvent.id %>">Save my spot <span class="arrow" aria-hidden="true">&rarr;</span></a>
-          <% } %>
-        <% } %>
-      </section>
-
-      <section class="card" aria-labelledby="quick-heading">
-        <p class="eyebrow" id="quick-heading">Quick actions</p>
-        <ul class="quick-grid">
-          <% quickActions.forEach(([label, href, icon]) => { %>
+  <%# ---------- Officers: what needs their attention, as a simple list ---------- %>
+  <% if (isOfficer) { %>
+    <section class="card dash-panel" id="attention" aria-labelledby="attention-title">
+      <h2 id="attention-title" class="dash-panel-title">Needs your attention</h2>
+      <% if (waitingTasks.length === 0) { %>
+        <p class="dash-all-done">
+          <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: 'check' }) %></span>
+          All caught up. Nothing is waiting for you.
+        </p>
+      <% } else { %>
+        <ul class="task-list">
+          <% waitingTasks.forEach((t) => { %>
             <li>
-              <a class="quick-tile" href="<%= href %>">
-                <span class="icon-tile icon-tile-sm"><%- include('../partials/icon', { name: icon }) %></span>
-                <span><%= label %></span>
-              </a>
+              <span class="task-icon"><%- include('../partials/icon', { name: taskIcon(t.href) }) %></span>
+              <span class="task-label"><%= t.label %></span>
+              <span class="task-count"><%= t.count %></span>
+              <a class="btn btn-secondary btn-sm" href="<%= t.href %>">Open <span class="visually-hidden"><%= t.label %></span></a>
             </li>
           <% }) %>
         </ul>
-      </section>
-    </div>
+      <% } %>
+    </section>
+  <% } %>
 
-    <%# ---------- Latest news posters ---------- %>
-    <section class="section-gap" aria-labelledby="news-heading">
-      <div class="section-heading">
-        <h2 id="news-heading">Latest news</h2>
-        <a class="text-link" href="/announcements">All news <span class="arrow" aria-hidden="true">&rarr;</span></a>
+  <%# ---------- Next event + latest news, side by side ---------- %>
+  <div class="dash-pair">
+    <section class="card dash-panel" aria-labelledby="next-title">
+      <div class="dash-panel-head">
+        <h2 id="next-title" class="dash-panel-title">Next event</h2>
+        <a class="text-link" href="/events">All events</a>
       </div>
-      <% if (announcements.length === 0) { %>
-        <div class="card empty-state"><p>Nothing new right now. Check back soon.</p></div>
+      <% if (!nextEvent) { %>
+        <p class="muted">No events scheduled yet.</p>
       <% } else { %>
-        <div class="dash-news">
-          <% announcements.forEach((a) => { %>
-            <a class="card link-card dash-news-card" href="/announcements/<%= a.id %>">
-              <% if (a.cover_path) { %>
-                <span class="poster-frame"><img src="<%= a.cover_path %>" alt="" loading="lazy"></span>
-              <% } else { %>
-                <span class="poster-frame dash-news-empty"><span class="icon-tile"><%- include('../partials/icon', { name: 'megaphone' }) %></span></span>
-              <% } %>
-              <span class="meta"><%= formatDate(a.news_date) %></span>
-              <h3><%= a.title %></h3>
-            </a>
-          <% }) %>
+        <% const badge = dateBadge(nextEvent.event_date); %>
+        <div class="dash-event">
+          <span class="date-badge" aria-hidden="true">
+            <span class="date-badge-month"><%= badge.month %></span>
+            <span class="date-badge-day"><%= badge.day %></span>
+          </span>
+          <div>
+            <p class="dash-event-title"><a href="/events/<%= nextEvent.id %>"><%= nextEvent.title %></a></p>
+            <p class="meta"><%= countdown %> &middot; <%= formatTime(nextEvent.start_time) %> &middot; <%= nextEvent.venue || 'Venue to be announced' %></p>
+            <p class="meta"><%= nextEvent.registered ? "You're registered." : 'You have not registered yet.' %></p>
+          </div>
         </div>
       <% } %>
     </section>
 
-    <%# ---------- Photos from recent events ---------- %>
-    <% if (photos.length > 0) { %>
-      <section class="section-gap" aria-labelledby="photos-heading">
-        <div class="section-heading">
-          <h2 id="photos-heading">From our events</h2>
-          <a class="text-link" href="/events">All events <span class="arrow" aria-hidden="true">&rarr;</span></a>
-        </div>
-        <div class="photo-strip">
-          <% photos.forEach((p) => { %>
-            <a class="photo-strip-item" href="/events/<%= p.event_id %>#photos">
-              <img src="<%= p.file_path %>" alt="<%= p.caption || `Photo from ${p.title}` %>" loading="lazy">
-              <span class="photo-strip-label"><%= p.title %></span>
-            </a>
+    <section class="card dash-panel" aria-labelledby="news-title">
+      <div class="dash-panel-head">
+        <h2 id="news-title" class="dash-panel-title">Latest news</h2>
+        <a class="text-link" href="/announcements">All news</a>
+      </div>
+      <% if (announcements.length === 0) { %>
+        <p class="muted">Nothing new right now.</p>
+      <% } else { %>
+        <ul class="dash-news-list">
+          <% announcements.forEach((a) => { %>
+            <li>
+              <a href="/announcements/<%= a.id %>"><%= a.title %></a>
+              <span class="meta"><%= formatDate(a.news_date) %></span>
+            </li>
           <% }) %>
-        </div>
-      </section>
-    <% } %>
-
-    <div class="page-end">
-      <p>Something bothering you on campus?</p>
-      <a class="btn btn-secondary" href="/concerns/new">Raise a concern <span class="arrow" aria-hidden="true">&rarr;</span></a>
-    </div>
+        </ul>
+      <% } %>
+    </section>
   </div>
 </main>
 

@@ -41,24 +41,28 @@
     .filter((href) => path === href || path.startsWith(href + '/'))
     .sort((a, b) => b.length - a.length)[0];
 %>
-<%# The same menu twice: a sidebar on wide screens, a "My tools" box on phones (CSS shows one) %>
+<%# The same menu twice: a slim icon rail on wide screens that opens on hover or keyboard focus,
+    and a "My tools" box on phones (CSS shows one). Labels stay in the page for screen readers. %>
 <% ['side-nav', 'side-nav-mobile'].forEach((variant) => { %>
   <% if (variant === 'side-nav-mobile') { %><details class="side-nav-mobile"><summary>My tools</summary><% } %>
   <nav class="<%= variant === 'side-nav' ? 'side-nav' : 'side-nav-list' %>" aria-label="My tools<%= variant === 'side-nav-mobile' ? ' (small screens)' : '' %>">
     <p class="side-nav-who">
-      <strong><%= user.first_name %></strong>
-      <span><%= roleLabels[user.role] || user.role %></span>
+      <span class="side-nav-initials" aria-hidden="true"><%= (user.first_name[0] + user.last_name[0]).toUpperCase() %></span>
+      <span class="side-nav-label">
+        <strong><%= user.first_name %></strong>
+        <span><%= roleLabels[user.role] || user.role %></span>
+      </span>
     </p>
     <ul>
       <% dashboardLinks.forEach(([label, href, icon]) => { %>
-        <li><a href="<%= href %>"<% if (href === currentHref) { %> aria-current="page"<% } %>><span class="side-nav-icon"><%- include('icon', { name: icon }) %></span><%= label %></a></li>
+        <li><a href="<%= href %>"<% if (href === currentHref) { %> aria-current="page"<% } %>><span class="side-nav-icon"><%- include('icon', { name: icon }) %></span><span class="side-nav-label"><%= label %></span></a></li>
       <% }) %>
     </ul>
     <% myGroups.forEach(([groupLabel, links]) => { %>
-      <p class="side-nav-group"><%= groupLabel %></p>
+      <p class="side-nav-group"><span class="side-nav-label"><%= groupLabel %></span></p>
       <ul>
         <% links.forEach(([label, href, icon]) => { %>
-          <li><a href="<%= href %>"<% if (href === currentHref) { %> aria-current="page"<% } %>><span class="side-nav-icon"><%- include('icon', { name: icon }) %></span><%= label %></a></li>
+          <li><a href="<%= href %>"<% if (href === currentHref) { %> aria-current="page"<% } %>><span class="side-nav-icon"><%- include('icon', { name: icon }) %></span><span class="side-nav-label"><%= label %></span></a></li>
         <% }) %>
       </ul>
     <% }) %>
