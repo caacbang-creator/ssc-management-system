@@ -46,4 +46,16 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { loadUser, requireLogin, requireRole };
+// Any officer: every role except student (office check-in, C25). Use after requireLogin.
+function requireOfficer(req, res, next) {
+  if (!req.user) {
+    req.session.flash = { type: 'error', message: 'Please log in to continue.' };
+    return res.redirect('/login');
+  }
+  if (req.user.role === 'student') {
+    return res.status(403).render('errors/403', { title: 'Access denied' });
+  }
+  next();
+}
+
+module.exports = { loadUser, requireLogin, requireRole, requireOfficer };

@@ -23,6 +23,7 @@ const itemRoutes = require('./routes/items');
 const manageTransactionRoutes = require('./routes/manageTransactions');
 const manageItemRoutes = require('./routes/manageItems');
 const manageDutyRoutes = require('./routes/manageDuty');
+const officeRoutes = require('./routes/office');
 const documentRoutes = require('./routes/documents');
 const manageFinancialReportRoutes = require('./routes/manageFinancialReports');
 const manageResolutionRoutes = require('./routes/manageResolutions');
@@ -164,6 +165,7 @@ app.use('/documents', documentRoutes);
 // Logged-in pages
 app.use('/transactions', requireLogin, transactionRoutes);
 app.use('/items', requireLogin, itemRoutes);
+app.use('/office', requireLogin, officeRoutes);   // officers only (requireOfficer inside)
 app.use(['/dashboard', '/profile'], requireLogin);
 app.use('/', dashboardRoutes);
 

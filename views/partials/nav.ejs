@@ -33,6 +33,10 @@
         <% links.forEach((link) => { %>
           <li><a href="<%= link.href %>"<% if (isActive(link.href)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
         <% }) %>
+        <%# Officers only (cosmetic: /office refuses students on the server anyway) %>
+        <% if (user && user.role !== 'student') { %>
+          <li><a href="/office/check-in"<% if (isActive('/office')) { %> aria-current="page"<% } %>>Office check-in</a></li>
+        <% } %>
         <% if (user) { %>
           <li class="nav-user">
             <form method="post" action="/logout" class="inline-form">
@@ -63,6 +67,9 @@
           <% links.forEach((link) => { %>
             <li><a href="<%= link.href %>"<% if (isActive(link.href)) { %> aria-current="page"<% } %>><%= link.label %></a></li>
           <% }) %>
+          <% if (user && user.role !== 'student') { %>
+            <li><a href="/office/check-in"<% if (isActive('/office')) { %> aria-current="page"<% } %>>Office check-in</a></li>
+          <% } %>
           <% if (user) { %>
             <li class="nav-user">
               <a href="/profile"<% if (path === '/profile') { %> aria-current="page"<% } %>>My profile</a>

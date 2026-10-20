@@ -1,0 +1,61 @@
+<%- include('../partials/head') %>
+<%- include('../partials/nav') %>
+
+<main id="main" class="container">
+  <section class="card check-in-card" aria-labelledby="who-title">
+    <%# Who is checking in: always the logged-in officer (never chosen on this page) %>
+    <div class="check-in-who">
+      <%- include('../partials/avatar', { person: me, size: 'lg', duty: Boolean(duty) }) %>
+      <div>
+        <p class="eyebrow">Office check-in</p>
+        <h1 id="who-title"><%= me.first_name %> <%= me.last_name %></h1>
+        <p class="meta"><%= me.position || roleLabels[me.role] %></p>
+      </div>
+    </div>
+
+    <div class="check-in-status">
+      <% if (duty) { %>
+        <p><span class="tag tag-duty">OOTD</span> You are <strong>Officer of the Day</strong> today, from <strong><%= formatTime(duty.start_time) %></strong>.</p>
+      <% } else { %>
+        <p>You are not on duty today. You can still check in as a <strong>visitor</strong>.</p>
+      <% } %>
+      <% if (openLog) { %>
+        <p class="section-gap-sm">In the office since <strong><%= sinceText %></strong> (<%= openLog.log_type === 'duty' ? 'duty' : 'visit' %>).</p>
+      <% } %>
+    </div>
+
+    <%- include('../partials/form-errors') %>
+
+    <% if (openLog) { %>
+      <%# ---------- Time Out: only the office code ---------- %>
+      <form method="post" action="/office/check-out" novalidate>
+        <div class="form-field">
+          <label for="code">Office code</label>
+          <input type="text" id="code" name="code" value="<%= code %>" maxlength="6" autocomplete="off"
+            autocapitalize="characters" spellcheck="false" aria-describedby="code-hint" required>
+          <p class="hint" id="code-hint">The 6-character code shown at the SSC office.</p>
+        </div>
+        <button type="submit" class="btn btn-primary">Time Out</button>
+      </form>
+    <% } else { %>
+      <%# ---------- Time In: office code + password ---------- %>
+      <form method="post" action="/office/check-in" novalidate>
+        <div class="form-field">
+          <label for="code">Office code</label>
+          <input type="text" id="code" name="code" value="<%= code %>" maxlength="6" autocomplete="off"
+            autocapitalize="characters" spellcheck="false" aria-describedby="code-hint" required>
+          <p class="hint" id="code-hint">The 6-character code shown at the SSC office. The QR code fills it in for you.</p>
+        </div>
+        <div class="form-field">
+          <label for="password">Confirm your password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password"
+            aria-describedby="password-hint" required>
+          <p class="hint" id="password-hint">Proves it is really you, even on a shared phone.</p>
+        </div>
+        <button type="submit" class="btn btn-primary"><%= nextIsDuty ? 'Time In as Duty' : 'Check In as Visitor' %></button>
+      </form>
+    <% } %>
+  </section>
+</main>
+
+<%- include('../partials/foot') %>

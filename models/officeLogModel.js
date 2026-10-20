@@ -34,15 +34,22 @@ async function hasDutyToday(userId) {
 }
 
 // Records a Time In. For a duty, late is worked out IN SQL: Time In more than 15 minutes after the
-// scheduled start (startTime comes from duty_schedule, not from the form). Returns the time in.
+// scheduled start (startTime comes from duty_schedule, not from the form).
+// INSERT ... SELECT ... WHERE NOT EXISTS adds the row only if there is no open log today, in ONE
+// statement, so a double click cannot create two open logs.
+// Returns { time_in, is_late }, or null when the officer was already checked in.
 async function timeIn(userId, logType, startTime) {
   const lateSql = logType === 'duty' ? "CURTIME() > ADDTIME(?, '00:15:00')" : '0';
-  const params = logType === 'duty' ? [userId, logType, startTime] : [userId, logType];
+  const params = logType === 'duty' ? [userId, logType, startTime, userId] : [userId, logType, userId];
   const [result] = await pool.query(
     `INSERT INTO office_logs (user_id, log_type, log_date, time_in, is_late)
-     VALUES (?, ?, CURDATE(), NOW(), ${lateSql})`,
+     SELECT ?, ?, CURDATE(), NOW(), ${lateSql} FROM DUAL
+     WHERE NOT EXISTS (
+       SELECT 1 FROM office_logs WHERE user_id = ? AND log_date = CURDATE() AND time_out IS NULL
+     )`,
     params
   );
+  if (result.affectedRows === 0) return null;
   const [rows] = await pool.query('SELECT time_in, is_late FROM office_logs WHERE id = ?', [result.insertId]);
   return rows[0];
 }
