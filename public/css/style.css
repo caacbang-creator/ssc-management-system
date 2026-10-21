@@ -4943,20 +4943,6 @@ img.team-avatar {
   }
 }
 
-/* 1024px-1151px: still too tight, so the words beside the logo are hidden visually
-   (the logo stays, and screen readers still hear "Supreme Student Council") */
-@media (min-width: 1024px) and (max-width: 1151px) {
-  .wordmark {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
-
 /* With the officer Menu button there are three items in the header; the logo stays next to the
    button instead of floating to the middle */
 .header-inner .brand {
