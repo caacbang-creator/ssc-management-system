@@ -1,73 +1,68 @@
 <%
   // The sales table of a DRAFT, in the same columns as the published report, every cell an input.
-  // Usage: include('sales-edit', { base, table, sales })
+  // Part of the report sheet form (form.ejs). Usage: include('sales-edit', { table, saved })
   // The line totals and the saved total come from the saved lines (computed in SQL).
-  const savedTotal = sales.reduce((sum, s) => sum + Number(s.line_total), 0);
+  const savedTotal = saved.reduce((sum, s) => sum + Number(s.line_total), 0);
   // Example values only in the FIRST blank row, so the other blank rows look empty
   const firstNew = table.rows.findIndex((row) => !row.id);
   const lineTotal = {};
-  sales.forEach((s) => { lineTotal[String(s.id)] = s.line_total; });
+  saved.forEach((s) => { lineTotal[String(s.id)] = s.line_total; });
 %>
-<form method="post" action="<%= base %>/sales" novalidate>
-  <%- include('../../partials/form-errors', { errors: table.errors }) %>
-
-  <div class="table-wrap">
-    <table class="ledger ledger-edit">
-      <thead>
-        <tr>
-          <th scope="col" class="row-num">#</th>
-          <th scope="col">Product</th>
-          <th scope="col" class="num">Quantity sold</th>
-          <th scope="col" class="num">Unit price (₱)</th>
-          <th scope="col" class="num">Total sales</th>
-          <th scope="col" class="remove-col">Remove</th>
+<div class="table-wrap">
+  <table class="ledger ledger-edit">
+    <thead>
+      <tr>
+        <th scope="col" class="row-num">#</th>
+        <th scope="col">Product</th>
+        <th scope="col" class="num">Quantity sold</th>
+        <th scope="col" class="num">Unit price (₱)</th>
+        <th scope="col" class="num">Total sales</th>
+        <th scope="col" class="remove-col">Remove</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% table.rows.forEach((row, i) => { %>
+        <% const n = i + 1; %>
+        <tr class="<%= table.errorRows.includes(i) ? 'row-error' : '' %><%= row.id ? '' : ' row-new' %>">
+          <td class="row-num">
+            <%= n %>
+            <input type="hidden" name="s_id" value="<%= row.id %>">
+          </td>
+          <td>
+            <label class="visually-hidden" for="s-product-<%= i %>">Row <%= n %>: product</label>
+            <input type="text" id="s-product-<%= i %>" name="product" value="<%= row.product %>" maxlength="100" placeholder="<%= i === firstNew ? 'Ice Cream (Cone)' : '' %>">
+          </td>
+          <td class="num">
+            <label class="visually-hidden" for="s-qty-<%= i %>">Row <%= n %>: quantity sold</label>
+            <input type="text" id="s-qty-<%= i %>" name="quantity" value="<%= row.quantity %>" inputmode="numeric" maxlength="5" placeholder="<%= i === firstNew ? '206' : '' %>">
+          </td>
+          <td class="num">
+            <label class="visually-hidden" for="s-price-<%= i %>">Row <%= n %>: unit price in pesos</label>
+            <input type="text" id="s-price-<%= i %>" name="unit_price" value="<%= row.unit_price %>" inputmode="decimal" maxlength="16" placeholder="<%= i === firstNew ? '15.00' : '' %>">
+          </td>
+          <td class="num"><%= row.id && lineTotal[row.id] !== undefined ? formatMoney(lineTotal[row.id]) : '–' %></td>
+          <td class="remove-col">
+            <% if (row.id) { %>
+              <input type="checkbox" id="s-remove-<%= i %>" name="s_remove" value="<%= row.id %>"<% if (row.remove) { %> checked<% } %>>
+              <label class="visually-hidden" for="s-remove-<%= i %>">Remove row <%= n %></label>
+            <% } else { %>
+              <span class="meta">New</span>
+            <% } %>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% table.rows.forEach((row, i) => { %>
-          <% const n = i + 1; %>
-          <tr class="<%= table.errorRows.includes(i) ? 'row-error' : '' %><%= row.id ? '' : ' row-new' %>">
-            <td class="row-num">
-              <%= n %>
-              <input type="hidden" name="line_id" value="<%= row.id %>">
-            </td>
-            <td>
-              <label class="visually-hidden" for="s-product-<%= i %>">Row <%= n %>: product</label>
-              <input type="text" id="s-product-<%= i %>" name="product" value="<%= row.product %>" maxlength="100" placeholder="<%= i === firstNew ? 'Ice Cream (Cone)' : '' %>">
-            </td>
-            <td class="num">
-              <label class="visually-hidden" for="s-qty-<%= i %>">Row <%= n %>: quantity sold</label>
-              <input type="text" id="s-qty-<%= i %>" name="quantity" value="<%= row.quantity %>" inputmode="numeric" maxlength="5" placeholder="<%= i === firstNew ? '206' : '' %>">
-            </td>
-            <td class="num">
-              <label class="visually-hidden" for="s-price-<%= i %>">Row <%= n %>: unit price in pesos</label>
-              <input type="text" id="s-price-<%= i %>" name="unit_price" value="<%= row.unit_price %>" inputmode="decimal" maxlength="16" placeholder="<%= i === firstNew ? '15.00' : '' %>">
-            </td>
-            <td class="num"><%= row.id && lineTotal[row.id] !== undefined ? formatMoney(lineTotal[row.id]) : '–' %></td>
-            <td class="remove-col">
-              <% if (row.id) { %>
-                <input type="checkbox" id="s-remove-<%= i %>" name="remove" value="<%= row.id %>"<% if (row.remove) { %> checked<% } %>>
-                <label class="visually-hidden" for="s-remove-<%= i %>">Remove row <%= n %></label>
-              <% } else { %>
-                <span class="meta">New</span>
-              <% } %>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-      <tfoot>
-        <tr>
-          <th scope="row" colspan="4">Total sales (saved)</th>
-          <td class="num"><strong><%= formatMoney(savedTotal) %></strong></td>
-          <td></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+      <% }) %>
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row" colspan="4">Total sales (last saved)</th>
+        <td class="num"><strong><%= formatMoney(savedTotal) %></strong></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
 
-  <p class="hint">Most activities don't sell anything, so this table can stay empty. Totals update when you save.</p>
-  <div class="form-actions table-actions">
-    <button type="submit" class="btn btn-secondary">Save sales</button>
-    <button type="submit" name="more" value="1" class="btn btn-secondary">Save and add more rows</button>
-  </div>
-</form>
+<p class="hint">Most activities don't sell anything, so this table can stay empty. Totals update when you save.</p>
+<div class="table-actions">
+  <button type="submit" name="more" value="sales" class="btn btn-secondary btn-sm">Save and add more sales rows</button>
+</div>

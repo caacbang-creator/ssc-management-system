@@ -1,86 +1,81 @@
 <%
   // The receipts table of a DRAFT, in the same columns as the published report, but every cell
   // is an input. Saved lines have a "Remove" box; blank rows at the end are new receipts.
-  // Usage: include('expense-edit', { base, table, expenses })
-  //   table: { rows, errors, errorRows }; expenses: the saved lines (for the saved total)
-  const savedTotal = expenses.reduce((sum, x) => sum + Number(x.amount), 0);
-  // Item names already used, offered while typing so rows group the same way (Meals, Transportation...)
+  // Part of the report sheet form (form.ejs). Usage: include('expense-edit', { table, saved })
+  //   table: { rows, errorRows }; saved: the saved lines (for the saved total)
+  const savedTotal = saved.reduce((sum, x) => sum + Number(x.amount), 0);
   // Example values only in the FIRST blank row, so the other blank rows look empty
   const firstNew = table.rows.findIndex((row) => !row.id);
-  const itemNames = [...new Set(expenses.map((x) => x.item))];
+  // Item names already used, offered while typing so rows group the same way (Meals, Transportation...)
+  const itemNames = [...new Set(saved.map((x) => x.item))];
 %>
-<form method="post" action="<%= base %>/expenses" novalidate>
-  <%- include('../../partials/form-errors', { errors: table.errors }) %>
-
-  <div class="table-wrap">
-    <table class="ledger ledger-edit">
-      <thead>
-        <tr>
-          <th scope="col" class="row-num">#</th>
-          <th scope="col">Item</th>
-          <th scope="col">Receipt no.</th>
-          <th scope="col">Date</th>
-          <th scope="col">Particulars</th>
-          <th scope="col" class="num">Amount (₱)</th>
-          <th scope="col" class="remove-col">Remove</th>
+<div class="table-wrap">
+  <table class="ledger ledger-edit">
+    <thead>
+      <tr>
+        <th scope="col" class="row-num">#</th>
+        <th scope="col">Item</th>
+        <th scope="col">Receipt no.</th>
+        <th scope="col">Date</th>
+        <th scope="col">Particulars</th>
+        <th scope="col" class="num">Amount (₱)</th>
+        <th scope="col" class="remove-col">Remove</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% table.rows.forEach((row, i) => { %>
+        <% const n = i + 1; %>
+        <tr class="<%= table.errorRows.includes(i) ? 'row-error' : '' %><%= row.id ? '' : ' row-new' %>">
+          <td class="row-num">
+            <%= n %>
+            <input type="hidden" name="x_id" value="<%= row.id %>">
+          </td>
+          <td>
+            <label class="visually-hidden" for="x-item-<%= i %>">Row <%= n %>: item</label>
+            <input type="text" id="x-item-<%= i %>" name="item" value="<%= row.item %>" maxlength="60" list="expense-items" placeholder="<%= i === firstNew ? 'Meals' : '' %>">
+          </td>
+          <td>
+            <label class="visually-hidden" for="x-receipt-<%= i %>">Row <%= n %>: receipt number (empty for an acknowledgement receipt)</label>
+            <input type="text" id="x-receipt-<%= i %>" name="receipt_no" value="<%= row.receipt_no %>" maxlength="30" placeholder="<%= row.id ? 'None' : (i === firstNew ? '0001283' : '') %>">
+          </td>
+          <td>
+            <label class="visually-hidden" for="x-date-<%= i %>">Row <%= n %>: date</label>
+            <input type="date" id="x-date-<%= i %>" name="receipt_date" value="<%= row.receipt_date %>">
+          </td>
+          <td>
+            <label class="visually-hidden" for="x-part-<%= i %>">Row <%= n %>: particulars</label>
+            <input type="text" id="x-part-<%= i %>" name="particulars" value="<%= row.particulars %>" maxlength="150" placeholder="<%= i === firstNew ? 'LCC Supermarket' : '' %>">
+          </td>
+          <td class="num">
+            <label class="visually-hidden" for="x-amount-<%= i %>">Row <%= n %>: amount in pesos</label>
+            <input type="text" id="x-amount-<%= i %>" name="amount" value="<%= row.amount %>" inputmode="decimal" maxlength="16" placeholder="<%= i === firstNew ? '58.00' : '' %>">
+          </td>
+          <td class="remove-col">
+            <% if (row.id) { %>
+              <input type="checkbox" id="x-remove-<%= i %>" name="x_remove" value="<%= row.id %>"<% if (row.remove) { %> checked<% } %>>
+              <label class="visually-hidden" for="x-remove-<%= i %>">Remove row <%= n %></label>
+            <% } else { %>
+              <span class="meta">New</span>
+            <% } %>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% table.rows.forEach((row, i) => { %>
-          <% const n = i + 1; %>
-          <tr class="<%= table.errorRows.includes(i) ? 'row-error' : '' %><%= row.id ? '' : ' row-new' %>">
-            <td class="row-num">
-              <%= n %>
-              <input type="hidden" name="line_id" value="<%= row.id %>">
-            </td>
-            <td>
-              <label class="visually-hidden" for="x-item-<%= i %>">Row <%= n %>: item</label>
-              <input type="text" id="x-item-<%= i %>" name="item" value="<%= row.item %>" maxlength="60" list="expense-items" placeholder="<%= i === firstNew ? 'Meals' : '' %>">
-            </td>
-            <td>
-              <label class="visually-hidden" for="x-receipt-<%= i %>">Row <%= n %>: receipt number (empty for an acknowledgement receipt)</label>
-              <input type="text" id="x-receipt-<%= i %>" name="receipt_no" value="<%= row.receipt_no %>" maxlength="30" placeholder="<%= row.id ? 'None' : (i === firstNew ? '0001283' : '') %>">
-            </td>
-            <td>
-              <label class="visually-hidden" for="x-date-<%= i %>">Row <%= n %>: date</label>
-              <input type="date" id="x-date-<%= i %>" name="receipt_date" value="<%= row.receipt_date %>">
-            </td>
-            <td>
-              <label class="visually-hidden" for="x-part-<%= i %>">Row <%= n %>: particulars</label>
-              <input type="text" id="x-part-<%= i %>" name="particulars" value="<%= row.particulars %>" maxlength="150" placeholder="<%= i === firstNew ? 'LCC Supermarket' : '' %>">
-            </td>
-            <td class="num">
-              <label class="visually-hidden" for="x-amount-<%= i %>">Row <%= n %>: amount in pesos</label>
-              <input type="text" id="x-amount-<%= i %>" name="amount" value="<%= row.amount %>" inputmode="decimal" maxlength="16" placeholder="<%= i === firstNew ? '58.00' : '' %>">
-            </td>
-            <td class="remove-col">
-              <% if (row.id) { %>
-                <input type="checkbox" id="x-remove-<%= i %>" name="remove" value="<%= row.id %>"<% if (row.remove) { %> checked<% } %>>
-                <label class="visually-hidden" for="x-remove-<%= i %>">Remove row <%= n %></label>
-              <% } else { %>
-                <span class="meta">New</span>
-              <% } %>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-      <tfoot>
-        <tr>
-          <th scope="row" colspan="5">Total expenses (saved)</th>
-          <td class="num"><strong><%= formatMoney(savedTotal) %></strong></td>
-          <td></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-  <datalist id="expense-items">
-    <% itemNames.forEach((name) => { %><option value="<%= name %>"><% }) %>
-  </datalist>
+      <% }) %>
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row" colspan="5">Total expenses (last saved)</th>
+        <td class="num"><strong><%= formatMoney(savedTotal) %></strong></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+<datalist id="expense-items">
+  <% itemNames.forEach((name) => { %><option value="<%= name %>"><% }) %>
+</datalist>
 
-  <p class="hint">Fill in the empty rows for new receipts (empty rows are skipped). Leave <strong>Receipt no.</strong>
-    empty for an acknowledgement receipt. Tick <strong>Remove</strong> to delete a line. Nothing is saved if a row has a mistake.</p>
-  <div class="form-actions table-actions">
-    <button type="submit" class="btn btn-secondary">Save receipts</button>
-    <button type="submit" name="more" value="1" class="btn btn-secondary">Save and add more rows</button>
-  </div>
-</form>
+<p class="hint">Fill in the empty rows for new receipts (empty rows are skipped). Leave <strong>Receipt no.</strong>
+  empty for an acknowledgement receipt. Tick <strong>Remove</strong> to delete a line. Nothing is saved if a row has a mistake.</p>
+<div class="table-actions">
+  <button type="submit" name="more" value="expenses" class="btn btn-secondary btn-sm">Save and add more receipt rows</button>
+</div>

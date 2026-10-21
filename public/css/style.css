@@ -3028,6 +3028,38 @@ a.poster-frame:hover {
   margin-top: 0.5rem;
 }
 
+/* Report sheet (new / edit): the heading is laid out like the published report's title */
+.sheet-heading {
+  align-items: flex-start;
+}
+
+.sheet-heading .form-field {
+  margin-bottom: 0.6rem;
+}
+
+.sheet-title {
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+/* Period start, period end and school year side by side on wider screens */
+.sheet-meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 1rem;
+}
+
+@media (min-width: 700px) {
+  .sheet-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.report-sheet textarea {
+  min-height: 6rem;
+}
+
 .nowrap {
   white-space: nowrap;
 }

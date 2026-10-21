@@ -1,7 +1,6 @@
 // All SQL for the financial_report_expenses table (receipt lines of a liquidation report).
-// Lines can only change while their report is a DRAFT: every change joins the report and
-// checks its status inside the SQL, and the line's report_id is checked too (another
-// report's line -> 0 rows -> 404).
+// Lines are saved only through financialReportModel.saveSheet, which locks the report and
+// checks it is still a DRAFT, all in one transaction.
 const pool = require('../db');
 
 async function listForReport(reportId) {
@@ -15,89 +14,28 @@ async function listForReport(reportId) {
   return rows;
 }
 
-async function findInReport(reportId, lineId) {
-  const [rows] = await pool.query(
-    `SELECT id, item, receipt_no, receipt_date, particulars, amount
-     FROM financial_report_expenses
-     WHERE id = ? AND report_id = ?`,
-    [lineId, reportId]
-  );
-  return rows[0] || null;
-}
-
-// INSERT ... SELECT adds the line only if the report exists AND is a draft
-async function add(reportId, line) {
-  const [result] = await pool.query(
-    `INSERT INTO financial_report_expenses (report_id, item, receipt_no, receipt_date, particulars, amount)
-     SELECT id, ?, ?, ?, ?, ? FROM financial_reports WHERE id = ? AND status = 'draft'`,
-    [line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount, reportId]
-  );
-  return result.affectedRows;
-}
-
-async function update(reportId, lineId, line) {
-  const [result] = await pool.query(
-    `UPDATE financial_report_expenses x
-     JOIN financial_reports f ON f.id = x.report_id
-     SET x.item = ?, x.receipt_no = ?, x.receipt_date = ?, x.particulars = ?, x.amount = ?
-     WHERE x.id = ? AND x.report_id = ? AND f.status = 'draft'`,
-    [line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount, lineId, reportId]
-  );
-  return result.affectedRows;
-}
-
-async function remove(reportId, lineId) {
-  const [result] = await pool.query(
-    `DELETE x FROM financial_report_expenses x
-     JOIN financial_reports f ON f.id = x.report_id
-     WHERE x.id = ? AND x.report_id = ? AND f.status = 'draft'`,
-    [lineId, reportId]
-  );
-  return result.affectedRows;
-}
-
-// Saves the whole receipts table in ONE transaction (the Treasurer edits it like the published
-// table): removes, updates and new lines. The report row is locked and must still be a draft;
-// otherwise nothing changes and 'locked' is returned. Every UPDATE/DELETE also checks report_id,
-// so a line of another report is never touched.
-async function saveTable(reportId, { removeIds, updates, inserts }) {
-  const conn = await pool.getConnection();
-  try {
-    await conn.beginTransaction();
-    const [rows] = await conn.query(
-      "SELECT id FROM financial_reports WHERE id = ? AND status = 'draft' FOR UPDATE",
-      [reportId]
+// Applies the changes to a report's receipts on a connection that is ALREADY inside a
+// transaction (financialReportModel.saveSheet starts it and checks the report is a draft).
+// Every UPDATE/DELETE also checks report_id, so a line of another report is never touched.
+async function applyPlan(conn, reportId, { removeIds, updates, inserts }) {
+  for (const lineId of removeIds) {
+    await conn.query('DELETE FROM financial_report_expenses WHERE id = ? AND report_id = ?', [lineId, reportId]);
+  }
+  for (const line of updates) {
+    await conn.query(
+      `UPDATE financial_report_expenses
+       SET item = ?, receipt_no = ?, receipt_date = ?, particulars = ?, amount = ?
+       WHERE id = ? AND report_id = ?`,
+      [line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount, line.id, reportId]
     );
-    if (rows.length === 0) {
-      await conn.rollback();
-      return 'locked';
-    }
-    for (const lineId of removeIds) {
-      await conn.query('DELETE FROM financial_report_expenses WHERE id = ? AND report_id = ?', [lineId, reportId]);
-    }
-    for (const line of updates) {
-      await conn.query(
-        `UPDATE financial_report_expenses
-         SET item = ?, receipt_no = ?, receipt_date = ?, particulars = ?, amount = ?
-         WHERE id = ? AND report_id = ?`,
-        [line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount, line.id, reportId]
-      );
-    }
-    for (const line of inserts) {
-      await conn.query(
-        `INSERT INTO financial_report_expenses (report_id, item, receipt_no, receipt_date, particulars, amount)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [reportId, line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount]
-      );
-    }
-    await conn.commit();
-    return 'ok';
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
+  }
+  for (const line of inserts) {
+    await conn.query(
+      `INSERT INTO financial_report_expenses (report_id, item, receipt_no, receipt_date, particulars, amount)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [reportId, line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount]
+    );
   }
 }
 
-module.exports = { listForReport, saveTable };
+module.exports = { listForReport, applyPlan };

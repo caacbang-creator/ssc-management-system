@@ -1,12 +1,53 @@
 <%- include('../../partials/head') %>
 <%- include('../../partials/nav') %>
 
-<main id="main" class="container form-page">
-  <a class="back-link" href="/manage/financial-reports"><span aria-hidden="true">&larr;</span> Financial reports</a>
+<%
+  // New / edit: ONE sheet laid out like the published report (C18). Every cell is an input;
+  // the whole sheet (details, receipts, sales, notes) is saved together.
+  // Cancel goes back where the form posts: the list (new) or the report page (edit).
+  const cancelHref = action;
+  const isNew = action === '/manage/financial-reports';
+%>
 
-  <section class="card">
-    <h1><%= title %></h1>
-    <p class="muted">Saved as a draft. After saving, add each receipt (and any sales). The totals are worked out for you.</p>
+<main id="main" class="container">
+  <a class="back-link" href="<%= cancelHref %>"><span aria-hidden="true">&larr;</span> <%= isNew ? 'Financial reports' : 'Back to the report' %></a>
+
+  <form method="post" action="<%= action %>" class="report-sheet" novalidate>
+    <%# ---------- Heading: the same place as the published report's title and period ---------- %>
+    <div class="page-heading sheet-heading">
+      <div>
+        <p class="eyebrow"><%= title %> &middot; Draft</p>
+        <div class="form-field">
+          <label for="title">Report title</label>
+          <input type="text" id="title" name="title" class="sheet-title" value="<%= old.title || '' %>" maxlength="150"
+            placeholder="Liquidation Report: ORSEM 2026" required>
+        </div>
+        <div class="sheet-meta">
+          <div class="form-field">
+            <label for="period_start">Period start</label>
+            <input type="date" id="period_start" name="period_start" value="<%= old.period_start || '' %>" required>
+          </div>
+          <div class="form-field">
+            <label for="period_end">Period end</label>
+            <input type="date" id="period_end" name="period_end" value="<%= old.period_end || '' %>" required>
+          </div>
+          <div class="form-field">
+            <label for="school_year">School year</label>
+            <select id="school_year" name="school_year" aria-describedby="year-hint">
+              <% yearChoices.forEach((y) => { %>
+                <option value="<%= y %>"<% if (old.school_year === y) { %> selected<% } %>><%= y.replace('-', '–') %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <p class="hint" id="year-hint">Its expenses count toward that school year's annual budget.</p>
+      </div>
+      <%# First submit button in the form, so pressing Enter in a cell saves the draft %>
+      <div class="action-row">
+        <a class="btn btn-secondary" href="<%= cancelHref %>">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save draft</button>
+      </div>
+    </div>
 
     <% if (remarks) { %>
       <div class="alert alert-info">
@@ -17,42 +58,29 @@
 
     <%- include('../../partials/form-errors') %>
 
-    <form method="post" action="<%= action %>" novalidate>
-      <div class="form-field">
-        <label for="title">Title</label>
-        <input type="text" id="title" name="title" value="<%= old.title || '' %>" maxlength="150"
-          aria-describedby="title-hint" required>
-        <p class="hint" id="title-hint">e.g. "Liquidation Report: ORSEM 2026"</p>
-      </div>
-      <div class="form-row">
-        <div class="form-field">
-          <label for="period_start">Period start</label>
-          <input type="date" id="period_start" name="period_start" value="<%= old.period_start || '' %>" required>
-        </div>
-        <div class="form-field">
-          <label for="period_end">Period end</label>
-          <input type="date" id="period_end" name="period_end" value="<%= old.period_end || '' %>" required>
-        </div>
-      </div>
-      <div class="form-field">
-        <label for="school_year">School year</label>
-        <select id="school_year" name="school_year" aria-describedby="year-hint">
-          <% yearChoices.forEach((y) => { %>
-            <option value="<%= y %>"<% if (old.school_year === y) { %> selected<% } %>><%= y.replace('-', '–') %></option>
-          <% }) %>
-        </select>
-        <p class="hint" id="year-hint">Its expenses count toward this year's annual budget.</p>
-      </div>
-      <div class="form-field">
-        <label for="notes">Notes <span class="optional">(optional)</span></label>
-        <textarea id="notes" name="notes" rows="5" maxlength="5000"><%= old.notes || '' %></textarea>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save draft</button>
-        <a class="btn btn-secondary" href="/manage/financial-reports">Cancel</a>
-      </div>
-    </form>
-  </section>
+    <%# ---------- Expenses ---------- %>
+    <section class="card section-gap" id="expenses" aria-labelledby="expenses-title">
+      <h2 id="expenses-title">Expenses</h2>
+      <%- include('expense-edit', { table: tables.expenses, saved: savedExpenses }) %>
+    </section>
+
+    <%# ---------- Sales ---------- %>
+    <section class="card section-gap" id="sales" aria-labelledby="sales-title">
+      <h2 id="sales-title">Sales summary</h2>
+      <%- include('sales-edit', { table: tables.sales, saved: savedSales }) %>
+    </section>
+
+    <%# ---------- Notes ---------- %>
+    <section class="card section-gap">
+      <h2><label for="notes">Notes <span class="optional">(optional)</span></label></h2>
+      <textarea id="notes" name="notes" rows="4" maxlength="5000"><%= old.notes || '' %></textarea>
+    </section>
+
+    <div class="page-end">
+      <p>Saved as a draft. Totals are added up from the rows when you save. Send it to the President from the report page.</p>
+      <button type="submit" class="btn btn-primary">Save draft</button>
+    </div>
+  </form>
 </main>
 
 <%- include('../../partials/foot') %>

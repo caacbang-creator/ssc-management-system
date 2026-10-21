@@ -3,6 +3,8 @@
 // so they can never disagree with the lines they come from.
 // Every status change has the CURRENT status in its WHERE clause.
 const pool = require('../db');
+const financialExpenseModel = require('./financialExpenseModel');
+const financialSaleModel = require('./financialSaleModel');
 
 const TOTALS = `
   (SELECT COALESCE(SUM(x.amount), 0) FROM financial_report_expenses x WHERE x.report_id = f.id) AS total_expenses,
@@ -77,23 +79,49 @@ async function findById(id) {
   return rows[0] || null;
 }
 
-async function create(report, userId) {
-  const [result] = await pool.query(
-    `INSERT INTO financial_reports (title, school_year, period_start, period_end, notes, status, created_by)
-     VALUES (?, ?, ?, ?, ?, 'draft', ?)`,
-    [report.title, report.schoolYear, report.periodStart, report.periodEnd, report.notes, userId]
-  );
-  return result.insertId;
-}
-
-async function updateDraft(id, report) {
-  const [result] = await pool.query(
-    `UPDATE financial_reports
-     SET title = ?, school_year = ?, period_start = ?, period_end = ?, notes = ?
-     WHERE id = ? AND status = 'draft'`,
-    [report.title, report.schoolYear, report.periodStart, report.periodEnd, report.notes, id]
-  );
-  return result.affectedRows;
+// Saves the whole report sheet in ONE transaction: the details, the receipts and the sales.
+//   id = null: a new draft is created by userId
+//   id = 5:    report 5 is locked and must still be a draft, otherwise nothing changes
+// expenses / sales: { removeIds, updates, inserts } from the route (already validated).
+// Returns { result: 'ok', id } or { result: 'locked' }.
+async function saveSheet(id, report, userId, expenses, sales) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    let reportId = id;
+    if (reportId === null) {
+      const [result] = await conn.query(
+        `INSERT INTO financial_reports (title, school_year, period_start, period_end, notes, status, created_by)
+         VALUES (?, ?, ?, ?, ?, 'draft', ?)`,
+        [report.title, report.schoolYear, report.periodStart, report.periodEnd, report.notes, userId]
+      );
+      reportId = result.insertId;
+    } else {
+      const [rows] = await conn.query(
+        "SELECT id FROM financial_reports WHERE id = ? AND status = 'draft' FOR UPDATE",
+        [reportId]
+      );
+      if (rows.length === 0) {
+        await conn.rollback();
+        return { result: 'locked' };
+      }
+      await conn.query(
+        `UPDATE financial_reports
+         SET title = ?, school_year = ?, period_start = ?, period_end = ?, notes = ?
+         WHERE id = ?`,
+        [report.title, report.schoolYear, report.periodStart, report.periodEnd, report.notes, reportId]
+      );
+    }
+    await financialExpenseModel.applyPlan(conn, reportId, expenses);
+    await financialSaleModel.applyPlan(conn, reportId, sales);
+    await conn.commit();
+    return { result: 'ok', id: reportId };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 // Its expense and sales lines are deleted with it (ON DELETE CASCADE)
@@ -146,6 +174,6 @@ async function unpublish(id, reviewerId) {
 }
 
 module.exports = {
-  listPublished, findPublishedById, yearTotals, listForManage, findById, create,
-  updateDraft, deleteDraft, submit, publish, returnToDraft, unpublish
+  listPublished, findPublishedById, yearTotals, listForManage, findById, saveSheet,
+  deleteDraft, submit, publish, returnToDraft, unpublish
 };

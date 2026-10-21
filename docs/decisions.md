@@ -156,12 +156,14 @@ computed, never stored"):
 annual budget; the President still publishes (C2-B). VP Internal can view. Lines are locked once a
 report is pending or published (checked inside the SQL).
 
-**Editing (update, 2026-10-21):** a draft shows the receipts and sales in the **same table as the published
-report**, with every cell an input. Saved lines have a **Remove** box; blank rows at the bottom are new
-lines (empty ones are skipped); **Save and add more rows** saves and comes back with more blank rows (no
-JavaScript). One save covers the whole table in **one transaction**: if any row has a mistake, nothing is
-saved and the errors name the row ("Row 3: ..."). Line ids must belong to that report. At most 100 rows
-per save.
+**Editing (update, 2026-10-21):** **New report** and **Edit draft** open one **report sheet** laid out like
+the published report: title, period and school year at the top, then the **Expenses** and **Sales summary**
+tables with every cell an input, then the notes. Saved lines have a **Remove** box; blank rows at the bottom
+are new lines (empty ones are skipped); **Save and add more rows** saves and comes back with more blank
+rows (no JavaScript). One **Save draft** saves the details and both tables in **one transaction**: if any
+field or row has a mistake, nothing is saved and the errors name the table and row ("Receipts, row 3: ...").
+Line ids must belong to that report. At most 100 rows per table per save. The report page shows the draft
+exactly as it will be published, with an **Edit report** button.
 
 **Seed data:** the SSC's liquidation reports for SSC SaurBETes and ORSEM 2026 (August 4–5, 2026),
 copied line by line; their totals match the paper reports (₱6,446.00 / ₱6,930.00 / ₱484.00 and ₱5,731.00).

@@ -61,12 +61,16 @@
     </aside>
   </div>
 
-  <%# ---------- Receipts: full width; an editable table on a draft, the published layout otherwise ---------- %>
+  <%# ---------- Receipts and sales: full width, laid out like the published report ---------- %>
+  <% if (editable) { %>
+    <div class="page-end section-gap">
+      <p>This is how the report will look. To change the title, receipts, sales or notes, edit the draft.</p>
+      <a class="btn btn-secondary" href="<%= base %>/edit">Edit report</a>
+    </div>
+  <% } %>
   <section class="card section-gap" id="expenses" aria-labelledby="expenses-title">
     <h2 id="expenses-title">Expenses (<%= expenses.length %> receipts)</h2>
-    <% if (editable) { %>
-      <%- include('expense-edit', { base, table: tables.expenses, expenses }) %>
-    <% } else if (expenses.length === 0) { %>
+    <% if (expenses.length === 0) { %>
       <p class="muted">No receipts.</p>
     <% } else { %>
       <%- include('../../partials/expense-table', { expenses }) %>
@@ -76,9 +80,7 @@
   <%# ---------- Sales ---------- %>
   <section class="card section-gap" id="sales" aria-labelledby="sales-title">
     <h2 id="sales-title">Sales summary (<%= sales.length %>)</h2>
-    <% if (editable) { %>
-      <%- include('sales-edit', { base, table: tables.sales, sales }) %>
-    <% } else if (sales.length === 0) { %>
+    <% if (sales.length === 0) { %>
       <p class="muted">No sales.</p>
     <% } else { %>
       <%- include('../../partials/sales-table', { sales }) %>
