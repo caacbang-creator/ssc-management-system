@@ -368,8 +368,10 @@ a:hover {
     display: none;
   }
 
+  /* The Menu button sits in the top-left corner, the logo right after it */
   .nav-mobile {
     display: block;
+    order: -1;
   }
 }
 
@@ -4632,7 +4634,7 @@ img.team-avatar {
   display: none;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1024px) {
   .app-shell-open {
     display: grid;
     grid-template-columns: 250px minmax(0, 1fr);
@@ -4654,12 +4656,12 @@ img.team-avatar {
   }
 }
 
-/* The Menu button in the header (wide screens; phones use "My tools") */
+/* The sidebar Menu button in the header (1024px and up, like the full top menu; smaller screens use "My tools") */
 .sidebar-toggle {
   display: none;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1024px) {
   .sidebar-toggle {
     display: block;
     margin: 0 0.75rem 0 0;
@@ -4712,7 +4714,7 @@ img.team-avatar {
   padding: 0 0.75rem 0.75rem;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 1024px) {
   .side-nav-mobile {
     display: none;
   }
