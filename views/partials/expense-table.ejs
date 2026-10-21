@@ -1,7 +1,6 @@
 <%
   // Receipts of a liquidation report, grouped by item like the paper report.
-  // Usage: include('partials/expense-table', { expenses, editBase })
-  //   editBase: '/manage/financial-reports/5' to show Edit / Remove buttons, or '' for the public page.
+  // Usage: include('partials/expense-table', { expenses })
   // The total is added up here from the lines that are shown, never typed in.
   const SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const shortDate = (value) => {
@@ -22,7 +21,6 @@
         <th scope="col">Date</th>
         <th scope="col">Particulars</th>
         <th scope="col" class="num">Amount</th>
-        <% if (editBase) { %><th scope="col"><span class="visually-hidden">Actions</span></th><% } %>
       </tr>
     </thead>
     <tbody>
@@ -35,14 +33,6 @@
           <td class="nowrap"><%= shortDate(x.receipt_date) %></td>
           <td><%= x.particulars %></td>
           <td class="num"><%= formatMoney(x.amount) %></td>
-          <% if (editBase) { %>
-            <td class="ledger-actions">
-              <a class="btn btn-secondary btn-sm" href="<%= editBase %>/expenses/<%= x.id %>/edit">Edit <span class="visually-hidden">receipt <%= x.receipt_no || '' %> of <%= x.item %></span></a>
-              <form method="post" action="<%= editBase %>/expenses/<%= x.id %>/delete" class="inline-form">
-                <button type="submit" class="btn btn-danger btn-sm">Remove <span class="visually-hidden">receipt <%= x.receipt_no || '' %> of <%= x.item %></span></button>
-              </form>
-            </td>
-          <% } %>
         </tr>
       <% }) %>
     </tbody>
@@ -50,7 +40,6 @@
       <tr>
         <th scope="row" colspan="4">Total expenses</th>
         <td class="num"><strong><%= formatMoney(total) %></strong></td>
-        <% if (editBase) { %><td></td><% } %>
       </tr>
     </tfoot>
   </table>

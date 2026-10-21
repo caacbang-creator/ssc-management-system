@@ -56,4 +56,48 @@ async function remove(reportId, lineId) {
   return result.affectedRows;
 }
 
-module.exports = { listForReport, findInReport, add, update, remove };
+// Saves the whole receipts table in ONE transaction (the Treasurer edits it like the published
+// table): removes, updates and new lines. The report row is locked and must still be a draft;
+// otherwise nothing changes and 'locked' is returned. Every UPDATE/DELETE also checks report_id,
+// so a line of another report is never touched.
+async function saveTable(reportId, { removeIds, updates, inserts }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [rows] = await conn.query(
+      "SELECT id FROM financial_reports WHERE id = ? AND status = 'draft' FOR UPDATE",
+      [reportId]
+    );
+    if (rows.length === 0) {
+      await conn.rollback();
+      return 'locked';
+    }
+    for (const lineId of removeIds) {
+      await conn.query('DELETE FROM financial_report_expenses WHERE id = ? AND report_id = ?', [lineId, reportId]);
+    }
+    for (const line of updates) {
+      await conn.query(
+        `UPDATE financial_report_expenses
+         SET item = ?, receipt_no = ?, receipt_date = ?, particulars = ?, amount = ?
+         WHERE id = ? AND report_id = ?`,
+        [line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount, line.id, reportId]
+      );
+    }
+    for (const line of inserts) {
+      await conn.query(
+        `INSERT INTO financial_report_expenses (report_id, item, receipt_no, receipt_date, particulars, amount)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [reportId, line.item, line.receiptNo, line.receiptDate, line.particulars, line.amount]
+      );
+    }
+    await conn.commit();
+    return 'ok';
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = { listForReport, saveTable };

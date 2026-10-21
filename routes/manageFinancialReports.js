@@ -157,21 +157,62 @@ function renderForm(req, res, status, title, action, errors, old, remarks) {
   });
 }
 
-// The report page with its lines. extra: errors for the remarks form, or for one of the
-// "add line" forms (lineForm = 'expense' or 'sale') with the values typed in.
+// Blank rows under a draft's table for new lines (more after "Save and add more rows")
+const BLANK_ROWS = 3;
+const MORE_ROWS = 8;
+
+// The rows of an editable table: the saved lines, then blank rows
+function tableRows(lines, fields, toRow, blanks) {
+  const rows = lines.map((line) => ({ ...toRow(line), id: String(line.id), remove: false }));
+  for (let i = 0; i < blanks; i++) {
+    const row = { id: '', remove: false };
+    fields.forEach((field) => { row[field] = ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+// The report page with its lines. extra:
+//   errors / oldRemarks: the President's "send back" form
+//   table: { kind, rows, errors, errorRows } after a refused table save (the typed rows come back)
+//   more: 'expenses' or 'sales' to show extra blank rows under that table
 async function renderShow(res, status, report, extra = {}) {
   const expenses = await financialExpenseModel.listForReport(report.id);
   const sales = await financialSaleModel.listForReport(report.id);
+  const blanks = (kind) => (extra.more === kind ? MORE_ROWS : BLANK_ROWS);
+
+  const tables = {
+    expenses: {
+      rows: tableRows(expenses, TABLES.expenses.fields, (x) => ({
+        item: x.item,
+        receipt_no: x.receipt_no || '',
+        receipt_date: String(x.receipt_date).slice(0, 10),
+        particulars: x.particulars,
+        amount: Number(x.amount).toFixed(2)
+      }), blanks('expenses')),
+      errors: [],
+      errorRows: []
+    },
+    sales: {
+      rows: tableRows(sales, TABLES.sales.fields, (s) => ({
+        product: s.product,
+        quantity: String(s.quantity),
+        unit_price: Number(s.unit_price).toFixed(2)
+      }), blanks('sales')),
+      errors: [],
+      errorRows: []
+    }
+  };
+  if (extra.table) tables[extra.table.kind] = extra.table;
+
   res.status(status).render('manage/financial-reports/show', {
     title: report.title,
     report,
     expenses,
     sales,
+    tables,
     errors: extra.errors || [],
-    oldRemarks: extra.oldRemarks || '',
-    lineForm: extra.lineForm || '',
-    lineErrors: extra.lineErrors || [],
-    oldLine: extra.oldLine || {}
+    oldRemarks: extra.oldRemarks || ''
   });
 }
 
@@ -242,7 +283,8 @@ router.get('/:id', async (req, res, next) => {
     const id = parseId(req.params.id);
     const report = id ? await financialReportModel.findById(id) : null;
     if (!report) return notFound(res);
-    await renderShow(res, 200, report);
+    // ?more=expenses (after "Save and add more rows") shows extra blank rows under that table
+    await renderShow(res, 200, report, { more: String(req.query.more ?? '') });
   } catch (err) {
     next(err);
   }
@@ -296,179 +338,119 @@ router.post('/:id/delete', writersOnly, async (req, res, next) => {
   }
 });
 
-// ---------- Expense lines (drafts only) ----------
+// ---------- Receipts and sales tables (drafts only) ----------
+// The Treasurer edits each table in the same layout as the published report: every saved line
+// is a row of inputs with a "Remove" box, and blank rows at the bottom are new lines.
+// One POST saves the whole table (C18). No JavaScript: "Save and add more rows" saves, then
+// comes back with more blank rows.
+const MAX_ROWS = 100;
+
+// The two tables, so one save route serves both
+const TABLES = {
+  expenses: {
+    fields: ['item', 'receipt_no', 'receipt_date', 'particulars', 'amount'],
+    validate: validateExpense,
+    toRecord: toExpense,
+    model: financialExpenseModel,
+    saved: 'Receipts saved.'
+  },
+  sales: {
+    fields: ['product', 'quantity', 'unit_price'],
+    validate: validateSale,
+    toRecord: toSale,
+    model: financialSaleModel,
+    saved: 'Sales saved.'
+  }
+};
+
+// One value -> [value]; several -> the array; none -> []
+function toArray(value) {
+  if (value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+// Reads the table form into rows. Every row sends every field (and a line_id, empty for a
+// new row), so the arrays line up by position. Returns null if they don't (a tampered form).
+function readRows(body, fields) {
+  const ids = toArray(body.line_id);
+  const columns = fields.map((field) => toArray(body[field]));
+  if (columns.some((column) => column.length !== ids.length)) return null;
+  const removed = new Set(toArray(body.remove).map(String));
+  return ids.map((rawId, i) => {
+    const row = { id: String(rawId).trim() };
+    fields.forEach((field, k) => { row[field] = String(columns[k][i]); });
+    row.remove = row.id !== '' && removed.has(row.id);
+    return row;
+  });
+}
+
+async function saveTable(req, res, kind) {
+  const table = TABLES[kind];
+  const id = parseId(req.params.id);
+  const report = id ? await financialReportModel.findById(id) : null;
+  if (!report) return notFound(res);
+  if (report.status !== 'draft') return refuseOrNotFound(req, res, id, LINES_LOCKED);
+
+  const rows = readRows(req.body, table.fields);
+  if (!rows) {
+    req.session.flash = { type: 'error', message: 'The table could not be read. Please try again.' };
+    return res.redirect(303, `${BASE}/${id}#${kind}`);
+  }
+
+  // Lines that belong to THIS report; any other id in the form is refused
+  const ownIds = new Set((await table.model.listForReport(id)).map((line) => String(line.id)));
+  const plan = { removeIds: [], updates: [], inserts: [] };
+  const errors = [];
+  const errorRows = [];
+  if (rows.length > MAX_ROWS) errors.push(`Save at most ${MAX_ROWS} rows at a time.`);
+
+  rows.forEach((row, i) => {
+    if (row.id !== '') {
+      if (!ownIds.has(row.id)) {
+        errors.push(`Row ${i + 1}: this line is no longer in the report. Reload the page.`);
+        errorRows.push(i);
+        return;
+      }
+      if (row.remove) {
+        plan.removeIds.push(Number(row.id));
+        return;
+      }
+    } else if (table.fields.every((field) => row[field].trim() === '')) {
+      return; // an empty new row is simply skipped
+    }
+    const { old, errors: rowErrors } = table.validate(row);
+    if (rowErrors.length > 0) {
+      errorRows.push(i);
+      rowErrors.forEach((message) => errors.push(`Row ${i + 1}: ${message}`));
+      return;
+    }
+    const record = table.toRecord(old);
+    if (row.id !== '') plan.updates.push({ ...record, id: Number(row.id) });
+    else plan.inserts.push(record);
+  });
+
+  // Nothing is saved unless EVERY row is valid; the typed values come back on the page
+  if (errors.length > 0) {
+    return renderShow(res, 422, report, { table: { kind, rows, errors, errorRows } });
+  }
+  const result = await table.model.saveTable(id, plan);
+  if (result === 'locked') return refuseOrNotFound(req, res, id, LINES_LOCKED);
+  req.session.flash = { type: 'success', message: table.saved };
+  const more = req.body.more === '1' ? `?more=${kind}` : '';
+  res.redirect(303, `${BASE}/${id}${more}#${kind}`);
+}
+
 router.post('/:id/expenses', writersOnly, async (req, res, next) => {
   try {
-    const id = parseId(req.params.id);
-    const report = id ? await financialReportModel.findById(id) : null;
-    if (!report) return notFound(res);
-    const { old, errors } = validateExpense(req.body);
-    if (errors.length > 0) {
-      return renderShow(res, 422, report, { lineForm: 'expense', lineErrors: errors, oldLine: old });
-    }
-    const added = await financialExpenseModel.add(id, toExpense(old));
-    if (added === 0) return refuseOrNotFound(req, res, id, LINES_LOCKED);
-    req.session.flash = { type: 'success', message: 'Receipt added.' };
-    res.redirect(303, `${BASE}/${id}#expenses`);
+    await saveTable(req, res, 'expenses');
   } catch (err) {
     next(err);
   }
 });
 
-// Loads the report (draft) and one of its expense lines for the edit page; null = response sent
-async function findExpenseLine(req, res) {
-  const id = parseId(req.params.id);
-  const lineId = parseId(req.params.lineId);
-  const report = id ? await financialReportModel.findById(id) : null;
-  const line = report && lineId ? await financialExpenseModel.findInReport(id, lineId) : null;
-  if (!report || !line) {
-    notFound(res);
-    return null;
-  }
-  if (report.status !== 'draft') {
-    req.session.flash = { type: 'error', message: LINES_LOCKED };
-    res.redirect(303, `${BASE}/${id}`);
-    return null;
-  }
-  return { report, line };
-}
-
-router.get('/:id/expenses/:lineId/edit', writersOnly, async (req, res, next) => {
-  try {
-    const found = await findExpenseLine(req, res);
-    if (!found) return;
-    const { report, line } = found;
-    res.render('manage/financial-reports/expense-form', {
-      title: 'Edit receipt', report, lineId: line.id, errors: [],
-      old: { ...line, receipt_no: line.receipt_no || '', receipt_date: String(line.receipt_date).slice(0, 10) }
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/:id/expenses/:lineId', writersOnly, async (req, res, next) => {
-  try {
-    const found = await findExpenseLine(req, res);
-    if (!found) return;
-    const { report, line } = found;
-    const { old, errors } = validateExpense(req.body);
-    if (errors.length > 0) {
-      return res.status(422).render('manage/financial-reports/expense-form', {
-        title: 'Edit receipt', report, lineId: line.id, errors, old
-      });
-    }
-    const changed = await financialExpenseModel.update(report.id, line.id, toExpense(old));
-    if (changed === 0) return refuseOrNotFound(req, res, report.id, LINES_LOCKED);
-    req.session.flash = { type: 'success', message: 'Receipt updated.' };
-    res.redirect(303, `${BASE}/${report.id}#expenses`);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/:id/expenses/:lineId/delete', writersOnly, async (req, res, next) => {
-  try {
-    const id = parseId(req.params.id);
-    const lineId = parseId(req.params.lineId);
-    if (!id || !lineId) return notFound(res);
-    const removed = await financialExpenseModel.remove(id, lineId);
-    if (removed === 0) {
-      // Not this report's line -> 404; this report's line but not a draft -> refused
-      const line = await financialExpenseModel.findInReport(id, lineId);
-      if (!line) return notFound(res);
-      return refuseOrNotFound(req, res, id, LINES_LOCKED);
-    }
-    req.session.flash = { type: 'success', message: 'Receipt removed.' };
-    res.redirect(303, `${BASE}/${id}#expenses`);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// ---------- Sales lines (drafts only) ----------
 router.post('/:id/sales', writersOnly, async (req, res, next) => {
   try {
-    const id = parseId(req.params.id);
-    const report = id ? await financialReportModel.findById(id) : null;
-    if (!report) return notFound(res);
-    const { old, errors } = validateSale(req.body);
-    if (errors.length > 0) {
-      return renderShow(res, 422, report, { lineForm: 'sale', lineErrors: errors, oldLine: old });
-    }
-    const added = await financialSaleModel.add(id, toSale(old));
-    if (added === 0) return refuseOrNotFound(req, res, id, LINES_LOCKED);
-    req.session.flash = { type: 'success', message: 'Sales line added.' };
-    res.redirect(303, `${BASE}/${id}#sales`);
-  } catch (err) {
-    next(err);
-  }
-});
-
-async function findSaleLine(req, res) {
-  const id = parseId(req.params.id);
-  const lineId = parseId(req.params.lineId);
-  const report = id ? await financialReportModel.findById(id) : null;
-  const line = report && lineId ? await financialSaleModel.findInReport(id, lineId) : null;
-  if (!report || !line) {
-    notFound(res);
-    return null;
-  }
-  if (report.status !== 'draft') {
-    req.session.flash = { type: 'error', message: LINES_LOCKED };
-    res.redirect(303, `${BASE}/${id}`);
-    return null;
-  }
-  return { report, line };
-}
-
-router.get('/:id/sales/:lineId/edit', writersOnly, async (req, res, next) => {
-  try {
-    const found = await findSaleLine(req, res);
-    if (!found) return;
-    const { report, line } = found;
-    res.render('manage/financial-reports/sale-form', {
-      title: 'Edit sales line', report, lineId: line.id, errors: [],
-      old: { ...line, quantity: String(line.quantity), unit_price: String(line.unit_price) }
-    });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/:id/sales/:lineId', writersOnly, async (req, res, next) => {
-  try {
-    const found = await findSaleLine(req, res);
-    if (!found) return;
-    const { report, line } = found;
-    const { old, errors } = validateSale(req.body);
-    if (errors.length > 0) {
-      return res.status(422).render('manage/financial-reports/sale-form', {
-        title: 'Edit sales line', report, lineId: line.id, errors, old
-      });
-    }
-    const changed = await financialSaleModel.update(report.id, line.id, toSale(old));
-    if (changed === 0) return refuseOrNotFound(req, res, report.id, LINES_LOCKED);
-    req.session.flash = { type: 'success', message: 'Sales line updated.' };
-    res.redirect(303, `${BASE}/${report.id}#sales`);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/:id/sales/:lineId/delete', writersOnly, async (req, res, next) => {
-  try {
-    const id = parseId(req.params.id);
-    const lineId = parseId(req.params.lineId);
-    if (!id || !lineId) return notFound(res);
-    const removed = await financialSaleModel.remove(id, lineId);
-    if (removed === 0) {
-      const line = await financialSaleModel.findInReport(id, lineId);
-      if (!line) return notFound(res);
-      return refuseOrNotFound(req, res, id, LINES_LOCKED);
-    }
-    req.session.flash = { type: 'success', message: 'Sales line removed.' };
-    res.redirect(303, `${BASE}/${id}#sales`);
+    await saveTable(req, res, 'sales');
   } catch (err) {
     next(err);
   }

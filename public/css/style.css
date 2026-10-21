@@ -2972,12 +2972,60 @@ a.poster-frame:hover {
   text-align: right;
 }
 
-.ledger-actions {
-  white-space: nowrap;
+/* Draft report: the same ledger, but every cell is an input (the Treasurer types into the table) */
+.ledger-edit td {
+  padding: 0.3rem 0.35rem;
+  vertical-align: middle;
 }
 
-.ledger-actions .inline-form {
-  margin-left: 0.3rem;
+.ledger-edit input[type="text"],
+.ledger-edit input[type="date"] {
+  min-width: 6.5rem;
+  min-height: 38px;
+  padding: 0.35rem 0.5rem;
+  font-size: var(--text-sm);
+}
+
+.ledger-edit td.num input {
+  min-width: 6rem;
+  text-align: right;
+}
+
+.ledger-edit .row-num {
+  width: 2.5rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ledger-edit .remove-col {
+  width: 4.5rem;
+  text-align: center;
+}
+
+.ledger-edit .remove-col input {
+  width: 1.25rem;
+  min-height: 1.25rem;
+  accent-color: var(--danger);
+}
+
+/* New (blank) rows are a little lighter, so saved lines stand out */
+.ledger-edit .row-new td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* A row with a mistake: red edge and number (the error list above says what is wrong) */
+.ledger-edit .row-error td {
+  background: rgba(198, 40, 40, 0.14);
+}
+
+.ledger-edit .row-error .row-num {
+  color: #FCA5A5;
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.table-actions {
+  margin-top: 0.5rem;
 }
 
 .nowrap {

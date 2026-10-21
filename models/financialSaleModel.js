@@ -55,4 +55,43 @@ async function remove(reportId, lineId) {
   return result.affectedRows;
 }
 
-module.exports = { listForReport, findInReport, add, update, remove };
+// Saves the whole sales table in ONE transaction, only while the report is a draft
+// (same rules as financialExpenseModel.saveTable). Returns 'ok' or 'locked'.
+async function saveTable(reportId, { removeIds, updates, inserts }) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [rows] = await conn.query(
+      "SELECT id FROM financial_reports WHERE id = ? AND status = 'draft' FOR UPDATE",
+      [reportId]
+    );
+    if (rows.length === 0) {
+      await conn.rollback();
+      return 'locked';
+    }
+    for (const lineId of removeIds) {
+      await conn.query('DELETE FROM financial_report_sales WHERE id = ? AND report_id = ?', [lineId, reportId]);
+    }
+    for (const line of updates) {
+      await conn.query(
+        'UPDATE financial_report_sales SET product = ?, quantity = ?, unit_price = ? WHERE id = ? AND report_id = ?',
+        [line.product, line.quantity, line.unitPrice, line.id, reportId]
+      );
+    }
+    for (const line of inserts) {
+      await conn.query(
+        'INSERT INTO financial_report_sales (report_id, product, quantity, unit_price) VALUES (?, ?, ?, ?)',
+        [reportId, line.product, line.quantity, line.unitPrice]
+      );
+    }
+    await conn.commit();
+    return 'ok';
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = { listForReport, saveTable };

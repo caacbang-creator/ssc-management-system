@@ -1,5 +1,5 @@
 <%
-  // Products sold during an activity. Usage: include('partials/sales-table', { sales, editBase })
+  // Products sold during an activity. Usage: include('partials/sales-table', { sales })
   // line_total (quantity x unit price) comes from the SELECT; the total is added up here.
   const total = sales.reduce((sum, s) => sum + Number(s.line_total), 0);
 %>
@@ -11,7 +11,6 @@
         <th scope="col" class="num">Quantity sold</th>
         <th scope="col" class="num">Unit price</th>
         <th scope="col" class="num">Total sales</th>
-        <% if (editBase) { %><th scope="col"><span class="visually-hidden">Actions</span></th><% } %>
       </tr>
     </thead>
     <tbody>
@@ -21,14 +20,6 @@
           <td class="num"><%= s.quantity %></td>
           <td class="num"><%= formatMoney(s.unit_price) %></td>
           <td class="num"><%= formatMoney(s.line_total) %></td>
-          <% if (editBase) { %>
-            <td class="ledger-actions">
-              <a class="btn btn-secondary btn-sm" href="<%= editBase %>/sales/<%= s.id %>/edit">Edit <span class="visually-hidden"><%= s.product %></span></a>
-              <form method="post" action="<%= editBase %>/sales/<%= s.id %>/delete" class="inline-form">
-                <button type="submit" class="btn btn-danger btn-sm">Remove <span class="visually-hidden"><%= s.product %></span></button>
-              </form>
-            </td>
-          <% } %>
         </tr>
       <% }) %>
     </tbody>
@@ -36,7 +27,6 @@
       <tr>
         <th scope="row" colspan="3">Total sales</th>
         <td class="num"><strong><%= formatMoney(total) %></strong></td>
-        <% if (editBase) { %><td></td><% } %>
       </tr>
     </tfoot>
   </table>

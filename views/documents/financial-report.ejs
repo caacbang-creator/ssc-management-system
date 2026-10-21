@@ -47,7 +47,7 @@
     <% if (expenses.length === 0) { %>
       <p class="muted">No receipts listed.</p>
     <% } else { %>
-      <%- include('../partials/expense-table', { expenses, editBase: '' }) %>
+      <%- include('../partials/expense-table', { expenses }) %>
     <% } %>
   </section>
 
@@ -55,7 +55,7 @@
     <div class="report-split section-gap">
       <section class="card" aria-labelledby="sales-title">
         <h2 id="sales-title">Sales summary</h2>
-        <%- include('../partials/sales-table', { sales, editBase: '' }) %>
+        <%- include('../partials/sales-table', { sales }) %>
       </section>
 
       <section class="card income-card" aria-labelledby="income-title">
