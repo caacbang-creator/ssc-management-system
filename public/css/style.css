@@ -226,8 +226,12 @@ a:hover {
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.5), 0 1px 12px rgba(242, 193, 78, 0.15);
 }
 
+/* The header uses the full screen width: the Menu button (or the logo) sits in the left corner and
+   the links in the right corner, on every screen size */
 .header-inner {
-  max-width: 1240px;
+  max-width: none;
+  padding-left: clamp(1rem, 2vw, 2rem);
+  padding-right: clamp(1rem, 2vw, 2rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
