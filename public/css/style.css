@@ -526,7 +526,7 @@ a:hover {
    The eye reads the title, jumps right to the action, then reads down. */
 .split {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); /* minmax: a wide table scrolls inside its card instead of widening the page */
   gap: 1rem;
   align-items: start;
 }
@@ -2315,7 +2315,7 @@ a.poster-frame:hover {
 /* Wide two-column layout: main content + help panel (uses the full container width) */
 .wide-split {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); /* minmax: a wide table scrolls inside its card instead of widening the page */
   gap: 1.25rem;
   align-items: start;
 }
@@ -3064,12 +3064,13 @@ a.poster-frame:hover {
   white-space: nowrap;
 }
 
-/* "Add a receipt" / "Add a product" forms laid out in one row on wide screens */
+/* One-row forms (e.g. "Add an officer to the schedule"): fields line up at the TOP, so a hint
+   under one field does not push the other labels down */
 .line-form {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0 0.75rem;
-  align-items: end;
+  align-items: start;
 }
 
 @media (min-width: 700px) {
@@ -4067,6 +4068,18 @@ img.team-avatar {
 
 .office-code-card input[readonly] {
   font-size: var(--text-sm);
+}
+
+/* Room above "Check-in link" and "Set your own code" (.file-label resets the top margin),
+   and a thin line so setting a new code reads as its own step */
+.office-code-card .file-label {
+  display: block;
+  margin-top: 1.25rem;
+}
+
+.office-code-card h3.file-label {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
 }
 
 /* Avatar: the directory photo, or initials when there is none */
@@ -5071,7 +5084,7 @@ img.team-avatar {
 /* ---------- Appointment calendar ---------- */
 .booking-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); /* minmax: a wide table scrolls inside its card instead of widening the page */
   gap: 1rem;
   align-items: start;
 }
@@ -5465,7 +5478,7 @@ img.team-avatar {
 /* Borrow page: the item on the left, the form on the right */
 .borrow-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); /* minmax: a wide table scrolls inside its card instead of widening the page */
   gap: 1rem;
   align-items: start;
 }
