@@ -333,6 +333,9 @@ Each service has its **own page and form** instead of one shared form:
   The server checks this again on submit; a closed day is refused with 422.
 - Office hours for appointments are **8:00 AM to 5:00 PM**. Any time in that range is accepted
   (still no fixed slots, C11). There is **no daily limit**; the booked count is information only.
+- **Booking for today:** the time must be **later than now** (the server's clock, checked on submit; the
+  time box also starts at the next minute). Once office hours are over, today shows **Ended** and can't be
+  picked.
 - The calendar goes up to **5 months ahead**. Later dates are refused.
 - The request type comes from the **URL**, never from a form field. The `transactions` table is unchanged.
 - Old links (`/transactions/new?type=...`) redirect to the new pages.

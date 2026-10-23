@@ -52,6 +52,24 @@ function today() {
   return ymd(new Date());
 }
 
+// A Date as 'HH:MM' in local time
+function hhmm(d) {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+// '14:05' -> '2:05 PM' (for error messages; views use app.locals.formatTime)
+function formatClock(value) {
+  const [h, m] = value.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+// The earliest time that can still be booked TODAY: the next minute, but never before the office opens.
+// Strings in 'HH:MM' form compare correctly ('09:05' < '14:00').
+function earliestTodayTime() {
+  const next = hhmm(new Date(Date.now() + 60 * 1000));
+  return next > OPENS ? next : OPENS;
+}
+
 // True only for a real calendar date in 'YYYY-MM-DD' form (rejects 2026-02-30)
 function isValidDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -103,14 +121,17 @@ async function buildCalendar(monthText, selectedDate) {
     const text = ymd(date);
     const officers = onDuty[date.getDay() + 1] || [];
     const past = text < todayText;
+    // Today closes for booking once no time before closing is left (e.g. it is already 5 PM)
+    const ended = text === todayText && earliestTodayTime() > CLOSES;
     cells.push({
       date: text,
       day,
       past,
+      ended,
       isToday: text === todayText,
       officers,
       booked: booked[text] || 0,
-      open: !past && officers.length > 0,
+      open: !past && !ended && officers.length > 0,
       selected: text === selectedDate
     });
   }
@@ -145,8 +166,11 @@ async function renderAppointment(req, res, status, service, errors, old) {
     : String(req.query.month ?? '');
   const calendar = await buildCalendar(month, old.preferred_date || '');
   const titles = { clearance: 'Book a clearance appointment', ssc: 'Book an SSC appointment' };
+  // Booking for today: the time box starts at the next minute (the server checks it again)
+  const sel = calendar.selected;
+  const minTime = sel && sel.isToday ? earliestTodayTime() : OPENS;
   res.status(status).render('transactions/appointment', {
-    title: titles[service], service, calendar, errors, old, opens: OPENS, closes: CLOSES
+    title: titles[service], service, calendar, errors, old, opens: OPENS, closes: CLOSES, minTime
   });
 }
 
@@ -202,6 +226,12 @@ async function validate(type, body) {
       errors.push('Enter a preferred time.');
     } else if (old.preferred_time < OPENS || old.preferred_time > CLOSES) {
       errors.push('Choose a time from 8:00 AM to 5:00 PM, when the office is open.');
+    } else if (dateOk && old.preferred_date === today() && old.preferred_time < earliestTodayTime()) {
+      // Today: the time must still be ahead (the server's clock, not the browser's)
+      const earliest = earliestTodayTime();
+      errors.push(earliest > CLOSES
+        ? 'The office is closed for today. Choose another day.'
+        : `That time has already passed today. Choose ${formatClock(earliest)} or later, or another day.`);
     }
     record.preferredTime = old.preferred_time;
   }

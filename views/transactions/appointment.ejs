@@ -90,8 +90,8 @@
                   <td class="cal-cell<%= c.isToday ? ' cal-today' : '' %>">
                     <span class="cal-day cal-closed">
                       <span class="cal-num"><%= c.day %></span>
-                      <span class="cal-note"><%= c.past ? 'Past' : 'Closed' %></span>
-                      <span class="visually-hidden"><%= c.past ? 'past' : 'no officer on duty' %></span>
+                      <span class="cal-note"><%= c.past ? 'Past' : (c.ended ? 'Ended' : 'Closed') %></span>
+                      <span class="visually-hidden"><%= c.past ? 'past' : (c.ended ? 'office hours are over for today' : 'no officer on duty') %></span>
                     </span>
                   </td>
                 <% } %>
@@ -130,8 +130,8 @@
             <div class="form-field">
               <label for="preferred_time">Preferred time</label>
               <input type="time" id="preferred_time" name="preferred_time" value="<%= old.preferred_time || '' %>"
-                min="<%= opens %>" max="<%= closes %>" aria-describedby="time-hint" required>
-              <p class="hint" id="time-hint">Office hours: <%= formatTime(opens) %> to <%= formatTime(closes) %></p>
+                min="<%= minTime %>" max="<%= closes %>" aria-describedby="time-hint" required>
+              <p class="hint" id="time-hint">Office hours: <%= formatTime(opens) %> to <%= formatTime(closes) %><% if (sel.isToday) { %>. Today, choose <%= formatTime(minTime) %> or later.<% } %></p>
             </div>
             <div class="form-field">
               <label for="purpose"><%= isClearance ? 'What is the clearance for?' : 'What would you like to discuss?' %></label>
