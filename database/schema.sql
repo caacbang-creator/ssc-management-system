@@ -324,3 +324,15 @@ CREATE TABLE documents (
   CONSTRAINT fk_documents_reviewer FOREIGN KEY (reviewed_by)
     REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------
+-- sessions: login sessions (express-session), so a redeploy does
+-- not log everyone out. Managed by models/sessionModel.js.
+-- ---------------------------------------------------------------
+DROP TABLE IF EXISTS sessions;
+CREATE TABLE sessions (
+  session_id VARCHAR(128) NOT NULL PRIMARY KEY,
+  expires BIGINT UNSIGNED NOT NULL,   -- milliseconds since 1970 (Date.now())
+  data MEDIUMTEXT NOT NULL,
+  INDEX idx_sessions_expires (expires)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
