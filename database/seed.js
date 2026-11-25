@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
-const { STRICT_MODE } = require('../db');
+const { STRICT_MODE, sslOptions } = require('../db');
 
 // Returns a 'YYYY-MM-DD' date string, offset by a number of days from today
 function dayFromToday(offset) {
@@ -31,6 +31,7 @@ async function main() {
     port: Number(process.env.DB_PORT) || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    ssl: sslOptions(), // TLS for the hosted database (see db.js)
     multipleStatements: true
   });
 

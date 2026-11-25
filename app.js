@@ -29,6 +29,7 @@ const manageDocumentRoutes = require('./routes/manageDocuments');
 const dashboardRoutes = require('./routes/dashboard');
 const announcementModel = require('./models/announcementModel');
 const eventModel = require('./models/eventModel');
+const MySQLSessionStore = require('./models/sessionModel');
 
 if (!process.env.SESSION_SECRET) {
   console.error('SESSION_SECRET is missing in .env. See .env.example.');
@@ -107,15 +108,21 @@ app.use(express.urlencoded({ extended: false }));
 // Serve CSS and images from /public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Sessions: the browser keeps only a signed cookie with a random id; the data stays on the server
+// The host puts a proxy in front of the app that handles HTTPS. Trusting ONE proxy hop
+// lets Express see the original https request (needed for the secure cookie below).
+app.set('trust proxy', 1);
+
+// Sessions: the browser keeps only a signed cookie with a random id; the data stays in MySQL
 app.use(session({
   name: 'ssc.sid',
   secret: process.env.SESSION_SECRET,
+  store: new MySQLSessionStore(),
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,           // JavaScript in the page cannot read the cookie
     sameSite: 'lax',          // not sent on form posts from other websites
+    secure: process.env.NODE_ENV === 'production', // cookie sent over HTTPS only when live
     maxAge: 2 * 60 * 60 * 1000 // 2 hours
   }
 }));
